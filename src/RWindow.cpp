@@ -63,7 +63,7 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     glfwWindowHint(GLFW_RESIZABLE, !format_.fix);
     glfwWindowHint(GLFW_DECORATED, format_.decorate);
     // 默认初始窗口不可见，需主动调用show()
-    glfwWindowHint(GLFW_VISIBLE, false);
+    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
     window_.reset(glfwCreateWindow(format_.initWidth, format_.initHeight,
                                name.c_str(), nullptr, format_.shared));
@@ -176,7 +176,7 @@ void RWindow::setFullScreenWindow(bool b)
         glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width-w)/2, (vidmode->height-h)/2,
                              w, h, vidmode->refreshRate);
     resizeCallback(window_.get(), windowWidth(), windowHeight());
-    glfwSwapInterval(1);
+    glfwSwapInterval(format_.vSync ? 1 : 0);
 }
 
 void RWindow::setVSync(bool enable)
@@ -194,6 +194,11 @@ void RWindow::setCursorModel(RWindow::CursorMode mode)
 {
     format_.cMode = mode;
     glfwSetInputMode(window_.get(), GLFW_CURSOR, static_cast<int>(mode));
+}
+
+void RWindow::setWindowFocus()
+{
+    glfwFocusWindow(window_.get());
 }
 
 void RWindow::restoreWindow()
@@ -341,6 +346,9 @@ int RWindow::exec()
 
     RStartEvent sEvent(this);
     dispatchEvent(sEvent);
+
+    // 防止全屏焦点丢失
+    if(!focused_) glfwFocusWindow(window_.get());
 
     while(loopingCheck() == Status::Looping)
     {

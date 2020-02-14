@@ -66,6 +66,7 @@ public:
     void setVSync(bool enable = true);//垂直同步
     void setCursor(const RCursor *cursor);
     void setCursorModel(CursorMode mode);
+    void setWindowFocus();
     void restoreWindow();
 
     void setBackColor(unsigned r, unsigned g, unsigned b);
