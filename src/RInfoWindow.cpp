@@ -123,7 +123,7 @@ void RInfoWIndow::renderRscList()
 
 void RInfoWIndow::startEvent(RStartEvent &)
 {
-    rcTitle_.setTextureName("rcTitle");
+    rcTitle_.setTextureName("__rcTitle");
     rcTitle_.setTexts(L"Resource List");
     rcTitle_.setSize(LIST_W, TITLE_H);
     rcTitle_.setFontSize(13);
@@ -132,12 +132,12 @@ void RInfoWIndow::startEvent(RStartEvent &)
     rcTitle_.setBackColor(COLOR_ONE);
     rcTitle_.setAlign(RArea::Align::Mind, RArea::Align::Left);
 
-    rcBack_.rename("rcBack");
+    rcBack_.rename("__rcBack");
     rcBack_.setWidth(LIST_W);
     rcBack_.setPos(0, 0);
     rcBack_.setColorTexture(COLOR_TOW);
 
-    rcCount_.setTextureName("rcCount");
+    rcCount_.setTextureName("__rcCount");
     rcCount_ = rcTitle_;
     rcCount_.setPos(0, 0);
     rcCount_.setTexts(L"Count:");
@@ -156,53 +156,53 @@ void RInfoWIndow::startEvent(RStartEvent &)
         rcID_.setTexts(std::to_wstring(i));
         rcID_.resetingNow();
         numbers_[i] = rcID_.textTexture();
-        numbers_[i].rename("rcNum " + std::to_string(i));
+        numbers_[i].rename("__rcNum " + std::to_string(i));
     }
 
     RPack pack(":/icon/info-icons");
     const RPack::FInfo *info;
 
     info = pack.getFileInfo(":/cursor-24.png");
-    rcIcons_[RResource::Type::Cursor] = RTexture(RImage(info->data.get(), info->size, "", true), "cursor-icon");
+    rcIcons_[RResource::Type::Cursor] = RTexture(RImage(info->data.get(), info->size, "", true), "__cursor-icon");
     info = pack.getFileInfo(":/font-24.png");
-    rcIcons_[RResource::Type::Font] = RTexture(RImage(info->data.get(), info->size, "", true), "font-icon");
+    rcIcons_[RResource::Type::Font] = RTexture(RImage(info->data.get(), info->size, "", true), "__font-icon");
     info = pack.getFileInfo(":/image-24.png");
-    rcIcons_[RResource::Type::Image] = RTexture(RImage(info->data.get(), info->size, "", true), "image-icon");
+    rcIcons_[RResource::Type::Image] = RTexture(RImage(info->data.get(), info->size, "", true), "__image-icon");
     info = pack.getFileInfo(":/script-24.png");
-    rcIcons_[RResource::Type::Script] = RTexture(RImage(info->data.get(), info->size, "", true), "script-icon");
+    rcIcons_[RResource::Type::Script] = RTexture(RImage(info->data.get(), info->size, "", true), "__script-icon");
     info = pack.getFileInfo(":/mp3-24.png");
-    rcIcons_[RResource::Type::Mp3] = RTexture(RImage(info->data.get(), info->size, "", true), "mp3-icon");
+    rcIcons_[RResource::Type::Mp3] = RTexture(RImage(info->data.get(), info->size, "", true), "__mp3-icon");
     info = pack.getFileInfo(":/pack-24.png");
-    rcIcons_[RResource::Type::Pack] = RTexture(RImage(info->data.get(), info->size, "", true), "pack-icon");
+    rcIcons_[RResource::Type::Pack] = RTexture(RImage(info->data.get(), info->size, "", true), "__pack-icon");
     info = pack.getFileInfo(":/shader-24.png");
-    rcIcons_[RResource::Type::Shader] = RTexture(RImage(info->data.get(), info->size, "", true), "shader-icon");
+    rcIcons_[RResource::Type::Shader] = RTexture(RImage(info->data.get(), info->size, "", true), "__shader-icon");
     info = pack.getFileInfo(":/shaderProg-24.png");
-    rcIcons_[RResource::Type::ShaderProg] = RTexture(RImage(info->data.get(), info->size, "", true), "shaderProg-icon");
+    rcIcons_[RResource::Type::ShaderProg] = RTexture(RImage(info->data.get(), info->size, "", true), "__shaderProg-icon");
     info = pack.getFileInfo(":/texture-24.png");
-    rcIcons_[RResource::Type::Texture] = RTexture(RImage(info->data.get(), info->size, "", true), "texture-icon");
+    rcIcons_[RResource::Type::Texture] = RTexture(RImage(info->data.get(), info->size, "", true), "__texture-icon");
     pack.release();
 
-    rcIcon_.rename("rcIcon");
+    rcIcon_.rename("__rcIcon");
     rcIcon_.setSize(TITLE_H, TITLE_H);
     rcIcon_.setX(LIST_LEFT_ALIGN + 30);
 
-    rcNumBack_.rename("rcNumBack");
+    rcNumBack_.rename("__rcNumBack");
     rcNumBack_.setPos(0, 0);
     rcNumBack_.setWidth(rcIcon_.x());
     rcNumBack_.setColorTexture(COLOR_THREE);
 
     rcName_ = rcID_;
-    rcName_.setTextureName("rcName");
+    rcName_.setTextureName("__rcName");
     rcName_.setX(rcIcon_.x() + TITLE_H);
     rcName_.setWidth(LIST_W - rcName_.x());
     rcName_.setEllipsis(false);
 
-    rcScroll_.rename("rcScroll");
+    rcScroll_.rename("__rcScroll");
     rcScroll_.setWidth(SCROLL_BAR_W);
     rcScroll_.setColorTexture(COLOR_FOUR);
     rcScroll_.setX(rcBack_.width() - SCROLL_BAR_W);
     rcScroll_.setMinSize(0, 10);
-    rcScrBack_.rename("rcScrBack");
+    rcScrBack_.rename("__rcScrBack");
     rcScrBack_.setWidth(SCROLL_BAR_W);
     rcScrBack_.setColorTexture(COLOR_ZERO);
     rcScrBack_.setPos(rcScroll_.x(), TITLE_H);
@@ -210,16 +210,16 @@ void RInfoWIndow::startEvent(RStartEvent &)
     reArea_[0] = rcScrBack_.rect();
     reArea_[0].move(reArea_[0].width()/2, 0);
 
-    trBack_.rename("trBack");
+    trBack_.rename("__trBack");
     trBack_.setPos(rcBack_.width() + 1, 0);
     trBack_.setColorTexture(COLOR_TOW);
 
     trTitle_ = rcTitle_;
-    trTitle_.setTextureName("trTile");
+    trTitle_.setTextureName("__trTile");
     trTitle_.setX(trBack_.x());
     trTitle_.setTexts(L"Tree View");
 
-    trView_.setTextureName("trView");
+    trView_.setTextureName("__trView");
     trView_.setFontSize(13);
     trView_.setlineSpacing(1.8f);
     trView_.setFontColor(FONT_COLOR);
@@ -232,6 +232,8 @@ void RInfoWIndow::startEvent(RStartEvent &)
     rolled.connect([this](int direct){ wheel_ = direct; return true; });
 
     translation({ this, size(), RPoint(0) });
+
+    cursor_.rename("__info-cursor");
 }
 
 void RInfoWIndow::translation(const RController::TranslationInfo &info)
