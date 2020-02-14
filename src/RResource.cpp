@@ -7,7 +7,7 @@
 
 using namespace Redopera;
 
-std::string RResource::resourcesPath = "resource/";
+std::string RResource::resourcesPath = "";
 std::mutex RResource::mutex;
 
 const std::shared_ptr<RResource::RscList> RResource::queryResourceList()
@@ -56,7 +56,7 @@ std::string RResource::rscpath(const std::string &path)
 
 void RResource::setResourcePath(const std::string &path)
 {
-    static std::regex r("(/|(../)+)?([-_a-z0-9][-_a-z0-9 ]*/)+", std::regex::icase|std::regex::optimize);
+    static std::regex r("(/|(../)+)*([-_a-z0-9.][-_a-z0-9. ]*/)*", std::regex::icase|std::regex::optimize);
     if(check(!std::regex_match(path, r), "Invalid resource path: " + path))
         return;
     resourcesPath = path;
