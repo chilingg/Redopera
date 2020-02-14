@@ -157,9 +157,14 @@ void RWindow::setWindowIcon(const RImage &img)
     glfwSetWindowIcon(window_.get(), 1, &icon);
 }
 
+void RWindow::setMaximizaWindow()
+{
+    glfwMaximizeWindow(window_.get());
+}
+
 void RWindow::setFullScreenWindow(bool b)
 {
-    static int w, h;
+    thread_local static int w, h;
     w = windowWidth();
     h = windowHeight();
 
@@ -187,6 +192,11 @@ void RWindow::setCursorModel(RWindow::CursorMode mode)
 {
     format_.cMode = mode;
     glfwSetInputMode(window_.get(), GLFW_CURSOR, static_cast<int>(mode));
+}
+
+void RWindow::restoreWindow()
+{
+    glfwRestoreWindow(window_.get());
 }
 
 void RWindow::setBackColor(unsigned r, unsigned g, unsigned b)

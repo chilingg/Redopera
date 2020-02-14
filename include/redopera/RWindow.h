@@ -61,10 +61,12 @@ public:
     void setWindowDecrate(bool b = true);
     void setWindowFloatOnTop(bool b = true);
     void setWindowIcon(const RImage &img);
+    void setMaximizaWindow();
     void setFullScreenWindow(bool b = true);
     void setVSync(bool enable = true);//垂直同步
     void setCursor(const RCursor *cursor);
     void setCursorModel(CursorMode mode);
+    void restoreWindow();
 
     void setBackColor(unsigned r, unsigned g, unsigned b);
     void setBackColor(const RColor &color);
