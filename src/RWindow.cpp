@@ -175,6 +175,8 @@ void RWindow::setFullScreenWindow(bool b)
     else
         glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width-w)/2, (vidmode->height-h)/2,
                              w, h, vidmode->refreshRate);
+    resizeCallback(window_.get(), windowWidth(), windowHeight());
+    glfwSwapInterval(1);
 }
 
 void RWindow::setVSync(bool enable)
