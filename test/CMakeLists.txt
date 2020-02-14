@@ -24,3 +24,9 @@ target_link_libraries(opengl redopera)
 
 add_executable(share share.cpp)
 target_link_libraries(share redopera)
+
+find_file(UNIT_TEST unitTest.cpp .)
+if(UNIT_TEST)
+    add_executable(unitTest unitTest.cpp)
+    target_link_libraries(unitTest redopera)
+endif()

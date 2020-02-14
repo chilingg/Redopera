@@ -7,3 +7,4 @@ Makefile*
 .*.swp
 *CMakeLists.txt.user
 build/*
+*/unitTest.cpp
