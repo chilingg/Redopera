@@ -124,11 +124,11 @@ bool RPack::packing(const std::shared_ptr<RData[]> &buffer, size_t size, const s
     return false;
 }
 
-bool RPack::packing(const std::string &path)
+bool RPack::packing(const std::string &path, const std::string &name)
 {
     std::string newpath = rscpath(path);
     std::ifstream file(newpath, std::ios::binary | std::ios::ate);
-    if(check(!file, "Failed to packing <" + name() + "> in " + newpath))
+    if(check(!file, "Failed to packing <" + this->name() + "> in " + newpath))
         return false;
 
     size_t size = file.tellg();
@@ -146,7 +146,7 @@ bool RPack::packing(const std::string &path)
         return false;
     }
 
-    return packing(data, size, path);
+    return packing(data, size, name);
 }
 
 bool RPack::save(const std::string &p)

@@ -51,7 +51,7 @@ public:
 
     bool load(const std::string &path);
     bool packing(const std::shared_ptr<RData[]> &buffer, size_t size, const std::string &name);
-    bool packing(const std::string &path);
+    bool packing(const std::string &path, const std::string &name);
     bool save(const std::string &path);
     void release();
 
