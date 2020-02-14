@@ -7,7 +7,7 @@ using namespace Redopera;
 
 unsigned RFont::cacheMaxSize_ = 1000;
 
-thread_local RFont RFont::defaultFont;
+thread_local std::unique_ptr<RFont> RFont::defaultFont(nullptr);
 
 void RFont::setCasheSize(unsigned size)
 {
@@ -16,20 +16,21 @@ void RFont::setCasheSize(unsigned size)
 
 void RFont::setDefaultFontSize(unsigned size)
 {
-    defaultFont.setSize(size);
+    if(defaultFont)
+        defaultFont->setSize(size);
 }
 
 const RFont &RFont::getDefaulteFont()
 {
-    if(!defaultFont.isValid())
-        defaultFont = sourceCodePro();
+    if(!defaultFont)
+        defaultFont = std::make_unique<RFont>(sourceCodePro());
 
-    return defaultFont;
+    return *defaultFont;
 }
 
 void RFont::setDefaultFont(const RFont &font)
 {
-    defaultFont = font;
+    defaultFont = std::make_unique<RFont>(font);
 }
 
 RFont::RFont():
@@ -45,11 +46,11 @@ RFont::RFont(const std::string &path, const std::string &name, unsigned fsize):
     load(path);
 }
 
-RFont::RFont(const std::shared_ptr<RData[]> &data, const std::string &name, unsigned fsize):
+RFont::RFont(const RData *data, const size_t size, const std::string &name, unsigned fsize):
     RResource(name, RResource::Type::Font),
     size_(fsize)
 {
-    load(data);
+    load(data, size);
 }
 
 RFont::RFont(const RFont &font):
@@ -149,18 +150,17 @@ bool RFont::load(const std::string &path)
         return false;
     }
 
-    std::shared_ptr<int[]> sp3(new int[10]());
     resource_->font.reset(data);
     caches_ = std::make_shared<std::map<RChar, Glyph>>();
     return true;
 }
 
-bool RFont::load(const std::shared_ptr<RData[]> &data)
+bool RFont::load(const RData *data, size_t size)
 {
     if(!resource_.unique())
         resetRscID();
     resource_ = std::make_shared<FontResource>();
-    stbtt_InitFont(&resource_->info, data.get(), 0);
+    stbtt_InitFont(&resource_->info, data, 0);
 
     if(check(resource_->info.numGlyphs == 0, "Unknow font file <" + name() + '>'))
     {
@@ -168,7 +168,9 @@ bool RFont::load(const std::shared_ptr<RData[]> &data)
         return false;;
     }
 
-    resource_->font = data;
+    RData *p = new RData[size];
+    std::memcpy(p, data, size);
+    resource_->font.reset(p);
     caches_ = std::make_shared<std::map<RChar, Glyph>>();
     return true;
 }

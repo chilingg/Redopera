@@ -34,7 +34,7 @@ public:
     };
 
     // sourceCodePro()定义在字体资源文件中 (SourceCodePro.cpp)
-    static RFont sourceCodePro();
+    static const RFont& sourceCodePro();
 
     static void setCasheSize(unsigned size);
     static void setDefaultFontSize(unsigned size);
@@ -43,7 +43,7 @@ public:
 
     RFont();
     explicit RFont(const std::string &path, const std::string &name = "Font", unsigned fsize = 14);
-    RFont(const std::shared_ptr<RData[]> &data, const std::string &name = "Font", unsigned fsize = 14);
+    RFont(const RData* data, const size_t size, const std::string &name = "Font", unsigned fsize = 14);
     RFont(const RFont &font);
     RFont(const RFont &&font);
     RFont& operator=(RFont font);
@@ -56,13 +56,12 @@ public:
 
     void setSize(unsigned size);
     bool load(const std::string &path);
-    bool load(const std::shared_ptr<RData[]> &data);
+    bool load(const RData *data, size_t size);
     void release();
     void clearFontDataCache() const;
 
 private:
-    // defaultFont定义在字体资源文件中 (SourceCodePro.cpp)
-    thread_local static RFont defaultFont;
+    thread_local static std::unique_ptr<RFont> defaultFont;
 
     static unsigned cacheMaxSize_;
 
