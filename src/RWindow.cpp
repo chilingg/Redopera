@@ -81,7 +81,7 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
         height_ = mode->height;
     }
 
-    window_.reset(glfwCreateWindow(width_, height_, name.c_str(), nullptr, format_.shared));
+    window_.reset(glfwCreateWindow(width_, height_, name.c_str(), monitor, format_.shared));
     if(check(window_ == nullptr, "Fainled to create GLFW window!"))
         exit(EXIT_FAILURE);
 
@@ -188,7 +188,6 @@ void RWindow::setFullScreenWindow(bool b)
         glfwSetWindowMonitor(window_.get(), monitor, 0, 0, vidmode->width, vidmode->height, vidmode->refreshRate);
         // 全屏时GLFW似乎会取消垂直同步
         glfwSwapInterval(format_.vSync ? 1 : 0);
-        resizeCallback(window_.get(), vidmode->width, vidmode->height);
     }
     else {
         glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width - format_.initWidth)/2,
@@ -364,8 +363,6 @@ int RWindow::exec()
     // 主窗口关闭时所有窗口都会得到通知
     if(mainWindow != this)
        mainWindow->closed.connect(this, &RController::breakLoop);
-    if(format_.fullScreen)
-        setFullScreenWindow();
 
     RStartEvent sEvent(this);
     dispatchEvent(sEvent);
