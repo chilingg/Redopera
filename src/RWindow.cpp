@@ -42,8 +42,8 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     eventPool([]{}),
     window_(nullptr, glfwDestroyWindow),
     vOffset_(0),
-    size_(format.initWidth, format.initHeight),
-    resize_(RSize(0, 0)),
+    size_(0, 0), // 真正的尺寸在循环时决定
+    resize_(RSize(format.initWidth, format.initHeight)),
     focused_(false)
 {
     std::call_once(init, std::bind(initMainWindow, this));
@@ -77,10 +77,11 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-        size_.set(mode->width, mode->height);
+        window_.reset(glfwCreateWindow(mode->width, mode->height, name.c_str(), nullptr, format_.shared));
     }
+    else
+        window_.reset(glfwCreateWindow(format.initWidth, format.initHeight, name.c_str(), nullptr, format_.shared));
 
-    window_.reset(glfwCreateWindow(size_.width(), size_.height(), name.c_str(), nullptr, format_.shared));
     if(check(window_ == nullptr, "Fainled to create GLFW window!"))
         exit(EXIT_FAILURE);
 

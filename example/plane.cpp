@@ -62,9 +62,6 @@ protected:
     {
         RWindow * window = RWindow::getMainWindow();
 
-        plane.setX(window->width()/2 - plane.width()/2);
-        plane.setY(window->height()/2 - plane.height()/2);
-
         TranslationInfo info = { this, window->size(), RPoint(0) };
         translation(info);
     }
@@ -72,6 +69,9 @@ protected:
     void translation(const TranslationInfo &info) override
     {
         viewpro.set(info.size, info.pos);
+
+        plane.setX(info.size.width()/2 - plane.width()/2);
+        plane.setY(info.size.height()/2 - plane.height()/2);
 
         arrow[0].setPos(info.size.width()/2 - arrow[0].width()/2, info.size.height()/2 - arrow[0].height()/2 + 60);
         arrow[1].setPos(info.size.width()/2 - arrow[0].width()/2 - 60, info.size.height()/2 - arrow[0].height()/2 );

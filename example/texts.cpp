@@ -11,6 +11,9 @@ const wchar_t* texts =
         "How should I greet you?\n"
         "With silence and tears?";
 
+const int WIDTH = 450;
+const int HEIGHT = 490;
+
 class TextWindow: public RWindow
 {
 public:
@@ -34,7 +37,7 @@ protected:
         // textbox的着色器设置（与plane并不共享，建议永远与窗口尺寸等同，避免字体渲染虚化）
         const RShaderProg &shaders = RTextsbxo::textboxShader();
         RInterface inter = shaders.useInterface();
-        inter.setViewprot(shaders.getUniformLocation("projection"), 0, width(), 0, height());
+        inter.setViewprot(shaders.getUniformLocation("projection"), 0, WIDTH, 0, HEIGHT);
 
         text->setTexts(texts);
         text[0].setFontSize(13);
@@ -43,11 +46,11 @@ protected:
         text[0].setSize(190, 90);
         text[0].setPadding(8, 8, 8, 8);
         text[0].setlineSpacing(1.4);
-        text[0].setPos(20, height() - text[0].height() - 20);
+        text[0].setPos(20, HEIGHT - text[0].height() - 20);
 
         text[1] = text[0];
         text[1].setAlign(RArea::Align::Mind, RArea::Align::Right);
-        text[1].setX(width() - text[1].width() - 20);
+        text[1].setX(WIDTH - text[1].width() - 20);
 
         text[2] = text[0];
         text[2].setHeight(320);
@@ -56,11 +59,11 @@ protected:
         text[2].setAlign(RArea::Align::Top, RArea::Align::Mind);
         text[2].verticalTypeset();
         text[2].setBackColor(0xff251515);
-        text[2].setY(height() - text[2].height() - text[1].height() - 40);
+        text[2].setY(HEIGHT - text[2].height() - text[1].height() - 40);
 
         text[3] = text[2];
         text[2].setAlign(RArea::Align::Mind, RArea::Align::Mind);
-        text[3].setX(width() - text[3].width() - 20);
+        text[3].setX(WIDTH - text[3].width() - 20);
     }
 
     void inputEvent(RInputEvent &e) override
@@ -76,8 +79,8 @@ private:
 int main()
 {
     RWindow::Format format;
-    format.initWidth = 450;
-    format.initHeight = 490;
+    format.initWidth = WIDTH;
+    format.initHeight = HEIGHT;
     format.background = 0x181010;
     format.fix = true;
     TextWindow textWin(format);
