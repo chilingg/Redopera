@@ -10,7 +10,7 @@ ADD_SUBDIRECTORY(src src)
 ADD_SUBDIRECTORY(example example)
 
 find_file(VARIETY CMakeLists.txt variety)
-if(UNIT_TEST)
+if(VARIETY)
     set(VARIETY_SUBMODULE ${CMAKE_BINARY_DIR}/src)
     set(REDOPERA_LIB_PATH ${CMAKE_BINARY_DIR}/src)
     set(REDOPERA_INCLUDE_PATH ${CMAKE_SOURCE_DIR}/include)
