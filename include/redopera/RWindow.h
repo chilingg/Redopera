@@ -31,6 +31,7 @@ public:
         bool fix            = false;    // 固定窗口尺寸
         bool decorate       = true;     // 窗口边框与标题栏
         bool keysSigal      = false;    // 键盘响应信号(entered)
+        bool fullScreen     = false;    // 全屏
         Viewport viewport   = Viewport::Full;  // 视口模式
         R_RGBA background   = 0x121212; // 背景色
         int initWidth       = 800;      // 初始窗口大小
@@ -90,6 +91,7 @@ public:
     CursorMode cursorMode() const;
     bool isFocus() const;
     bool isShouldCloused() const;
+    bool isFullScreen() const;
 
     void closeWindow();
     // 调用showWindow()之后才会连接回调

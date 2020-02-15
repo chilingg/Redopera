@@ -62,11 +62,26 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, format_.debug);
     glfwWindowHint(GLFW_RESIZABLE, !format_.fix);
     glfwWindowHint(GLFW_DECORATED, format_.decorate);
+    glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
     // 默认初始窗口不可见，需主动调用show()
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    window_.reset(glfwCreateWindow(format_.initWidth, format_.initHeight,
-                               name.c_str(), nullptr, format_.shared));
+    GLFWmonitor *monitor = nullptr;
+    if(format_.fullScreen)
+    {
+        monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+        width_ = mode->width;
+        height_ = mode->height;
+    }
+
+    window_.reset(glfwCreateWindow(width_, height_, name.c_str(), nullptr, format_.shared));
     if(check(window_ == nullptr, "Fainled to create GLFW window!"))
         exit(EXIT_FAILURE);
 
@@ -164,19 +179,22 @@ void RWindow::setMaximizaWindow()
 
 void RWindow::setFullScreenWindow(bool b)
 {
-    thread_local static int w, h;
-    w = windowWidth();
-    h = windowHeight();
-
+    format_.fullScreen = b;
     GLFWmonitor *monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode *vidmode = glfwGetVideoMode(monitor);
+
     if(b)
+    {
         glfwSetWindowMonitor(window_.get(), monitor, 0, 0, vidmode->width, vidmode->height, vidmode->refreshRate);
-    else
-        glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width-w)/2, (vidmode->height-h)/2,
-                             w, h, vidmode->refreshRate);
-    resizeCallback(window_.get(), windowWidth(), windowHeight());
-    glfwSwapInterval(format_.vSync ? 1 : 0);
+        // 全屏时GLFW似乎会取消垂直同步
+        glfwSwapInterval(format_.vSync ? 1 : 0);
+        resizeCallback(window_.get(), vidmode->width, vidmode->height);
+    }
+    else {
+        glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width - format_.initWidth)/2,
+                             (vidmode->height - format_.initHeight)/2, format_.initWidth, format_.initHeight, vidmode->refreshRate);
+    }
+
 }
 
 void RWindow::setVSync(bool enable)
@@ -229,22 +247,19 @@ void RWindow::setViewportSize(int width, int height)
 {
     width_ = width;
     height_ = height;
-    if(isLooping())
-        resizeCallback(window_.get(), windowWidth(), windowHeight());
+    resizeCallback(window_.get(), windowWidth(), windowHeight());
 }
 
 void RWindow::setViewportRatio(double ratio)
 {
     format_.vRatio_ = ratio;
-    if(isLooping())
-        resizeCallback(window_.get(), windowWidth(), windowHeight());
+    resizeCallback(window_.get(), windowWidth(), windowHeight());
 }
 
 void RWindow::setViewportPattern(RWindow::Viewport pattern)
 {
     format_.viewport = pattern;
-    if(isLooping())
-        resizeCallback(window_.get(), windowWidth(), windowHeight());
+    resizeCallback(window_.get(), windowWidth(), windowHeight());
 }
 
 void RWindow::enableDepthTest()
@@ -313,6 +328,11 @@ bool RWindow::isShouldCloused() const
     return glfwWindowShouldClose(window_.get()) == GLFW_TRUE;
 }
 
+bool RWindow::isFullScreen() const
+{
+    return format_.fullScreen;
+}
+
 void RWindow::closeWindow()
 {
     glfwSetWindowShouldClose(window_.get(), GLFW_TRUE);
@@ -321,16 +341,13 @@ void RWindow::closeWindow()
 void RWindow::show()
 {
     // 不在构造函数时设置回调，防止多线程中在未构造完成时被调用
+    glfwSetWindowFocusCallback(window_.get(), windowFocusCallback);
     glfwSetFramebufferSizeCallback(window_.get(), resizeCallback);
     glfwSetScrollCallback(window_.get(), mouseScrollCallback);
-    glfwSetWindowFocusCallback(window_.get(), windowFocusCallback);
     glfwSetWindowCloseCallback(window_.get(), windowCloseCallback);
     // 若无需实时响应，则无需开启
     if(format_.keysSigal)
         glfwSetKeyCallback(window_.get(), keyboardCollback);
-    // 主窗口关闭时所有窗口都会得到通知
-    if(mainWindow != this)
-       mainWindow->closed.connect(this, &RController::breakLoop);
 
     glfwShowWindow(window_.get());
 }
@@ -343,6 +360,12 @@ void RWindow::hide()
 int RWindow::exec()
 {
     assert(!isLooping());
+
+    // 主窗口关闭时所有窗口都会得到通知
+    if(mainWindow != this)
+       mainWindow->closed.connect(this, &RController::breakLoop);
+    if(format_.fullScreen)
+        setFullScreenWindow();
 
     RStartEvent sEvent(this);
     dispatchEvent(sEvent);
@@ -524,6 +547,7 @@ void RWindow::joystickPresentCallback(int jid, int event)
 void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
+    TranslationInfo info;
 
     switch(wctrl->format_.viewport)
     {
@@ -547,8 +571,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
             wctrl->width_ = width;
             wctrl->height_ = n;
         }
-        TranslationInfo info { wctrl, {wctrl->width_, wctrl->height_} };
-        wctrl->translation(info);
+        info = { wctrl, { wctrl->width_, wctrl->height_ } };
         break;
     }
     case Viewport::Full:
@@ -557,19 +580,20 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
         wctrl->vOffset_.set(0, 0);
         wctrl->width_ = width;
         wctrl->height_ =height;
-        TranslationInfo info { wctrl, {width, height} };
-        wctrl->translation(info);
+        info = { wctrl, { width, height } };
         break;
     }
     case Viewport::Fix:
     {
         glViewport((width - wctrl->width_) / 2.0, (height - wctrl->height_) / 2.0, wctrl->width_, wctrl->height_);
         wctrl->vOffset_.set((width - wctrl->width_) / 2.0, (height - wctrl->height_) / 2.0);
-        TranslationInfo info { wctrl, {wctrl->width_, wctrl->height_} };
-        wctrl->translation(info);
+        info = { wctrl, { wctrl->width_, wctrl->height_ } };
         break;
     }
     }
+
+    if(wctrl->isLooping())
+        wctrl->translation(info);
 }
 
 void RWindow::keyboardCollback(GLFWwindow *window, int key, int , int action, int mods)
