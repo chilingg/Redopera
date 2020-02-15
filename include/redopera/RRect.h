@@ -9,11 +9,11 @@ namespace Redopera {
 class RRect
 {
 public:
-    RRect();
-    RRect(int width, int height, int x = 0, int y = 0);
-    RRect(int width, int height, const RPoint2 &bottomLeft);
-    RRect(const RSize &size, const RPoint2 &bottomLeft);
-    RRect(const RPoint2 &bottomLeft, const RPoint2 &topRight);
+    RRect() noexcept;
+    RRect(int width, int height, int x = 0, int y = 0) noexcept;
+    RRect(int width, int height, const RPoint2 &bottomLeft) noexcept;
+    RRect(const RSize &size, const RPoint2 &bottomLeft) noexcept;
+    RRect(const RPoint2 &bottomLeft, const RPoint2 &topRight) noexcept;
 
     bool operator==(const RRect &rect);
     bool operator!=(const RRect &rect);
@@ -76,25 +76,25 @@ private:
     RPoint2 pos_;
 };
 
-inline RRect::RRect():
+inline RRect::RRect() noexcept:
     RRect(RSize(), RPoint2(0))
 {}
 
-inline RRect::RRect(int width, int height, int x, int y):
+inline RRect::RRect(int width, int height, int x, int y) noexcept:
     size_(width, height), pos_(x, y)
 {}
 
-inline RRect::RRect(int width, int height, const RPoint2 &bottomLeft):
+inline RRect::RRect(int width, int height, const RPoint2 &bottomLeft) noexcept:
     size_(width, height), pos_(bottomLeft)
 {
 
 }
 
-inline RRect::RRect(const RSize &size, const RPoint2 &bottomLeft):
+inline RRect::RRect(const RSize &size, const RPoint2 &bottomLeft) noexcept:
     size_(size), pos_(bottomLeft)
 {}
 
-inline RRect::RRect(const RPoint2 &bottomLeft, const RPoint2 &topRight):
+inline RRect::RRect(const RPoint2 &bottomLeft, const RPoint2 &topRight) noexcept:
     size_(bottomLeft.x() - topRight.x(), topRight.y() - bottomLeft.y()),
     pos_(bottomLeft)
 {}

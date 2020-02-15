@@ -12,9 +12,9 @@ class RPoint2
 public:
     constexpr static int INVALID_POINT_VALUE = ~0u >> 1;
 
-    explicit RPoint2(int x, int y = 0): x_(x), y_(y) {}
+    explicit RPoint2(int x, int y = 0) noexcept: x_(x), y_(y) {}
 
-    RPoint2(): x_(INVALID_POINT_VALUE), y_(INVALID_POINT_VALUE) {}
+    RPoint2() noexcept: x_(INVALID_POINT_VALUE), y_(INVALID_POINT_VALUE) {}
 
     bool operator==(const RPoint2 &pos) const { return x_ == pos.x_ && y_ == pos.y_; }
     bool operator!=(const RPoint2 &pos) const { return x_ != pos.x_ || y_ != pos.y_; }
@@ -49,13 +49,13 @@ class RPoint3 : public RPoint2
     friend std::hash<RPoint3>;
 
 public:
-    explicit RPoint3(int x, int y = 0, int z = 0):
+    explicit RPoint3(int x, int y = 0, int z = 0) noexcept:
         RPoint2(x, y), z_(z) {}
 
-    RPoint3(RPoint2 p2, int z):
+    RPoint3(RPoint2 p2, int z) noexcept:
         RPoint2(p2), z_(z) {}
 
-    RPoint3():
+    RPoint3() noexcept:
         RPoint2(), z_(0) {}
 
     bool operator==(const RPoint3 &pos) const { return x_ == pos.x_ && y_ == pos.y_ && z_ == pos.z_; }

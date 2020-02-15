@@ -6,8 +6,8 @@ namespace Redopera {
 class RSize
 {
 public:
-    RSize(): RSize(0, 0) {}
-    RSize(int width, int height): width_(width), height_(height) {}
+    RSize() noexcept: RSize(0, 0) {}
+    RSize(int width, int height) noexcept : width_(width), height_(height) {}
     bool operator==(const RSize &size) { return width_ == size.width_ && height_ == size.height_; }
     bool operator!=(const RSize &size) { return width_ != size.width_ || height_ != size.height_; }
 

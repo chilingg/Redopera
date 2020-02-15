@@ -10,8 +10,8 @@ using R_RGBA = uint32_t;
 class RColor
 {
 public:
-    explicit RColor(R_RGBA color = 0xff000000u) { rgba_ = color; }
-    RColor(unsigned r, unsigned g, unsigned b, unsigned a = 0xffu)
+    explicit RColor(R_RGBA color = 0xff000000u) noexcept { rgba_ = color; }
+    RColor(unsigned r, unsigned g, unsigned b, unsigned a = 0xffu) noexcept
     {
         rgba_ = r & 0xffu;
         rgba_ |= (0xffu & g) << 8;
