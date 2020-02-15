@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.1)
-#SET(REDOPERA_SRC )
 
 aux_source_directory(. REDOPERA_SRC)
 aux_source_directory(dependent/ REDOPERA_SRC)
@@ -20,6 +19,7 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DR_DEBUG)
+    SET_TARGET_PROPERTIES(redopera PROPERTIES OUTPUT_NAME redoperad)
 else()
     add_definitions(-DNDEBUG)
 endif()
