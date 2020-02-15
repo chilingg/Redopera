@@ -188,6 +188,8 @@ void RWindow::setFullScreenWindow(bool b)
         glfwSetWindowMonitor(window_.get(), monitor, 0, 0, vidmode->width, vidmode->height, vidmode->refreshRate);
         // 全屏时GLFW似乎会取消垂直同步
         glfwSwapInterval(format_.vSync ? 1 : 0);
+        // Windows下需手动调用resize回调
+        resizeCallback(window_.get(), vidmode->width, vidmode->height);
     }
     else {
         glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width - format_.initWidth)/2,
