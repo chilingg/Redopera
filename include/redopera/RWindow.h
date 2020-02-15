@@ -136,8 +136,8 @@ private:
     std::function<void()> eventPool; //主线程中为glfwPoolEvent，其余线程中为空
     std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> window_;
     RPoint2 vOffset_;
-    int width_;
-    int height_;
+    RSize size_;
+    std::atomic<RSize> resize_;
     std::atomic_bool focused_;
 
     GLbitfield clearMask = GL_COLOR_BUFFER_BIT;

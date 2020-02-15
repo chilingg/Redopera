@@ -42,8 +42,8 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     eventPool([]{}),
     window_(nullptr, glfwDestroyWindow),
     vOffset_(0),
-    width_(format.initWidth),
-    height_(format.initHeight),
+    size_(format.initWidth, format.initHeight),
+    resize_(RSize(0, 0)),
     focused_(false)
 {
     std::call_once(init, std::bind(initMainWindow, this));
@@ -66,9 +66,9 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     // 默认初始窗口不可见，需主动调用show()
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    GLFWmonitor *monitor = nullptr;
     if(format_.fullScreen)
     {
+        GLFWmonitor *monitor = nullptr;
         monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
@@ -77,11 +77,10 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-        width_ = mode->width;
-        height_ = mode->height;
+        size_.set(mode->width, mode->height);
     }
 
-    window_.reset(glfwCreateWindow(width_, height_, name.c_str(), monitor, format_.shared));
+    window_.reset(glfwCreateWindow(size_.width(), size_.height(), name.c_str(), nullptr, format_.shared));
     if(check(window_ == nullptr, "Fainled to create GLFW window!"))
         exit(EXIT_FAILURE);
 
@@ -244,8 +243,7 @@ void RWindow::setBackColor(R_RGBA rgba)
 
 void RWindow::setViewportSize(int width, int height)
 {
-    width_ = width;
-    height_ = height;
+    size_.set(width, height);
     resizeCallback(window_.get(), windowWidth(), windowHeight());
 }
 
@@ -285,17 +283,17 @@ const RWindow::Format &RWindow::format() const
 
 int RWindow::width() const
 {
-    return width_;
+    return size_.width();
 }
 
 int RWindow::height() const
 {
-    return height_;
+    return size_.height();
 }
 
 RSize RWindow::size() const
 {
-    return RSize(width_, height_);
+    return size_;
 }
 
 int RWindow::windowWidth() const
@@ -364,6 +362,10 @@ int RWindow::exec()
     if(mainWindow != this)
        mainWindow->closed.connect(this, &RController::breakLoop);
 
+    // Windows下若初始全屏则无法获取初始焦点，所以统一在此全屏
+    if(format_.fullScreen)
+        setFullScreenWindow();
+
     RStartEvent sEvent(this);
     dispatchEvent(sEvent);
 
@@ -372,7 +374,60 @@ int RWindow::exec()
 
     while(loopingCheck() == Status::Looping)
     {
-        eventPool(); //更新事件
+        eventPool(); // GLFW更新事件
+
+        // 若窗口尺寸变化
+        RSize size = resize_.load();
+        if(size.isValid())
+        {
+            resize_ = RSize(0, 0);
+
+            if(size != size_)
+            {
+                switch(format_.viewport)
+                {
+                case Viewport::Scale:
+                {
+                    double ratio = static_cast<double>(size.width()) / size.height();
+                    int n;
+                    if(ratio > format_.vRatio_)
+                    {
+                        n = static_cast<int>(size.height() * format_.vRatio_);
+                        glViewport((size.width() - n) / 2, 0, n, size.height());
+                        vOffset_.set((size.width() - n) / 2, 0);
+                        size_.setWidth(n);
+                        size_.setHeight(size.height());
+                    }
+                    else
+                    {
+                        n = static_cast<int>(size.width() / format_.vRatio_);
+                        glViewport(0, (size.height() - n) / 2, size.width(), n);
+                        vOffset_.set(0, (size.height() - n) / 2);
+                        size_.setWidth(size.width());
+                        size_.setHeight(n);
+                    }
+                    break;
+                }
+                case Viewport::Full:
+                {
+                    glViewport(0, 0, size.width(), size.height());
+                    vOffset_.set(0, 0);
+                    size_.set(size.width(), size.height());
+                    break;
+                }
+                case Viewport::Fix:
+                {
+                    glViewport((size.width() - size_.width()) / 2.0, (size.height() - size_.height()) / 2.0, size_.width(), size_.height());
+                    vOffset_.set((size.width() - size_.width()) / 2.0, (size.height() - size_.height()) / 2.0);
+                    break;
+                }
+                }
+
+                // 传递Translation info
+                TranslationInfo info = { this, { size_.width(), size_.height() } };
+                translation(info);
+            }
+        }
 
         if(focused_) //更新输入
         {
@@ -544,53 +599,7 @@ void RWindow::joystickPresentCallback(int jid, int event)
 void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
-    TranslationInfo info;
-
-    switch(wctrl->format_.viewport)
-    {
-    case Viewport::Scale:
-    {
-        double ratio = static_cast<double>(width) / height;
-        int n;
-        if(ratio > wctrl->format_.vRatio_)
-        {
-            n = static_cast<int>(height * wctrl->format_.vRatio_);
-            glViewport((width - n) / 2, 0, n, height);
-            wctrl->vOffset_.set((width - n) / 2, 0);
-            wctrl->width_ = n;
-            wctrl->height_ = height;
-        }
-        else
-        {
-            n = static_cast<int>(width / wctrl->format_.vRatio_);
-            glViewport(0, (height - n) / 2, width, n);
-            wctrl->vOffset_.set(0, (height - n) / 2);
-            wctrl->width_ = width;
-            wctrl->height_ = n;
-        }
-        info = { wctrl, { wctrl->width_, wctrl->height_ } };
-        break;
-    }
-    case Viewport::Full:
-    {
-        glViewport(0, 0, width, height);
-        wctrl->vOffset_.set(0, 0);
-        wctrl->width_ = width;
-        wctrl->height_ =height;
-        info = { wctrl, { width, height } };
-        break;
-    }
-    case Viewport::Fix:
-    {
-        glViewport((width - wctrl->width_) / 2.0, (height - wctrl->height_) / 2.0, wctrl->width_, wctrl->height_);
-        wctrl->vOffset_.set((width - wctrl->width_) / 2.0, (height - wctrl->height_) / 2.0);
-        info = { wctrl, { wctrl->width_, wctrl->height_ } };
-        break;
-    }
-    }
-
-    if(wctrl->isLooping())
-        wctrl->translation(info);
+    wctrl->resize_ = RSize(width, height);
 }
 
 void RWindow::keyboardCollback(GLFWwindow *window, int key, int , int action, int mods)
