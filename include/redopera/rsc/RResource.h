@@ -38,7 +38,7 @@ public:
 
     using RscList = std::map<RscID, RscInfo>;
 
-    static const std::shared_ptr<RscList> queryResourceList();
+    static RscList queryResourceList();
 
     static std::string getTextFileContent(const std::string &path);
     static std::string rscpath(const std::string &path);
@@ -70,9 +70,10 @@ private:
     static std::string resourcesPath;
     static std::mutex mutex;
 
+    const std::shared_ptr<RscList> resourcesList_;
+    std::shared_ptr<RscID> resourceID_;
     const Type type_;
     std::string name_;
-    std::shared_ptr<RscID> resourceID_;
 };
 
 } // Redopera

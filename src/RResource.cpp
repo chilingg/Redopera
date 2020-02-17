@@ -10,11 +10,10 @@ using namespace Redopera;
 std::string RResource::resourcesPath = "";
 std::mutex RResource::mutex;
 
-const std::shared_ptr<RResource::RscList> RResource::queryResourceList()
+RResource::RscList RResource::queryResourceList()
 {
-    // 获取ID列表后的读取都是线程安全的，若其他线程对其修改会新建一个一样的列表进行
     std::lock_guard<std::mutex> guard(mutex);
-    return resourcesList();
+    return *resourcesList();
 }
 
 std::string RResource::getTextFileContent(const std::string &path)
@@ -68,25 +67,28 @@ const std::string &RResource::getResourcePath()
 }
 
 RResource::RResource(const std::string &name, Type type):
+    resourcesList_(resourcesList()),
+    resourceID_(new unsigned(registerResourceID(name, type)), unregisterResourceID),
     type_(type),
-    name_(name),
-    resourceID_(new unsigned(registerResourceID(name, type)), unregisterResourceID)
+    name_(name)
 {
 
 }
 
 RResource::RResource(const RResource &rc):
+    resourcesList_(resourcesList()),
+    resourceID_(rc.resourceID_),
     type_(rc.type_),
-    name_(rc.name_),
-    resourceID_(rc.resourceID_)
+    name_(rc.name_)
 {
 
 }
 
 RResource::RResource(const RResource &&rc):
+    resourcesList_(resourcesList()),
+    resourceID_(std::move(rc.resourceID_)),
     type_(rc.type_),
-    name_(std::move(rc.name_)),
-    resourceID_(std::move(rc.resourceID_))
+    name_(std::move(rc.name_))
 {
 
 }
@@ -138,8 +140,6 @@ void RResource::rename(const std::string &name)
 
     {
     std::lock_guard<std::mutex> guard(mutex);
-    if(!resourcesList().unique())
-        resourcesList() = std::make_shared<RscList>(*resourcesList());
     auto it = resourcesList()->find(*resourceID_);
     it->second.name.swap(temp);
     }
@@ -152,11 +152,8 @@ RscID RResource::registerResourceID(const std::string &name, Type type)
 
     while(resourcesList()->count(i))
         ++i;
-
-    // 若有其他线程在查询资源ID列表 则新建一个ID列表
-    if(!resourcesList().unique())
-        resourcesList() = std::make_shared<RscList>(*resourcesList());
     resourcesList()->emplace(i, RscInfo{ type, name });
+
     return i;
 }
 
@@ -170,9 +167,6 @@ void RResource::unregisterResourceID(RscID *id)
 {
     {
     std::lock_guard<std::mutex> guard(mutex);
-    // 若有其他线程在查询资源ID列表 则新建一个ID列表
-    if(!resourcesList().unique())
-        resourcesList() = std::make_shared<RscList>(*resourcesList());
     resourcesList()->erase(*id);
     }
 

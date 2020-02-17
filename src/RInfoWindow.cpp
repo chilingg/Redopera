@@ -48,7 +48,13 @@ void RInfoWIndow::control()
 
 void RInfoWIndow::renderRscList()
 {
-    int n = RResource::queryResourceList()->size();
+    if(timer_.elapsed() > 1000)
+    {
+        rcList_ = RResource::queryResourceList();
+        timer_.start();
+    }
+
+    int n = rcList_.size();
     rcCountNum_.setTexts(std::to_wstring(n));
     rcScroll_.setHeight(n * LIST_W);
 
@@ -76,7 +82,7 @@ void RInfoWIndow::renderRscList()
     rcBack_.render();
     rcNumBack_.render();
 
-    for(auto &rc : *RResource::queryResourceList())
+    for(auto &rc : rcList_)
     {
         if(rcID_.y() < 0)
             break;
