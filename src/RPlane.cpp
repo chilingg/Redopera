@@ -54,40 +54,39 @@ const RPlane::RenderTool& RPlane::planeRenderTool()
             "#version 330 core\n"
             "layout(location = 0) in vec3 aPos;\n"
             "layout(location = 1) in vec2 aTexCoor;\n"
-            "uniform vec4 edging;\n"
             "uniform mat4 model[3];\n"
             "uniform mat4 view;\n"
             "uniform mat4 projection;\n"
-            "out vec4 texCoor; // 末位检测是否渲染边框\n"
+            "out vec2 texCoor;\n"
+            "flat out int instance;\n"
             "void main(void)\n"
             "{\n"
+                "instance = gl_InstanceID;\n"
+                "texCoor = aTexCoor;\n"
                 "gl_Position = projection * view * model[gl_InstanceID] * vec4(aPos, 1.0);\n"
-                "if(edging == vec4(0, 0, 0, 0))\n"
-                    "texCoor = vec4(aTexCoor, 0, 0.0);\n"
-                "else if(edging == vec4(0, 0, 0, 1))"
-                "{\n"
-                    "if(gl_InstanceID == 0)\n"
-                        "texCoor = vec4(1.0, 0, 0, 1.0);\n"
-                    "else if(gl_InstanceID == 1)\n"
-                        "texCoor = vec4(0, 1.0, 0, 1.0);\n"
-                    "else\n"
-                        "texCoor = vec4(0, 0, 1.0, 1.0);\n"
-                "}\n"
-                "else\n"
-                    "texCoor = edging;\n"
             "}\n"
         };
         static const GLchar *fCode = {
             "#version 330 core\n"
-            "in vec4 texCoor; // 边框渲染时用作颜色值\n"
-            "out vec4 outColor;\n"
+            "uniform int edging;\n"
+            "uniform float luminance;\n"
+            "uniform vec4 hue;\n"
+            "uniform vec4 eColor;\n"
             "uniform sampler2D tex;\n"
+            "in vec2 texCoor;\n"
+            "flat in int instance;\n"
+            "out vec4 outColor;\n"
             "void main(void)\n"
             "{\n"
-                "if(texCoor.a == 0)\n"
-                    "outColor = texture(tex, texCoor.st);\n"
-                "else\n"
-                    "outColor = texCoor;\n"
+                "if(edging == 0)\n"
+                    "outColor = (texture(tex, texCoor) * hue) * luminance;\n"
+                "else if(edging == 1)\n"
+                    "outColor = eColor;\n"
+                "else {\n"
+                    "if(instance == 0) outColor = vec4(1.0, 0, 0, 1.0);\n"
+                    "else if(instance == 1) outColor = vec4(0, 1.0, 0, 1.0);\n"
+                    "else outColor = vec4(0, 0, 1.0, 1.0);\n"
+                "}\n"
             "}\n"
         };
 
@@ -100,6 +99,8 @@ const RPlane::RenderTool& RPlane::planeRenderTool()
         MODEL_LOC = tPlaneShaders.getUniformLocation("model");
         EDGING_LOC = tPlaneShaders.getUniformLocation("edging");
         inter.setCameraMove(tPlaneShaders.getUniformLocation("view"), 0, 0, 0);
+        inter.setUniform(tPlaneShaders.getUniformLocation("luminance"), 1.f);
+        inter.setUniform(tPlaneShaders.getUniformLocation("hue"), 1.f, 1.f, 1.f, 1.f);
     }
 
     thread_local static RenderTool tool { tPlaneShaders, vao[0], MODEL_LOC, vao[1], EDGING_LOC };
@@ -366,7 +367,7 @@ void RPlane::render()
     glBindVertexArray(rt.vao);
 
     RInterface inter = rt.shaders.useInterface();
-    inter.setUniform(rt.edgingLoc, .0f, .0f, .0f, .0f);
+    inter.setUniform(rt.edgingLoc, 0);
     renderControl(rt.shaders, rt.modelLoc);
 
     glBindVertexArray(0);
@@ -398,7 +399,8 @@ void RPlane::edging(const RColor &color)
 
     RInterface inter = rt.shaders.useInterface();
     inter.setUniformMatrix(rt.modelLoc, mat);
-    inter.setUniform(rt.edgingLoc, color.r()/255.f, color.g()/255.f, color.b()/255.f, 1.0f);
+    inter.setUniform(rt.edgingLoc, 1);
+    inter.setUniform(rt.shaders.getUniformLocation("eColor"), color.r()/255.f, color.g()/255.f, color.b()/255.f, 1.0f);
 
     glDrawArrays(GL_LINE_LOOP, 0, 4);
     glBindVertexArray(0);
@@ -440,7 +442,7 @@ void RPlane::edgingAll()
 
     RInterface inter = rt.shaders.useInterface();
     inter.setUniformMatrix(rt.modelLoc, mats, 3);
-    inter.setUniform(rt.edgingLoc, .0f, .0f, .0f, 1.0f);
+    inter.setUniform(rt.edgingLoc, 3);
 
     glDrawArraysInstanced(GL_LINE_LOOP, 0, 4, 3);
     glBindVertexArray(0);
