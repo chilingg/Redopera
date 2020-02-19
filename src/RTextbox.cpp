@@ -22,6 +22,17 @@ void flipVertical(RData *data, int width, int height)
     }
 }
 
+void rotate90(RData *dest, const RData *src, int width, int height)
+{
+    for(int w = 0; w < width; ++w)
+    {
+        for(int h = height - 1; h >= 0; --h)
+        {
+            *dest++ = src[h * width + w];
+        }
+    }
+}
+
 const RTextsbxo::RenderTool &RTextsbxo::textboxRenderTool()
 {
     if(!tTextShaders.isValid())
@@ -350,57 +361,60 @@ void RTextsbxo::setBackColor(unsigned r, unsigned g, unsigned b, unsigned a)
 void RTextsbxo::setTexts(std::wstring texts)
 {
     texts_ = texts;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setTexts(std::string texts)
 {
     texts_ = strcnv.from_bytes(texts);
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setFontSize(unsigned size)
 {
     format_.font.setSize(size);
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setFont(RFont font)
 {
     format_.font = font;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setlineSpacing(float value)
 {
     value = std::max(0.0f, value);
     format_.lSpacing = value;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setWordSpacing(float value)
 {
     value = std::max(0.0f, value);
     format_.wSpacing = value;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setSpacing(float value)
 {
     value = std::max(0.0f, value);
     format_.spacing = value;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setTextFormat(Format format)
 {
+    typesetting = format.typeset == Typeset::Vertical ?
+                &RTextsbxo::verticalTextToTexture : &RTextsbxo::horizontalTextToTexture;
     format_ = format;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setEllipsis(bool b)
 {
     format_.ellipsis = b;
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::setTexture(const RTexture &tex)
@@ -414,18 +428,24 @@ void RTextsbxo::setTextureName(const std::string &name)
     textTex_.rename(name + "...Text");
 }
 
+void RTextsbxo::setPixScale(float x, float y)
+{
+    format_.pixScale = { x, y };
+    addDirty(RArea::Typeset);
+}
+
 void RTextsbxo::verticalTypeset()
 {
     typesetting = &RTextsbxo::verticalTextToTexture;
     format_.typeset = Typeset::Vertical;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::horizontalTypeset()
 {
     typesetting = &RTextsbxo::horizontalTextToTexture;
     format_.typeset = Typeset::Horizontal;
-    reseting();
+    addDirty(RArea::Typeset);
 }
 
 void RTextsbxo::reseting()
@@ -477,7 +497,7 @@ void RTextsbxo::update()
     model_ = { glm::mat4(1), glm::mat4(1) };
     model_[1] = glm::translate(model_[1], { area().pos.x() + x, area().pos.y() + y, 0 });
     model_[1] = model_[1] * glm::mat4_cast(glm::qua<float>(glm::vec3{ area().rotate.x, area().rotate.y, area().rotate.z }));
-    model_[1] = glm::scale(model_[1], { w, h, 0.0f });
+    model_[1] = glm::scale(model_[1], { w / format_.pixScale.x, h / format_.pixScale.y, 0.0f });
 
     if(area().flipH)
     {
@@ -679,8 +699,13 @@ void RTextsbxo::verticalTextToTexture()
                 continue;
             }
 
+            int len;
             const RFont::Glyph *glyph = font().getFontGlyph(texts_[i]);
-            unsigned len = fsize + glyph->yoff + glyph->height;
+            if((texts_[i] >= L'a' && texts_[i] <= L'z') || (texts_[i] >= L'A' && texts_[i] <= L'Z'))
+                len = glyph->xoff + glyph->width;
+            else
+                len = fsize + glyph->yoff + glyph->height;
+
             wordsw = len + advanceW;
             advanceW += len * format_.wSpacing;
 
@@ -688,7 +713,6 @@ void RTextsbxo::verticalTextToTexture()
             {
                 if(linepos + advanceL > lineMax) break;
 
-                unsigned len = fsize + glyph->yoff + glyph->height;
                 lines.push_back(len);
                 advanceW = len * format_.wSpacing;
                 linepos += advanceL;
@@ -704,9 +728,7 @@ void RTextsbxo::verticalTextToTexture()
     // 四方预留5px
     lenMax += 10;
     lineMax += 10;
-    if(loader_.size() < lenMax*lineMax)
-        loader_.resize(lenMax*lineMax);
-    std::fill(loader_.begin(), loader_.begin() + lenMax*lineMax, '\0');
+    std::vector<RData> loader(lenMax * lineMax, 0);
 
     if(hAlign() == RArea::Align::Left) linepos = lineMax - ((lines.size()-1) * advanceL + fsize) - 5;
     else if(hAlign() == RArea::Align::Mind) linepos = (((lines.size()-1) * advanceL + fsize) + lineMax) / 2;
@@ -717,6 +739,7 @@ void RTextsbxo::verticalTextToTexture()
     // 为空格预备的Glyph
     RFont::Glyph spacing { 1, static_cast<int>(format_.spacing * fsize), 0, -static_cast<int>(fsize),
                 std::unique_ptr<const RData[]>(new RData[static_cast<int>(format_.spacing * fsize)]()) };
+    RFont::Glyph letter;
     size_t textNum = 0;
     advanceW = 0;
 
@@ -742,6 +765,16 @@ void RTextsbxo::verticalTextToTexture()
             else
                 glyph = font().getFontGlyph(texts_[textNum]);
 
+            if((texts_[textNum] >= L'a' && texts_[textNum] <= L'z') || (texts_[textNum] >= L'A' && texts_[textNum] <= L'Z'))
+            {
+                auto data = std::make_unique<RData[]>(glyph->width * glyph->height);
+                rotate90(data.get(), glyph->data.get(), glyph->width, glyph->height);
+                letter = { glyph->height, glyph->width, static_cast<int>(fsize) + glyph->yoff + glyph->height,
+                           -(static_cast<int>(fsize) - glyph->xoff) };
+                letter.data.reset(data.release());
+                glyph = &letter;
+            }
+
             int startx = linepos - fsize;
             int starty = wordOffset + fsize + glyph->yoff;
 
@@ -751,7 +784,7 @@ void RTextsbxo::verticalTextToTexture()
                 {
                     if(!glyph->data.get()[y * glyph->width + x])
                         continue;
-                    loader_[(starty + y) * lineMax + startx + x] = glyph->data.get()[y*glyph->width+x];
+                    loader[(starty + y) * lineMax + startx + x] = glyph->data.get()[y*glyph->width+x];
                 }
             }
 
@@ -771,15 +804,15 @@ void RTextsbxo::verticalTextToTexture()
         {
             for(unsigned y = lenMax - 5; y < lenMax; ++y)
                 for(unsigned x = 0; x < 5; ++x)
-                    loader_[y * lineMax + x] = '\xff';
+                    loader[y * lineMax + x] = '\xff';
         }
     }
 
-    flipVertical(loader_.data(), lineMax, lenMax);
+    flipVertical(loader.data(), lineMax, lenMax);
     if(lineMax != static_cast<unsigned>(textTex_.width()) || lenMax != static_cast<unsigned>(textTex_.height()))
-        textTex_.load(loader_.data(), lineMax, lenMax, 1, RTexture::SingleTex);
+        textTex_.load(loader.data(), lineMax, lenMax, 1, RTexture::SingleTex);
     else
-        textTex_.reload(loader_.data());
+        textTex_.reload(loader.data());
     complete();
 }
 
@@ -852,9 +885,7 @@ void RTextsbxo::horizontalTextToTexture()
     // 四方预留5px
     lenMax += 10;  // 纹理行宽
     lineMax += 10;    // 纹理行高
-    if(loader_.size() < lenMax*lineMax)
-        loader_.resize(lenMax*lineMax);
-    std::fill(loader_.begin(), loader_.begin() + lenMax*lineMax, '\0');
+    std::vector<RData> loader(lenMax * lineMax, 0);
 
     if(vAlign() == RArea::Align::Bottom) linepos = lineMax - ((lines.size()-1) * advanceL + fsize) - 5;
     else if(vAlign() == RArea::Align::Mind) linepos = (lineMax - ((lines.size()-1) * advanceL + fsize)) / 2;
@@ -898,7 +929,7 @@ void RTextsbxo::horizontalTextToTexture()
                 {
                     if(!glyph->data.get()[y * glyph->width + x])
                         continue;
-                    loader_[(starty + y) * lenMax + startx + x] = glyph->data.get()[y*glyph->width+x];
+                    loader[(starty + y) * lenMax + startx + x] = glyph->data.get()[y*glyph->width+x];
                 }
             }
 
@@ -918,14 +949,14 @@ void RTextsbxo::horizontalTextToTexture()
         {
             for(unsigned y = lineMax - 5; y < lineMax; ++y)
                 for(unsigned x = lenMax - 5; x < lenMax; ++x)
-                    loader_[y * lenMax + x] = '\xff';
+                    loader[y * lenMax + x] = '\xff';
         }
     }
 
-    flipVertical(loader_.data(), lenMax, lineMax);
+    flipVertical(loader.data(), lenMax, lineMax);
     if(lenMax != static_cast<unsigned>(textTex_.width()) || lineMax != static_cast<unsigned>(textTex_.height()))
-        textTex_.load(loader_.data(), lenMax, lineMax, 1, RTexture::SingleTex);
+        textTex_.load(loader.data(), lenMax, lineMax, 1, RTexture::SingleTex);
     else
-        textTex_.reload(loader_.data());
+        textTex_.reload(loader.data());
     complete();
 }

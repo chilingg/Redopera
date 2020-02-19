@@ -32,6 +32,8 @@ public:
         Typeset typeset = Typeset::Horizontal;
         glm::vec3 color = { 1.f, 1.f, 1.f };
         RFont font;
+        struct { float x, y;
+               } pixScale { 1.0f, 1.0f };
         bool ellipsis = true;   //若不能显示所有字符，在末尾添加一个5x5方框
     };
 
@@ -106,6 +108,7 @@ public:
     void setEllipsis(bool b);
     void setTexture(const RTexture &tex);
     void setTextureName(const std::string &name);
+    void setPixScale(float x, float y);
 
     void verticalTypeset();
     void horizontalTypeset();
@@ -132,7 +135,6 @@ private:
     void verticalTextToTexture();
     void horizontalTextToTexture();
 
-    std::vector<RData> loader_;
     RTexture backTex_;
     RTexture textTex_;
     std::wstring texts_;
