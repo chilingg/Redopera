@@ -185,15 +185,27 @@ void RArea::setOuterPos(const RPoint &pos)
     addDirty(Move);
 }
 
+void RArea::setInnerPos(const RPoint &pos)
+{
+    format_.pos.set(pos.x()-format_.padding.l, pos.y()-format_.padding.b, format_.pos.z());
+    addDirty(Move);
+}
+
 void RArea::setCenterPos(const RPoint &pos)
 {
     format_.pos.set(pos.x()-format_.size.width()/2, pos.y()-format_.size.height()/2, format_.pos.z());
     addDirty(Move);
 }
 
-void RArea::setInnerPos(const RPoint &pos)
+void RArea::setCenterPosX(int x)
 {
-    format_.pos.set(pos.x()-format_.padding.l, pos.y()-format_.padding.b, format_.pos.z());
+    format_.pos.setX(x - format_.size.width()/2);
+    addDirty(Move);
+}
+
+void RArea::setCenterPosY(int y)
+{
+    format_.pos.setY(y - format_.size.height()/2);
     addDirty(Move);
 }
 

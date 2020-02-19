@@ -89,8 +89,11 @@ public:
     void setZ(int z);
 
     void setOuterPos(const RPoint &pos);
-    void setCenterPos(const RPoint &pos);
     void setInnerPos(const RPoint &pos);
+
+    void setCenterPos(const RPoint &pos);
+    void setCenterPosX(int x);
+    void setCenterPosY(int y);
 
     void move(int x, int y, int z = 0);
     void move(const RPoint &pos);

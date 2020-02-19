@@ -269,12 +269,12 @@ void RInfoWIndow::inputEvent(RInputEvent &event)
 
     if(wheel_)
     {
-        if(rcBack_.rect().contains(event.cursorPos()))
+        if(rcBack_.rect().contains(event.pos()))
             sOff_ += TITLE_H/2.0 * -wheel_;
         wheel_ = 0;
     }
 
-    if(reArea_[0].contains(event.cursorPos()))
+    if(reArea_[0].contains(event.pos()))
     {
         shape = RCursor::Shape::Hresize;
 
@@ -284,10 +284,10 @@ void RInfoWIndow::inputEvent(RInputEvent &event)
             reArea_[0].set(size(), RPoint2(0, 0));
         }
 
-        if(event.status(MouseButtons::MOUSE_BUTTON_LEFT) == ButtonAction::PRESS && event.cursorPos().x() > LIST_W/2)
+        if(event.status(MouseButtons::MOUSE_BUTTON_LEFT) == ButtonAction::PRESS && event.pos().x() > LIST_W/2)
         {
-            reArea_[0].setCenter(event.cursorPos());
-            rcTitle_.setWidth(event.cursorPos().x() + SCROLL_BAR_W);
+            reArea_[0].setCenter(event.pos());
+            rcTitle_.setWidth(event.pos().x() + SCROLL_BAR_W);
             rcCount_.setWidth(rcTitle_.width());
             rcBack_.setWidth(rcTitle_.width());
             rcName_.setWidth(rcTitle_.width() - rcName_.x());
