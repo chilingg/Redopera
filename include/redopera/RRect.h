@@ -42,6 +42,8 @@ public:
 
     void setCenter(const RPoint2 &pos);
     void setCenter(int x, int y);
+    void setCenterX(int x);
+    void setCenterY(int y);
     void set(int width, int height, int x, int y);
     void set(const RSize &size, const RPoint2 &bottomLeft);
 
@@ -215,6 +217,16 @@ inline void RRect::setCenter(const RPoint2 &pos)
 inline void RRect::setCenter(int x, int y)
 {
     pos_.set(x - size_.width()/2, y - size_.height()/2);
+}
+
+inline void RRect::setCenterX(int x)
+{
+    pos_.setX(x - size_.width()/2);
+}
+
+inline void RRect::setCenterY(int y)
+{
+    pos_.setY(y - size_.height()/2);
 }
 
 inline void RRect::set(int width, int height, int x, int y)
