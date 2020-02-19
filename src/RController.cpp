@@ -101,8 +101,17 @@ RController::~RController()
 
 void RController::activeOnce()
 {
-    for(auto &pair : children_)
-        pair.second->activeOnce();
+    for(auto it = children_.begin(); it != children_.end();)
+    {
+        if(it->second->isValid())
+            it->second->activeOnce();
+        else
+        {
+            it++->second->changeParent(nullptr);
+            continue;
+        }
+         ++it;
+    }
     control();
 }
 
