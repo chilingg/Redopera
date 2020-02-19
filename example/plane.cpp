@@ -85,6 +85,8 @@ protected:
         // plane的着色器设置
         RInterface inter = RPlane::planeShader().useInterface();
         inter.setViewprot(pro, 0, info.size.width(), 0, info.size.height());
+        inter.setUniform(RPlane::planeShader().getUniformLocation("hue"), 1.f, .8f, 1.f, 1.f);
+        inter.setUniform(RPlane::planeShader().getUniformLocation("luminance"), 0.9f);
         } // 一个线程同一时间内只能有一个Interface对象
 
         // textbox的着色器设置（与plane并不共享，建议永远与窗口尺寸等同，避免字体渲染虚化）
@@ -95,19 +97,19 @@ protected:
 
     void inputEvent(RInputEvent &e) override
     {
-        // 光标隐藏，cursor.z只作标记用
         RWindow* window = RWindow::getMainWindow();
-        if(e.cursorPos() != cursor && window->cursorMode() == RWindow::CursorMode::Hidden)
-            window->setCursorModel(RWindow::CursorMode::Normal);
-        else if(e.cursorPos() == cursor)
+        if(window->cursorMode() == RWindow::CursorMode::Hidden)
         {
-            if(timer.elapsed() > 2000)
-            {
-                window->setCursorModel(RWindow::CursorMode::Hidden);
-                timer.start();
-            }
+            if(e.pos() != e.prePos())
+                window->setCursorModel(RWindow::CursorMode::Normal);
         }
-        cursor = e.cursorPos();
+        else if(window->cursorMode() == RWindow::CursorMode::Normal)
+        {
+            if(e.pos() != e.prePos())
+                timer.start();
+            else if(e.pos() == e.prePos() && timer.elapsed() > 1500)
+                window->setCursorModel(RWindow::CursorMode::Hidden);
+        }
 
         // inputEvent只能监测感兴趣的按键
         if(e.press(Keys::KEY_ESCAPE))
@@ -134,7 +136,6 @@ private:
     RRect viewpro;
     GLuint pro;
     RTimer timer;
-    RPoint2 cursor;
 };
 
 int main()
