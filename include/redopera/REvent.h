@@ -98,7 +98,8 @@ public:
                 != RInputModule::instance().gamepadInputs_[p].preButtons[index];
     }
 
-    RPoint2 cursorPos() { return RInputModule::instance().cursorPos_; }
+    RPoint2 pos() { return RInputModule::instance().cursorPos_[0]; }
+    RPoint2 prePos() { return RInputModule::instance().cursorPos_[1]; }
 
     RController *sender;
     void *userData;

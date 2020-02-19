@@ -278,7 +278,7 @@ private:
     std::map<Keys, KeyValue> keyInputs_;
     std::map<MouseButtons, MouseButtonValue> mouseInputs_;
     std::vector<GamepadValue> gamepadInputs_;
-    RPoint2 cursorPos_;
+    std::array<RPoint2, 2> cursorPos_;
 };
 
 } // Redopera
