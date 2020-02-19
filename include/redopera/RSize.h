@@ -14,8 +14,11 @@ public:
     RSize& operator*=(const int value) { width_ *= value; height_ *= value; return *this; }
     RSize& operator/=(const int value) { width_ /= value; height_ /= value; return *this; }
 
-    RSize operator*(const int value) { return RSize(width_ *= value, height_ *= value); }
-    RSize operator/(const int value) { return RSize(width_ /= value, height_ /= value); }
+    RSize operator*(const double value) { return RSize(width_ *= value, height_ *= value); }
+    RSize operator/(const double value) { return RSize(width_ /= value, height_ /= value); }
+
+    RSize operator*(const float value) { return RSize(width_ *= value, height_ *= value); }
+    RSize operator/(const float value) { return RSize(width_ /= value, height_ /= value); }
 
     int width() const { return width_; }
     int height() const { return height_; }
