@@ -50,13 +50,21 @@ public:
     ButtonAction status(MouseButtons btn) {
         return RInputModule::instance().mouseInputs_[btn].action;
     }
-    ButtonAction status(GamepadButtons btn, unsigned p = 0) {
-        assert(p < RInputModule::instance().gamepadInputs_.size());
+    ButtonAction status(GamepadBtn btn, unsigned p = 0) {
+        if(RInputModule::instance().gamepadInputs_.empty()) return ButtonAction::RELEASE;
+
         RInputModule::instance().gamepadInputs_[p].status.buttons[static_cast<unsigned>(btn)] = 2;
         return RInputModule::toButtonAction(1);
     }
     float status(GamepadAxes axis, unsigned p = 0) {
-        assert(p < RInputModule::instance().gamepadInputs_.size());
+        if(RInputModule::instance().gamepadInputs_.empty())
+        {
+            if(axis == GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER || axis == GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER)
+                return -1.f;
+            else
+                return 0.f;
+        }
+
         return RInputModule::instance().gamepadInputs_[p].status.axes[static_cast<unsigned>(axis)];
     }
 
@@ -70,8 +78,9 @@ public:
                 && RInputModule::instance().mouseInputs_[btn].action
                 != RInputModule::instance().mouseInputs_[btn].preAction;
     }
-    bool press(GamepadButtons btn, unsigned p = 0) {
-        assert(p < RInputModule::instance().gamepadInputs_.size());
+    bool press(GamepadBtn btn, unsigned p = 0) {
+        if(RInputModule::instance().gamepadInputs_.empty()) return false;
+
         unsigned index = static_cast<unsigned>(btn);
         return RInputModule::instance().gamepadInputs_[p].status.buttons[index]
                 == static_cast<unsigned char>(ButtonAction::PRESS)
@@ -89,8 +98,9 @@ public:
                 && RInputModule::instance().mouseInputs_[btn].action
                 != RInputModule::instance().mouseInputs_[btn].preAction;
     }
-    bool release(GamepadButtons btn, unsigned p = 0) {
-        assert(p < RInputModule::instance().gamepadInputs_.size());
+    bool release(GamepadBtn btn, unsigned p = 0) {
+        if(RInputModule::instance().gamepadInputs_.empty()) return false;
+
         unsigned index = static_cast<unsigned>(btn);
         return RInputModule::instance().gamepadInputs_[p].status.buttons[index]
                 == static_cast<unsigned char>(ButtonAction::RELEASE)

@@ -137,7 +137,7 @@ void RController::addChild(RController *child)
 void RController::freeChild(RController *child)
 {
     if(children_.count(child->name_))
-        changeParent(nullptr);
+        child->changeParent(nullptr);
 }
 
 void RController::freeAllChild()
@@ -186,6 +186,7 @@ void RController::changeParent(RController *parent)
         }
         else if(state_ == Status::Looping)
         {
+            state_ = s;
             RFinishEvent e(parent_);
             dispatchEvent(e);
         }

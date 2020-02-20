@@ -151,7 +151,7 @@ enum class Modifier
     MOD_NUM_LOCK = GLFW_MOD_NUM_LOCK
 };
 
-enum class GamepadButtons
+enum class GamepadBtn
 {
     GAMEPAD_BUTTON_A,//GLFW_GAMEPAD_BUTTON_A,
     GAMEPAD_BUTTON_B,
