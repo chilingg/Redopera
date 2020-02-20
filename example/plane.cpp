@@ -85,7 +85,7 @@ protected:
         // plane的着色器设置
         RInterface inter = RPlane::planeShader().useInterface();
         inter.setViewprot(pro, 0, info.size.width(), 0, info.size.height());
-        inter.setUniform(RPlane::planeShader().getUniformLocation("hue"), 1.f, .8f, 1.f, 1.f);
+        inter.setUniform(RPlane::planeShader().getUniformLocation("hue"), .9f, 0.3f, 0.f, 1.f);
         inter.setUniform(RPlane::planeShader().getUniformLocation("luminance"), 0.9f);
         } // 一个线程同一时间内只能有一个Interface对象
 
