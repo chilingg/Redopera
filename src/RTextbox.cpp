@@ -41,50 +41,46 @@ const RTextsbxo::RenderTool &RTextsbxo::textboxRenderTool()
             "#version 330 core\n"
             "layout(location = 0) in vec3 aPos;\n"
             "layout(location = 1) in vec2 aTexCoor;\n"
-            "uniform vec4 edging;\n"
             "uniform mat4 model[3];\n"
             "uniform mat4 view;\n"
             "uniform mat4 projection;\n"
-            "out vec4 texCoor; // 末位检测是否渲染边框\n"
+            "out vec2 texCoor;\n"
             "flat out int instance;\n"
             "void main(void)\n"
             "{\n"
+                "texCoor = aTexCoor;\n"
+                "instance = gl_InstanceID;\n"
                 "gl_Position = projection * view * model[gl_InstanceID] * vec4(aPos, 1.0);\n"
-                "if(edging == vec4(0, 0, 0, 0))\n"
-                "{\n"
-                    "texCoor = vec4(aTexCoor, 0, 0.0);\n"
-                    "instance = gl_InstanceID;\n"
-                "}\n"
-                "else if(edging == vec4(0, 0, 0, 1))"
-                "{\n"
-                    "if(gl_InstanceID == 0)\n"
-                        "texCoor = vec4(1.0, 0, 0, 1.0);\n"
-                    "else if(gl_InstanceID == 1)\n"
-                        "texCoor = vec4(0, 1.0, 0, 1.0);\n"
-                    "else\n"
-                        "texCoor = vec4(0, 0, 1.0, 1.0);\n"
-                "}\n"
-                "else\n"
-                    "texCoor = edging;\n"
             "}\n"
         };
         static const GLchar *fCode = {
             "#version 330 core\n"
-            "in vec4 texCoor; // 边框渲染时用作颜色值\n"
+            "in vec2 texCoor;\n"
             "out vec4 outColor;\n"
             "uniform sampler2D backColor;\n"
             "uniform sampler2D text;\n"
+            "uniform int edging;\n"
             "uniform vec3 color;\n"
             "flat in int instance;\n"
             "void main(void)\n"
             "{\n"
-                "if(texCoor.a == 0)\n"
-                    "if(instance == 1)\n"
-                        "outColor = vec4(color, texture(text, texCoor.st).r);\n"
-                    "else\n"
+                "if(edging == 0)\n"
+                "{\n"
+                    "if(instance == 0)"
                         "outColor = texture(backColor, texCoor.st);\n"
-                "else\n"
-                    "outColor = texCoor;\n"
+                    "else\n"
+                        "outColor = vec4(color, texture(text, texCoor).r);\n"
+                "}\n"
+                "else if(edging == 1)\n"
+                    "outColor = vec4(color, 1.0);\n"
+                "else {\n"
+                    "if(instance == 0)\n"
+                        "outColor = vec4(1.0, 0, 0, 1.0);\n"
+                    "else if(instance == 1)\n"
+                        "outColor = vec4(0, 1.0, 0, 1.0);\n"
+                    "else\n"
+                        "outColor = vec4(0, 0, 1.0, 1.0);\n"
+                "}\n"
             "}\n"
         };
 
@@ -537,7 +533,7 @@ void RTextsbxo::render()
 
     const RenderTool &tbrt = textboxRenderTool();
     RInterface inter = tbrt.shaders.useInterface();
-    inter.setUniform(tbrt.edgingLoc, .0f, .0f, .0f, .0f);
+    inter.setUniform(tbrt.edgingLoc, 0);
     inter.setUniformMatrix(tbrt.modelLoc, model_.data(), 2);
     inter.setUniform(tbrt.colorLoc, format_.color);
     inter.setUniform(tbrt.textLoc, 1);
@@ -580,7 +576,8 @@ void RTextsbxo::edging(const RColor &color)
     const RenderTool &tbrt = textboxRenderTool();
     RInterface inter = tbrt.shaders.useInterface();
     inter.setUniformMatrix(tbrt.modelLoc, mat);
-    inter.setUniform(tbrt.edgingLoc, color.r()/255.f, color.g()/255.f, color.b()/255.f, 1.0f);
+    inter.setUniform(tbrt.edgingLoc, 1);
+    inter.setUniform(tbrt.colorLoc, color.r()/255.f, color.g()/255.f, color.b()/255.f);
 
     glDrawArrays(GL_LINE_LOOP, 0, 4);
     glBindVertexArray(0);
@@ -623,7 +620,7 @@ void RTextsbxo::edgingAll()
     const RenderTool &tbrt = textboxRenderTool();
     RInterface inter = tbrt.shaders.useInterface();
     inter.setUniformMatrix(tbrt.modelLoc, mats, 3);
-    inter.setUniform(tbrt.edgingLoc, .0f, .0f, .0f, 1.0f);
+    inter.setUniform(tbrt.edgingLoc, 3);
 
     glDrawArraysInstanced(GL_LINE_LOOP, 0, 4, 3);
     glBindVertexArray(0);
