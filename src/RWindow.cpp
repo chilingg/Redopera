@@ -572,9 +572,8 @@ void RWindow::openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, 
         terminateTree(Status::Error);
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
-        std::cerr << '(' << id << ')' << sourceStr << typeStr << "-medium " << ">> "
-                  << message << std::endl;
-        terminateTree(Status::Error);
+        std::cout << printFormat::red << '(' << id << ')' << sourceStr << typeStr << "-medium "
+                  << ">> " << message << printFormat::non << std::endl;
         break;
     case GL_DEBUG_SEVERITY_LOW:
         std::cout << printFormat::yellow << printFormat::bold << '(' << id << ')' << sourceStr << typeStr << "-low "
