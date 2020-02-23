@@ -1,215 +1,139 @@
-#include "RDebug.h"
+#include <RDebug.h>
 
-using namespace Redopera;
+#include <cstdio>
+#include <cstring>
+#include <codecvt>
+#include <locale>
+#include <thread>
+#include <functional>
 
-std::mutex RDebug::mutex;
-std::wstring_convert<std::codecvt_utf8<wchar_t>> RDebug::strcnv;
+static std::wstring_convert<std::codecvt_utf8<wchar_t>> strcnv;
 
-RDebug::RDebug():
-    guard(mutex)
+Redopera::RDebug::~RDebug()
 {
-
+    data_[index_] = '\0';
+    printf("%s\n", data_);
 }
 
-RDebug::~RDebug()
+Redopera::RDebug &Redopera::RDebug::append(const std::string &str)
 {
-    std::cout << std::endl;
-}
-
-const RDebug &RDebug::operator<<(int value) const
-{
-    std::cout << value << ' ';
+    std::memcpy(data_ + index_, str.data(), str.size());
+    index_ += str.size();
     return *this;
 }
 
-const RDebug &RDebug::operator<<(long value) const
+Redopera::RDebug &Redopera::RDebug::operator<<(int value)
 {
-    std::cout << value << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%d ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(long long value) const
+Redopera::RDebug &Redopera::RDebug::operator<<(long value)
 {
-    std::cout << value << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%ld ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(unsigned value) const
+Redopera::RDebug &Redopera::RDebug::operator<<(long long value)
 {
-    std::cout << value << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%lld ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(unsigned long value) const
+Redopera::RDebug &Redopera::RDebug::operator<<(unsigned value)
 {
-    std::cout << value << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%u ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(unsigned long long value) const
+Redopera::RDebug &Redopera::RDebug::operator<<(unsigned long value)
 {
-    std::cout << value << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%lu ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(double value) const
+Redopera::RDebug &Redopera::RDebug::operator<<(unsigned long long value)
 {
-    std::cout << value << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%llu ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(float value) const
+Redopera::RDebug &Redopera::RDebug::operator<<(double value)
 {
-    std::cout << value << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%lf ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(void *p) const
+Redopera::RDebug &Redopera::RDebug::operator<<(float value)
 {
-    std::cout << p << ' ';
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%f ", value);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(bool b) const
+Redopera::RDebug &Redopera::RDebug::operator<<(unsigned char c)
 {
-    const char *str = b ? "true " : "fales ";
-    std::cout << str;
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%u ", c);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(char c) const
+Redopera::RDebug &Redopera::RDebug::operator<<(bool b)
 {
-    std::cout << c;
+    return append(b ? "true " : "false ");
+}
+
+Redopera::RDebug &Redopera::RDebug::operator<<(char c)
+{
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%c ", c);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(unsigned char c) const
+Redopera::RDebug &Redopera::RDebug::operator<<(const char *str)
 {
-    std::cout << c;
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%s", str);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(const char *str) const
+Redopera::RDebug &Redopera::RDebug::operator<<(char *str)
 {
-    std::cout << str;
+    index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "%s", str);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(const unsigned char *c) const
+Redopera::RDebug &Redopera::RDebug::operator<<(const std::string &str)
 {
-    std::cout << c;
+    append(str);
     return *this;
 }
 
-const RDebug &RDebug::operator<<(const std::string &str) const
+Redopera::RDebug &Redopera::RDebug::operator<<(wchar_t c)
 {
-    std::cout << str;
-    return *this;
+    return append(strcnv.to_bytes(c));
 }
 
-const RDebug &RDebug::operator<<(wchar_t c) const
+Redopera::RDebug &Redopera::RDebug::operator<<(const wchar_t *str)
 {
-    std::string s = strcnv.to_bytes(c);
-    std::cout << s;
-    return *this;
+    return append(strcnv.to_bytes(str));
 }
 
-const RDebug &RDebug::operator<<(const wchar_t *str) const
+Redopera::RDebug &Redopera::RDebug::operator<<(wchar_t *str)
 {
-    std::string s = strcnv.to_bytes(str);
-    std::cout << s;
-    return *this;
+    return append(strcnv.to_bytes(str));
 }
 
-const RDebug &RDebug::operator<<(const std::wstring &str) const
+Redopera::RDebug &Redopera::RDebug::operator<<(const std::wstring &str)
 {
-    std::string s = strcnv.to_bytes(str);
-    std::cout << s;
-    return *this;
+    return append(strcnv.to_bytes(str));
 }
 
-const RDebug &RDebug::operator<<(std::ios_base &(*base)(std::ios_base &)) const
+void Redopera::prError(const std::string &err)
 {
-    std::cout << base;
-    return *this;
+    fprintf(stderr, "%s\n", err.c_str());
 }
 
-const RDebug &RDebug::operator<<(std::thread::id id) const
+bool Redopera::check(bool b, const std::string &err)
 {
-    std::cout << id << ' ';
-    return *this;
-}
+    if(b)
+        fprintf(stderr, "%s\n", err.c_str());
 
-const RDebug &RDebug::operator<<(const RColor &color) const
-{
-    std::cout << "RGBA:(" << color.r()*1u << ", " << color.g()*1u << ", " << color.b()*1u << ", " << color.a()*1u << ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RPoint2 &p) const
-{
-    std::cout << '(' << p.x() << ", " << p.y() << ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RPoint3 &p) const
-{
-    std::cout << '(' << p.x() << ", " << p.y() << ", " << p.z() << ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RSize &size) const
-{
-    std::cout << "(W: " << size.width() << " H: " << size.height() << ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RRect &rect) const
-{
-    std::cout << "(" << rect.left() << ", " << rect.bottom() << " | W: " << rect.width() << " H: " << rect.height() << ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const glm::vec3 &vec) const
-{
-    std::cout << '(' << vec.x << ", " << vec.y << ", " << vec.z << ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const glm::vec4 &vec) const
-{
-    std::cout << '(' << vec.x << ", " << vec.y << ", " << vec.z << ", " << vec.w << ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const glm::mat4 &mat) const
-{
-    //std::cout << std::setw(8);
-    std::cout << std::left;
-    std::cout << "mat:(" << std::setw(8) << mat[0][0] << " , " << std::setw(8) <<  mat[1][0] << " , "
-                         << std::setw(8) << mat[2][0] << " , " << std::setw(8) <<  mat[3][0] << ")\n";
-    std::cout << "    (" << std::setw(8) << mat[0][1] << " , " << std::setw(8) <<  mat[1][1] << " , "
-                         << std::setw(8) << mat[2][1] << " , " << std::setw(8) <<  mat[3][1] << ")\n";
-    std::cout << "    (" << std::setw(8) << mat[0][2] << " , " << std::setw(8) <<  mat[1][2] << " , "
-                         << std::setw(8) << mat[2][2] << " , " << std::setw(8) <<  mat[3][2] << ")\n";
-    std::cout << "    (" << std::setw(8) << mat[0][3] << " , " << std::setw(8) <<  mat[1][3] << " , "
-                         << std::setw(8) << mat[2][3] << " , " << std::setw(8) <<  mat[3][3] << "). ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RTime &time) const
-{
-    std::cout << time.toString() << ' ';
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RArea &area) const
-{
-    std::cout << "Area:( " << area.x() << ", " << area.y() << ", " << area.z()
-              << " | W: " << area.width() << " H: " << area.height()
-              << " | M: " << area.area().margin.t << ' ' << area.area().margin.b
-              << ' ' << area.area().margin.l << ' ' << area.area().margin.r
-              << " | P: " << area.area().padding.t << ' ' << area.area().padding.b
-              << ' ' << area.area().padding.l << ' ' << area.area().padding.r << ") ";
-    return *this;
+    return b;
 }
