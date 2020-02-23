@@ -461,17 +461,17 @@ void RTextsbxo::complete()
 
 void RTextsbxo::update()
 {
-    float w = innerWidth() + 10;
-    float h = innerHeight() + 10;
+    float w = (innerWidth() + 10) / format_.pixScale.x;
+    float h = (innerHeight() + 10) / format_.pixScale.y;
 
     float x, y;
     switch(area().align.h)
     {
     case RArea::Align::Left:
-        x = w / 2.0f + area().padding.l - 5;
+        x = w / 2.0f + area().padding.l - (5 / format_.pixScale.x);
         break;
     case RArea::Align::Right:
-        x = width() - w/2.0f - area().padding.r + 5;
+        x = width() - w/2.0f - area().padding.r + (5 / format_.pixScale.x);
         break;
     default: // RArea::Align::Mind
         x = width() / 2.0f;
@@ -480,10 +480,10 @@ void RTextsbxo::update()
     switch(area().align.v)
     {
     case RArea::Align::Bottom:
-        y = h / 2.0f + area().padding.b - 5;
+        y = h / 2.0f + area().padding.b - (5 / format_.pixScale.y);
         break;
     case RArea::Align::Top:
-        y = height() - h/2.0f - area().padding.t + 5;
+        y = height() - h/2.0f - area().padding.t + (5 / format_.pixScale.y);
         break;
     default: // RArea::Align::Mind
         y = height() / 2.0f;
@@ -493,7 +493,7 @@ void RTextsbxo::update()
     model_ = { glm::mat4(1), glm::mat4(1) };
     model_[1] = glm::translate(model_[1], { area().pos.x() + x, area().pos.y() + y, 0 });
     model_[1] = model_[1] * glm::mat4_cast(glm::qua<float>(glm::vec3{ area().rotate.x, area().rotate.y, area().rotate.z }));
-    model_[1] = glm::scale(model_[1], { w / format_.pixScale.x, h / format_.pixScale.y, 0.0f });
+    model_[1] = glm::scale(model_[1], { w, h, 0.0f });
 
     if(area().flipH)
     {
