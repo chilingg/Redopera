@@ -198,7 +198,8 @@ void RTextsbox::setFontColor(unsigned r, unsigned g, unsigned b)
 
 void RTextsbox::setBackColor(R_RGBA rgba)
 {
-    const RData *colorData = reinterpret_cast<RData*>(&rgba);
+    RData *colorData = reinterpret_cast<RData*>(&rgba);
+    std::reverse(colorData, colorData + 4);
     backTex_.load(colorData, 1, 1, 4, RTexture::Nearest4);
 }
 
