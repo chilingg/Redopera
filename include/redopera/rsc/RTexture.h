@@ -50,7 +50,7 @@ public:
     {
         struct {
             Filter max, min;
-        } filter { Filter::Nearest, Filter::Nearest };
+        } filter { Filter::Linear, Filter::Linear };
 
         int inChannel = 4;
 

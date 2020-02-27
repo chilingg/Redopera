@@ -4,11 +4,11 @@
 
 using namespace Redopera;
 
-const RTexture::Format RTexture::Linear4 { { Filter::Linear, Filter::Nearest }, 4 };
-const RTexture::Format RTexture::Linear3 { { Filter::Linear, Filter::Nearest }, 3 };
+const RTexture::Format RTexture::Linear4 { { Filter::Linear, Filter::Linear }, 4 };
+const RTexture::Format RTexture::Linear3 { { Filter::Linear, Filter::Linear }, 3 };
 const RTexture::Format RTexture::Nearest4 { { Filter::Nearest, Filter::Nearest }, 4 };
 const RTexture::Format RTexture::Nearest3 { { Filter::Nearest, Filter::Nearest }, 3 };
-const RTexture::Format RTexture::SingleL { { Filter::Linear, Filter::Nearest }, 1 };
+const RTexture::Format RTexture::SingleL { { Filter::Linear, Filter::Linear }, 1 };
 const RTexture::Format RTexture::SingleN { { Filter::Nearest, Filter::Nearest }, 1 };
 
 RTexture::Format RTexture::textureFormat;
