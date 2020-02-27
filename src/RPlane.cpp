@@ -162,7 +162,7 @@ RPlane::RPlane(const RRect &rect, int z, const RArea::Format &area):
 
 RPlane::RPlane(const RPlane &plane):
     RArea(plane),
-    renderControl(plane.renderControl),
+    renderControl(std::bind(&RPlane::defaultRenderControl, this, std::placeholders::_1, std::placeholders::_2)),
     renderTool_(plane.renderTool_),
     mats_(plane.mats_),
     model_(plane.model_),
@@ -173,7 +173,7 @@ RPlane::RPlane(const RPlane &plane):
 
 RPlane::RPlane(const RPlane &&plane):
     RArea(plane),
-    renderControl(std::move(plane.renderControl)),
+    renderControl(std::bind(&RPlane::defaultRenderControl, this, std::placeholders::_1, std::placeholders::_2)),
     renderTool_(plane.renderTool_),
     mats_(std::move(plane.mats_)),
     model_(std::move(plane.model_)),
@@ -185,7 +185,6 @@ RPlane::RPlane(const RPlane &&plane):
 RPlane &RPlane::operator=(const RPlane &plane)
 {
     RArea::operator=(plane);
-    renderControl = plane.renderControl;
     renderTool_ = plane.renderTool_;
     mats_ = plane.mats_;
     model_ = plane.model_;
@@ -197,11 +196,11 @@ RPlane &RPlane::operator=(const RPlane &plane)
 RPlane &RPlane::operator=(const RPlane &&plane)
 {
     RArea::operator=(plane);
-    renderControl = std::move(plane.renderControl);
     renderTool_ = plane.renderTool_;
     mats_ = std::move(plane.mats_);
     model_ = std::move(plane.model_);
     texture_ = std::move(plane.texture_);
+
     return *this;
 }
 
@@ -233,7 +232,8 @@ void RPlane::setColorTexture(const RColor &color)
 
 void RPlane::setColorTexture(R_RGBA rgba)
 {
-    const RData *colorData = reinterpret_cast<RData*>(&rgba);
+    RData *colorData = reinterpret_cast<RData*>(&rgba);
+    std::reverse(colorData, colorData + 4);
     texture_.load(colorData, 1, 1, 4, RTexture::Nearest4);
 }
 
