@@ -131,8 +131,9 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
     //若启用 OpenGL Debug
     if(format_.debug && GL_CONTEXT_FLAG_DEBUG_BIT)
     {
-        rDebug << EscCtl::green << EscCtl::bold << "Window " << title << ": " << glGetString(GL_VERSION)
-        << "\nEnable OpenGL debug output" << EscCtl::non;
+        rDebug << EscCtl::green << EscCtl::bold << "Window " << title << ": "
+               << reinterpret_cast<const char*>(glGetString(GL_VERSION))
+               << "\nEnable OpenGL debug output" << EscCtl::non;
         glEnable(GL_DEBUG_OUTPUT);
         glDebugMessageCallback(openglDebugMessageCallback, nullptr);
         //过滤着色器编译成功消息通知
