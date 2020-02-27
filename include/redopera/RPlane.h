@@ -32,6 +32,7 @@ public:
     };
 
     static const std::shared_ptr<RenderTool> setShadersAsThread(const RShaderProg &shaders, GLint modelLoc, GLint edgingLoc = -1);
+    static std::shared_ptr<const RenderTool> renderTool();
 
     RPlane();
     RPlane(int width, int height, int x, int y, int z = 0, const RArea::Format &area = RArea::getDefaultArea());
@@ -64,8 +65,6 @@ public:
     void edgingAll(const RShaderProg &shaders, GLuint mLoc);
 
 protected:
-    static const std::shared_ptr<RenderTool> renderTool();
-
     void defaultRenderControl(const RShaderProg &shaders, GLuint mLoc);
     std::function<void(const RShaderProg &shaders, GLuint mLoc)>renderControl;
 
@@ -77,7 +76,7 @@ private:
     static Vertexs createVaertexObject();
     static RenderTool createRenderTool();
 
-    std::shared_ptr<RenderTool> renderTool_;
+    std::shared_ptr<const RenderTool> renderTool_;
     ModelMat mats_;
     glm::mat4 model_;
     RTexture texture_;

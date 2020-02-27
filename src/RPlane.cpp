@@ -426,7 +426,7 @@ void RPlane::edgingAll()
     glBindVertexArray(0);
 }
 
-const std::shared_ptr<RPlane::RenderTool> RPlane::renderTool()
+std::shared_ptr<const RPlane::RenderTool> RPlane::renderTool()
 {
     if(tRenderTool.expired())
     {
