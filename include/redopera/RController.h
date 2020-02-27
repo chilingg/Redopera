@@ -26,8 +26,7 @@ public:
 
     static void terminateTree(Status status = Status::Finished);
 
-    explicit RController(RController *parent = nullptr, void *holder = nullptr,
-                         std::function<void(StartEvent)> sEvent = [](StartEvent){});
+    explicit RController(void *holder);
     ~RController();
 
     RController(RController &ctl) = delete;

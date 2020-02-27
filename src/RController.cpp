@@ -20,19 +20,19 @@ void RController::terminateTree(RController::Status status)
         node->state_ = s;
 }
 
-RController::RController(RController *parent, void *holder, std::function<void(StartEvent)> sEvent):
+RController::RController(void *holder):
     controlFunc([]{}),
     execFunc(std::bind(&RController::defaultExecFunc, this)),
     translateFunc(std::bind(&RController::translationToChildren, this, std::placeholders::_1)),
     inputFunc([](InputEvent){}),
     closeFunc([](CloseEvent&){}),
-    startFunc(sEvent),
+    startFunc([](StartEvent){}),
     finishFunc([](FinishEvent){}),
     state_(Status::Normal),
     parent_(nullptr),
     holder_(holder)
 {
-    changeParent(parent);
+
 }
 
 RController::~RController()

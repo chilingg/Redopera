@@ -11,8 +11,8 @@ using namespace Redopera;
 class TestCtl
 {
 public:
-    TestCtl(RController *parent):
-        ctrl_(parent, this),
+    TestCtl():
+        ctrl(this),
         plane(36, 36, RPoint(0, 0)),
         icon(16, 16, RPoint(0, 10)),
         arrow{ {L"↑", 40, 40, 0, 0} },
@@ -46,10 +46,10 @@ public:
         arrow[2].rotateZ(glm::radians(180.0f));
         arrow[3].rotateZ(glm::radians(270.0f));
 
-        ctrl_.setControlFunc(std::bind(&TestCtl::control, this));
-        ctrl_.setStartFunc(std::bind(&TestCtl::startEvent, this, std::placeholders::_1));
-        ctrl_.setInputFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
-        ctrl_.setTranslateFunc(std::bind(&TestCtl::translation, this, std::placeholders::_1));
+        ctrl.setControlFunc(std::bind(&TestCtl::control, this));
+        ctrl.setStartFunc(std::bind(&TestCtl::startEvent, this, std::placeholders::_1));
+        ctrl.setInputFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
+        ctrl.setTranslateFunc(std::bind(&TestCtl::translation, this, std::placeholders::_1));
     }
 
     void control()
@@ -71,7 +71,7 @@ public:
     {
         RWindow * window = RWindow::getMainWindow();
 
-        TransEvent info = { &ctrl_, window->size(), RPoint(0) };
+        TransEvent info = { &ctrl, window->size(), RPoint(0) };
         translation(info);
     }
 
@@ -122,7 +122,7 @@ public:
 
         // inputEvent只能监测感兴趣的按键
         if(e.press(Keys::KEY_ESCAPE))
-            ctrl_.getParent()->breakLoop();
+            ctrl.getParent()->breakLoop();
 
         RPoint3 p(0);
         if(e.status(Keys::KEY_LEFT) == BtnAct::PRESS)
@@ -137,8 +137,9 @@ public:
             plane.setPos(plane.pos() + p);
     }
 
+    RController ctrl;
+
 private:
-    RController ctrl_;
     RPlane plane;
     RPlane icon;
     RTextsbox arrow[4];
@@ -154,7 +155,8 @@ int main()
     format.background = 0x101018;
     RWindow window(480, 480, "Plane", format);
 
-    TestCtl t(window.ctrl());
+    TestCtl t;
+    t.ctrl.changeParent(window.ctrl());
 
     window.show();
     return window.exec();

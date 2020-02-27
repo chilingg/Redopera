@@ -63,7 +63,7 @@ RWindow::RWindow():
 std::mutex mutex;
 
 RWindow::RWindow(int width, int height, const std::string title, const RWindow::Format &format):
-    ctrl_(std::make_unique<RController>(nullptr, this)),
+    ctrl_(std::make_unique<RController>(this)),
     format_(format),
     eventPool([]{}),
     window_(nullptr, glfwDestroyWindow),

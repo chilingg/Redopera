@@ -35,8 +35,8 @@ const char *fCode =
 class TestCtl
 {
 public:
-    TestCtl(RController *parent):
-        ctrl(parent, this),
+    TestCtl():
+        ctrl(this),
         shaders({RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}),
         model(glm::mat4(1))
     {
@@ -100,8 +100,9 @@ public:
             ctrl.getParent()->breakLoop();
     }
 
-private:
     RController ctrl;
+
+private:
     RKeeper<GLuint> VAO, VBO;
     RShaderProg shaders;
     GLuint modelLoc;
@@ -124,7 +125,8 @@ int main()
     RWindow window(500, 500, "Triangle", format);
     p = &window;
 
-    TestCtl t(window.ctrl());
+    TestCtl t;
+    t.ctrl.changeParent(window.ctrl());
 
     window.entered.connect(observeKeyboard);
 
