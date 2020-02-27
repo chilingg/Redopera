@@ -32,7 +32,7 @@ RController::RController(void *holder):
     parent_(nullptr),
     holder_(holder)
 {
-
+    addNodeToRoot(this);
 }
 
 RController::~RController()
