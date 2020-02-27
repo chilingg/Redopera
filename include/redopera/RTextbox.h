@@ -27,7 +27,6 @@ public:
         float spacing = 0.6f;   // 空格
         Typeset typeset = Typeset::Horizontal;
         glm::vec3 fcolor = { 1.f, 1.f, 1.f };
-        RFont font;
         struct {
             float x, y;
         } pixScale { 1.0f, 1.0f };
@@ -51,7 +50,7 @@ public:
     static void setDefaultFontFmt(Format fmt);
     static const Format& getDefaultFontFmt();
 
-    static const std::shared_ptr<RenderTool> renderTool();
+    static std::shared_ptr<const RenderTool> renderTool();
 
     RTextsbox();
 
@@ -125,11 +124,12 @@ private:
     static Vertexs createVaertexObject();
     static RenderTool createRenderTool();
 
-    std::shared_ptr<RenderTool> renderTool_;
+    std::shared_ptr<const RenderTool> renderTool_;
     RTexture backTex_;
     std::wstring texts_;
     std::array<glm::mat4, 2> model_;
     Format format_;
+    RFont font_;
 
     RTexture textTex_;
     bool resetting_ = true;

@@ -23,7 +23,7 @@ void deleteRenderTool(RTextsbox::RenderTool *p)
     delete p;
 }
 
-const std::shared_ptr<RTextsbox::RenderTool> RTextsbox::renderTool()
+std::shared_ptr<const RTextsbox::RenderTool> RTextsbox::renderTool()
 {
     if(tRenderTool.expired())
     {
@@ -76,6 +76,7 @@ RTextsbox::RTextsbox(const RTextsbox &box):
     texts_(box.texts_),
     model_(box.model_),
     format_(box.format_),
+    font_(box.font_),
     textTex_(box.textTex_),
     resetting_(box.resetting_),
     typesetting(box.typesetting)
@@ -88,6 +89,7 @@ RTextsbox::RTextsbox(RTextsbox &&box):
     texts_(std::move(box.texts_)),
     model_(std::move(box.model_)),
     format_(box.format_),
+    font_(std::move(box.font_)),
     textTex_(std::move(box.textTex_)),
     resetting_(box.resetting_),
     typesetting(box.typesetting)
@@ -102,6 +104,7 @@ RTextsbox &RTextsbox::operator=(const RTextsbox &box)
     textTex_ = box.textTex_;
     texts_ = box.texts_;
     format_ = box.format_;
+    font_ = box.font_;
     model_ = box.model_;
     resetting_ = box.resetting_;
     typesetting = box.typesetting;
@@ -115,6 +118,7 @@ RTextsbox &RTextsbox::operator=(const RTextsbox &&box)
     textTex_ = std::move(box.textTex_);
     texts_ = std::move(box.texts_);
     format_ = std::move(box.format_);
+    font_ = std::move(box.font_);
     model_ = std::move(box.model_);
     resetting_ = box.resetting_;
     typesetting = box.typesetting;
@@ -138,12 +142,12 @@ RColor RTextsbox::fontColor() const
 
 const RFont &RTextsbox::font() const
 {
-    return format_.font;
+    return font_;
 }
 
 unsigned RTextsbox::fontSize() const
 {
-    return format_.font.size();
+    return font_.size();
 }
 
 float RTextsbox::lineSpacing() const
@@ -216,13 +220,13 @@ void RTextsbox::setTexts(std::wstring texts)
 
 void RTextsbox::setFontSize(unsigned size)
 {
-    format_.font.setSize(size);
+    font_.setSize(size);
     addDirty(RArea::Typeset);
 }
 
 void RTextsbox::setFont(RFont font)
 {
-    format_.font = font;
+    font_ = font;
     addDirty(RArea::Typeset);
 }
 
@@ -601,11 +605,11 @@ void rotate90(RData *dest, const RData *src, int width, int height)
 
 void RTextsbox::verticalTextToTexture()
 {
-    unsigned advanceL = format_.font.size() * format_.lSpacing; // 行步进
+    unsigned advanceL = font_.size() * format_.lSpacing; // 行步进
     unsigned advanceW = 0; // 宽步进
     unsigned lenMax = innerHeight();   // 行宽限制
     unsigned lineMax = innerWidth();    // 行高限制
-    unsigned linepos = format_.font.size();  // 行高
+    unsigned linepos = font_.size();  // 行高
     unsigned fsize = linepos;  // 字体大小
 
     // 计算每行的行宽
@@ -766,11 +770,11 @@ void RTextsbox::verticalTextToTexture()
 
 void RTextsbox::horizontalTextToTexture()
 {
-    unsigned advanceL = format_.font.size() * format_.lSpacing; // 行步进
+    unsigned advanceL = font_.size() * format_.lSpacing; // 行步进
     unsigned advanceW = 0; // 宽步进
     unsigned lenMax = innerWidth();   // 行宽限制
     unsigned lineMax = innerHeight();    // 行高限制
-    unsigned linepos = format_.font.size();  // 行高
+    unsigned linepos = font_.size();  // 行高
     unsigned fsize = linepos;  // 字体大小
 
     // 计算每行的行宽
