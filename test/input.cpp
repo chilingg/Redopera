@@ -1,16 +1,22 @@
 #include <RDebug.h>
+#include <RTime.h>
 
 using namespace Redopera;
 
 class Test
 {
 public:
-    std::string toStr() const
+    std::string toStdString() const
     {
         return std::string("Test class" + std::to_string(x) + ", " + std::to_string(y));
     }
     int x = 9, y = 8;
 };
+
+std::string toStdString(const Test &test)
+{
+    return test.toStdString();
+}
 
 int main()
 {
@@ -41,6 +47,9 @@ int main()
 
     rDebug << "Test color input";
     rDebug << EscCtl::bold << EscCtl::yellow << "Yellow" << EscCtl::non;
+
+    rDebug << "Test RTime";
+    rDebug << RTime();
 
     return 0;
 }

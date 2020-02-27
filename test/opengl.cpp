@@ -17,7 +17,8 @@ const char *vCode =
 
 int main()
 {
-    if(check(!RContext::initialization(), "Failure initialization OpenGL context!"))
+    RContext context;
+    if(check(!context, "Failure initialization OpenGL context!"))
         exit(EXIT_FAILURE);
 
     rDebug << "======== Using OpenGL Transform feedback to sqrt calculat ========\n";
@@ -25,8 +26,8 @@ int main()
     format.versionMajor = 3;
     format.versionMinor = 3;
 
-    if(RContext::setContexAsThisThread(format))
-        std::cout << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created\n" << std::endl;
+    if(context.setContex(format))
+        rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created\n";
 
     RShader vertex(vCode, RShader::Type::Vertex);
     RShaderProg renderProg({vertex});
@@ -38,7 +39,7 @@ int main()
     // Interface实例存在期间，对应程序都处于using状态
     RInterface interface = renderProg.useInterface();
     GLuint program = renderProg.shaderProgramID();
-    rDebug << "Number: 1\t2\t3\t4\t5";
+    rDebug << "Number: \t1 \t 2 \t 3 \t 4 \t 5";
 
     // ================ OpenGL ================
     // Reference: https://open.gl/feedback
@@ -82,7 +83,7 @@ int main()
     GLfloat feedback[5];
     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(feedback), feedback);
 
-    rDebug << "Result: " << feedback[0] << '\t' << feedback[1] << '\t'
+    rDebug << "Result:\t" << feedback[0] << '\t' << feedback[1] << '\t'
            << feedback[2] << '\t' << feedback[3] << '\t' << feedback[4];
 
     glDeleteBuffers(1, &tbo);

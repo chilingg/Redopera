@@ -3,24 +3,20 @@
 #include "RThread.h"
 
 #include <fstream>
+#include <vector>
 #include <atomic>
+#include <cstring>
 
 using namespace Redopera;
 
-RPack::RPack():
-    RResource("Pack", Type::Pack)
-{
+std::string RResource::rscPath;
 
-}
-
-RPack::RPack(const std::string &path, const std::string &name):
-    RResource(name, Type::Pack)
+RPack::RPack(const std::string &path)
 {
     load(path);
 }
 
 RPack::RPack(const RPack &&pack):
-    RResource(std::move(pack)),
     fileInfo_(std::move(pack.fileInfo_))
 {
 
@@ -28,7 +24,6 @@ RPack::RPack(const RPack &&pack):
 
 void RPack::swap(RPack &pack)
 {
-    RResource::swap(pack);
     fileInfo_.swap(pack.fileInfo_);
 }
 
@@ -56,11 +51,11 @@ const RPack::FInfo *RPack::getFileInfo(const std::string &file)
     return nullptr;
 }
 
-bool RPack::load(const std::string &path)
+bool RPack::load(std::string path)
 {
-    std::string newpath = rscpath(path);
-    std::ifstream file(newpath, std::ios::binary);
-    if(check(!file, "Failed to load pack <" + name() + "> in " + newpath))
+    RResource::rscpath(path);
+    std::ifstream file(path, std::ios::binary);
+    if(check(!file, "Failed to load pack in " + path))
         return false;
 
     Head head;
@@ -80,27 +75,35 @@ bool RPack::load(const std::string &path)
             {
                 std::shared_ptr<RData[]> data(new RData[info[i].size]);
                 file.read(reinterpret_cast<char*>(data.get()), info[i].size);
-                data = unpackingOperation(data, info[i].size);
-                fileInfo_.emplace(info[i].nameHash, FInfo{ info[i].size, info[i].check, data });
+                unpackingOperation(data, info[i].size);
+                fileInfo_.emplace(info[i].nameHash, FInfo{ info[i].size, info[i].check, std::move(data) });
             }
             file.close();
         }
         else
         {
-            prError("Invali pack file: " + newpath);
+            prError("Invali pack file: " + path);
             return false;
         }
     }
     catch(std::ifstream::failure &e)
     {
-        prError("Wrong access pack file: " + newpath + '\n' + e.what());
+        prError("Wrong access pack file: " + path + '\n' + e.what());
         return false;
     }
 
     return true;
 }
 
-bool RPack::packing(const std::shared_ptr<RData[]> &buffer, size_t size, const std::string &name)
+bool RPack::packing(const RData *buffer, size_t size, const std::string &name)
+{
+    std::shared_ptr<RData[]> data(new RData[size]);
+    std::memcpy(data.get(), buffer, size);
+
+    return packing(data, size, name);
+}
+
+bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::string &name)
 {
     uint64_t hash = std::hash<std::string>()(name);
     size_t check = generateCheckCode(buffer.get(), size);
@@ -109,26 +112,30 @@ bool RPack::packing(const std::shared_ptr<RData[]> &buffer, size_t size, const s
     {
         if(fileInfo_[hash].check != check)
         {
-            fileInfo_[hash] = { size, check, buffer };
-            rDebug << printFormat::yellow << "RPack: Update file <" + name + '>' <<  printFormat::white;
+            fileInfo_[hash] = FInfo{ size, check, buffer };
+#ifdef R_DEBUG
+            rDebug << EscCtl::green << "RPack: Update file <" + name + '>' <<  EscCtl::non;
+#endif
             return true;
         }
     }
     else
     {
         fileInfo_.emplace(hash, FInfo{ size, check, buffer });
-        rDebug << printFormat::yellow << "RPack: Insert file <" + name + '>' <<  printFormat::white;
+#ifdef R_DEBUG
+        rDebug << EscCtl::green << "RPack: Insert file <" + name + '>' <<  EscCtl::non;
+#endif
         return true;
     }
 
     return false;
 }
 
-bool RPack::packing(const std::string &path, const std::string &name)
+bool RPack::packing(std::string path, const std::string &name)
 {
-    std::string newpath = rscpath(path);
-    std::ifstream file(newpath, std::ios::binary | std::ios::ate);
-    if(check(!file, "Failed to packing <" + this->name() + "> in " + newpath))
+    RResource::rscpath(path);
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if(check(!file, "Failed to packing <" + name + "> in " + path))
         return false;
 
     size_t size = file.tellg();
@@ -142,16 +149,16 @@ bool RPack::packing(const std::string &path, const std::string &name)
     }
     catch(std::ifstream::failure &f)
     {
-        prError("Wrong access file: " + newpath + f.what());
+        prError("Wrong access file: " + path + f.what());
         return false;
     }
 
     return packing(data, size, name);
 }
 
-bool RPack::save(const std::string &p)
+bool RPack::save(std::string path)
 {
-    std::string path = rscpath(p);
+    RResource::rscpath(path);
 
     std::ofstream file(path, std::ios::binary);
     if(check(!file, "Failure save pack file as <" + path + '>'))
@@ -166,7 +173,7 @@ bool RPack::save(const std::string &p)
         file.write(reinterpret_cast<char*>(&head), sizeof(Head));
 
         for(auto &info : fileInfo_)
-            info.second.data = packingOperation(info.second.data, info.second.size);
+            packingOperation(info.second.data, info.second.size);
 
         for(auto &info : fileInfo_)
         {
@@ -188,8 +195,9 @@ bool RPack::save(const std::string &p)
         prError("Failure save pack file as <" + path + '>');
         return false;
     }
-
-    rDebug << printFormat::yellow << "RPack: Save pack as <" + path + '>' <<  printFormat::white;
+#ifdef R_DEBUG
+    rDebug << EscCtl::green << "RPack: Save pack as <" + path + '>' <<  EscCtl::non;
+#endif
     return true;
 }
 
@@ -251,14 +259,14 @@ uint64_t RPack::generateCheckCode(const RData *buffer, size_t size)
     return result;
 }
 
-std::shared_ptr<RData[]> RPack::packingOperation(const std::shared_ptr<RData[]> &buffer, size_t &)
+void RPack::packingOperation(std::shared_ptr<RData[]> &, size_t &)
 {
-    return buffer;
+
 }
 
-std::shared_ptr<RData[]> RPack::unpackingOperation(const std::shared_ptr<RData[]> &buffer, size_t &)
+void RPack::unpackingOperation(std::shared_ptr<RData[]> &, size_t &)
 {
-    return buffer;
+
 }
 
 void swap(RPack &pack1, RPack &pack2)

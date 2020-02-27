@@ -3,7 +3,6 @@
 # Redopera 基于OpenGL的C++多线程2D游戏开发库
 
   * Redopera使用一个同步事件循环
-  * 使用Redopera开发游戏的流程为：继承一个Conrtoller类辅以工具类管理资源类。
   * Redopera的大部分功能模块来源于其他开源项目，以统一实用为目标进行封装。
   * 模块之间尽量避免依赖，在需要的时候可以很容易的进行替换。
 
@@ -29,25 +28,19 @@
       <th>依赖</th>
    </tr>
    <tr>
-      <td rowspan="3">控制</td>
+      <td rowspan="23">工具</td>
       <td></td>
       <td>控制循环或循环中的行为</td>
       <td>RController.h</td>
       <td></td>
    </tr>
    <tr>
-      <td rowspan="2" style="text-align:center">窗口</td>
-      <td>窗口控制</td>
+      <td></td>
+      <td>窗口</td>
       <td>RWindowCtrl.h</td>
       <td>GLFW、GLAD</td>
    </tr>
    <tr>
-      <td>信息窗口</td>
-      <td>RInfoWindow.h</td>
-      <td></td>
-   </tr>
-   <tr>
-      <td rowspan="21">工具</td>
       <td rowspan="4" style="text-align:center">IO</td>
       <td>音频播放</td>
       <td>RAudioStream.h</td>
@@ -159,13 +152,7 @@
       <td></td>
    </tr>
    <tr>
-      <td rowspan="11" style="text-align:center">资源</td>
-      <td></td>
-      <td>资源类基类</td>
-      <td>RResource.h</td>
-      <td></td>
-   </tr>
-   <tr>
+      <td rowspan="10" style="text-align:center">资源</td>
       <td rowspan="7" style="text-align:center">文件加载</td>
       <td>光标</td>
       <td>RCursor.h</td>
@@ -229,7 +216,10 @@
 
 ## 更新
 
-### 发布 1.1 Alpha版本 —— 2020.02.23
+### 发布 1.1 Alpha版本 —— 2020.02.27
+  * 移除RController虚函数继承，改为组件注册回调
+  * 移除RResource ID注册
+  * 移除Resource、Control、Plane实例命名
   * 修复若干BUG
 
 ### 发布 1.0 Alpha版本 —— 2020.02.13

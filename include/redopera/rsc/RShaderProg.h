@@ -5,6 +5,7 @@
 #include "../RMath.h"
 
 #include <initializer_list>
+#include <map>
 
 namespace Redopera {
 
@@ -82,13 +83,13 @@ private:
     thread_local static int count;
 };
 
-class RShaderProg : public RResource
+class RShaderProg
 {
     friend void swap(RShaderProg &prog1, RShaderProg&prog2);
 
 public:
-    RShaderProg();
-    RShaderProg(std::initializer_list<RShader> list, const std::string &name = "ShaderProgram");
+    RShaderProg() = default;
+    RShaderProg(std::initializer_list<RShader> list);
     RShaderProg(const RShaderProg &program);
     RShaderProg(const RShaderProg &&program);
     RShaderProg& operator=(RShaderProg program);

@@ -3,33 +3,23 @@
 
 using namespace Redopera;
 
-RLuaScript::RLuaScript():
-    RResource("Script", Type::Script)
-{
-
-}
-
-RLuaScript::RLuaScript(const std::string &lua, const std::string &name):
-    RResource(name, Type::Script)
+RLuaScript::RLuaScript(const std::string &lua)
 {
     load(lua);
 }
 
-RLuaScript::RLuaScript(const RData *data, size_t size, const std::string &name):
-    RResource(name, Type::Script)
+RLuaScript::RLuaScript(const RData *data, size_t size, const std::string &name)
 {
     load(data, size, name);
 }
 
 RLuaScript::RLuaScript(const RLuaScript &scp):
-    RResource(scp),
     lua_(scp.lua_)
 {
 
 }
 
 RLuaScript::RLuaScript(const RLuaScript &&scp):
-    RResource(std::move(scp)),
     lua_(std::move(scp.lua_))
 {
 
@@ -43,7 +33,6 @@ RLuaScript &RLuaScript::operator=(RLuaScript scp)
 
 void RLuaScript::swap(RLuaScript &scp)
 {
-    RResource::swap(scp);
     lua_.swap(scp.lua_);
 }
 
@@ -69,7 +58,7 @@ bool RLuaScript::valueIsFunction(int index) const
 
 bool RLuaScript::valueIsNumber(int index) const
 {
-    return lua_isinteger(lua_.get(), index);
+    return lua_isnumber(lua_.get(), index);
 }
 
 bool RLuaScript::valueIsString(int index) const
@@ -194,6 +183,11 @@ void RLuaScript::setGlobalAsTop(const std::string &name)
     lua_getglobal(lua_.get(), name.c_str());
 }
 
+void RLuaScript::cleanStack()
+{
+    lua_settop(lua_.get(), 0);
+}
+
 bool RLuaScript::call(const std::string &func, std::initializer_list<double> numList, std::initializer_list<const char *> strList, int resultN)
 {
     lua_getglobal(lua_.get(), func.c_str());
@@ -214,58 +208,63 @@ bool RLuaScript::call(const std::string &func, std::initializer_list<double> num
 
 bool RLuaScript::load(const std::string &lua)
 {
-    if(!lua_.unique())
-        resetRscID();
-    lua_ .reset(luaL_newstate(), lua_close);
-    luaL_openlibs(lua_.get());
+    std::shared_ptr<lua_State> temp(luaL_newstate(), lua_close);
+    luaL_openlibs(temp.get());
 
-    std::string path = rscpath(lua);
-    if(luaL_dofile(lua_.get(), path.c_str()))
+    std::string path = lua;
+    RResource::rscpath(path);
+    if(luaL_dofile(temp.get(), path.c_str()))
     {
-        pop();
-        if(luaL_dostring(lua_.get(), lua.c_str()))
+        if(luaL_dostring(temp.get(), lua.c_str()))
         {
-            prError(lua_tostring(lua_.get(), -1));
-            pop();
-            lua_.reset();
+            prError(lua_tostring(temp.get(), -2));
+            prError(lua_tostring(temp.get(), -1));
+            return false;
+        }
+        else {
+            lua_pop(temp.get(), 1);
         }
     }
 
-    return lua_ != nullptr;
+    lua_.swap(temp);
+    return true;
 }
 
 bool RLuaScript::load(const RData *buff, size_t size, const std::string &name)
 {
-    if(!lua_.unique())
-        resetRscID();
-    lua_ .reset(luaL_newstate(), lua_close);
-    luaL_openlibs(lua_.get());
+    std::shared_ptr<lua_State> temp(luaL_newstate(), lua_close);
+    luaL_openlibs(temp.get());
 
-    if(luaL_loadbuffer(lua_.get(), reinterpret_cast<const char*>(buff), size, name.c_str()) || lua_pcall(lua_.get(), 0, 0, 0))
+    if(luaL_loadbuffer(temp.get(), reinterpret_cast<const char*>(buff), size, name.c_str()) || lua_pcall(temp.get(), 0, 0, 0))
     {
-        prError(lua_tostring(lua_.get(), -1));
-        pop();
-        lua_.reset();
+        prError(lua_tostring(temp.get(), -1));
+        return false;
     }
 
-    return lua_ != nullptr;
+    lua_.swap(temp);
+    return true;
 }
 
 bool RLuaScript::import(const std::string &lua)
 {
-    std::string path = rscpath(lua);
+    std::string path = lua;
+    RResource::rscpath(path);
     if(luaL_dofile(lua_.get(), path.c_str()))
     {
-        pop();
         if(luaL_dostring(lua_.get(), lua.c_str()))
         {
+            prError(lua_tostring(lua_.get(), -2));
             prError(lua_tostring(lua_.get(), -1));
+            pop(2);
+
+            return false;
+        }
+        else {
             pop();
-            lua_.reset();
         }
     }
 
-    return lua_ != nullptr;
+    return true;
 }
 
 bool RLuaScript::import(const RData *buff, size_t size, const std::string &name)
@@ -274,10 +273,10 @@ bool RLuaScript::import(const RData *buff, size_t size, const std::string &name)
     {
         prError(lua_tostring(lua_.get(), -1));
         pop();
-        lua_.reset();
+        return false;
     }
 
-    return lua_ != nullptr;
+    return true;
 }
 
 void RLuaScript::release()

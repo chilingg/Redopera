@@ -4,6 +4,9 @@
 #include <RPlane.h>
 #include <RTextbox.h>
 #include <RDebug.h>
+#include <RInputModule.h>
+#include <REvent.h>
+#include <RController.h>
 
 #include <future>
 
@@ -36,74 +39,78 @@ const GLchar *fCode =
 
 std::atomic_bool done(false);
 
-class Tester : public RWindow
+std::future<RTexture> future;
+GLuint mLoc;
+
+// 未设置当前线程OpenGL Context之前无法创建OpenGL相关对象
+std::unique_ptr<RPlane> plane;
+std::unique_ptr<RShaderProg> shaders;
+
+void control()
 {
-public:
-    Tester(std::future<RTexture> &&f, const RWindow::Format &format):
-        RWindow(format),
-        future(std::move(f))
-    {}
+    plane->render(*shaders, mLoc);
+}
 
-protected:
-    void control() override
-    {
-        plane.render(shaders, mLoc);
-    }
+void startEvent(StartEvent)
+{
+    shaders->attachShader({ RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)});
+    shaders->linkProgram();
+    auto inter = shaders->useInterface();
+    mLoc = shaders->getUniformLocation("model");
 
-    void startEvent(RStartEvent &) override
-    {
-        shaders.attachShader({ RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)});
-        shaders.linkProgram();
-        auto inter = shaders.useInterface();
-        mLoc = shaders.getUniformLocation("model");
-        inter.setViewprot(shaders.getUniformLocation("projection"), 0, width(), 0, height());
+    RTexture tex = future.get();
+    plane->setSize(tex.size());
+    plane->setTexture(tex);
+}
 
-        RTexture tex = future.get();
-        plane.setSize(tex.size());
-        plane.setPos((width() - plane.width()) / 2, (height() - plane.height()) / 2);
-        plane.setTexture(tex);
-    }
+void translation(const TransEvent &e)
+{
+    shaders->useInterface().setViewprot(
+                shaders->getUniformLocation("projection"), 0, e.size.width(), 0, e.size.height());
+    plane->setPos((e.size.width() - plane->width()) / 2, (e.size.height() - plane->height()) / 2);
+}
 
-    void finishEvent(RFinishEvent &) override
-    {
-        done = true;
-    }
+void inputEvent(InputEvent e)
+{
+    if(e.press(Keys::KEY_ESCAPE))
+        e.sender->breakLoop();
+}
 
-    void inputEvent(RInputEvent &e) override
-    {
-        // inputEvent只能监测感兴趣的按键
-        if(e.press(Keys::KEY_ESCAPE))
-            breakLoop();
-    }
-
-private:
-    std::future<RTexture> future;
-    RPlane plane;
-    RShaderProg shaders;
-    GLuint mLoc;
-};
+void finishEvent(FinishEvent)
+{
+    done = true;
+}
 
 int main()
 {
+    RWindow::Format format;
+    RWindow window(400, 400, "Share", format);
+    window.ctrl()->setStartFunc(startEvent);
+    window.ctrl()->setInputFunc(inputEvent);
+    window.ctrl()->setFinishFunc(finishEvent);
+    window.ctrl()->setTranslateFunc(translation);
+    window.ctrl()->setControlFunc(control);
+
+    plane = std::make_unique<RPlane>();
+    shaders = std::make_unique<RShaderProg>();
+
     std::promise<RTexture> promise;
-    std::future<RTexture> f = promise.get_future();
+    future = promise.get_future();
 
-    std::promise<GLFWwindow*> promise2;
-    std::future<GLFWwindow*> f2 = promise2.get_future();
+    RThread thread([&promise, &window]{
 
-    RThread thread([&promise, &promise2]{
-
-        if(check(!RContext::initialization(), "Failure initialization OpenGL context!"))
+        RContext context;
+        if(check(!context, "Failure initialization OpenGL context!"))
             exit(EXIT_FAILURE);
 
         RContext::Format format;
-        GLFWwindow *window = RContext::setContexAsThisThread(format);
+        format.shared = window.getWindowHandle();
+        GLFWwindow *winhandle = context.setContex(format);
 
-        if(check(!window, "Failure get OpenGL context"))
+        if(check(!winhandle, "Failure get OpenGL context"))
             exit(EXIT_FAILURE);
 
-        promise2.set_value(window);
-        RTextsbxo text;
+        RTextsbox text;
         text.update();
         promise.set_value(text.textTexture());
 
@@ -111,11 +118,11 @@ int main()
             ;
     });
 
-    RWindow::Format format;
-    format.shared = f2.get();
-    Tester window(std::move(f), format);
-    window.setWindowSize(400, 400);
-
     window.show();
-    return window.exec();
+    window.exec();
+
+    plane.reset();
+    shaders.reset();
+
+    return 0;
 }

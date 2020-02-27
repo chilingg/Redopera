@@ -37,6 +37,7 @@ public:
         t_.swap(other.t_);
     }
 
+    const std::thread& getThread() const { return t_; }
     std::thread::id threadID() const noexcept { return t_.get_id(); }
     bool joinable() const noexcept { return t_.joinable(); }
     void join() { t_.join(); }

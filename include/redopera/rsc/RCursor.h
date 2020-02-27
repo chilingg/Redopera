@@ -1,13 +1,16 @@
 #ifndef RCORSOR_H
 #define RCORSOR_H
 
-#include "RResource.h"
-#include "../ROpenGL.h"
 #include "RImage.h"
+#include "ROpenGL.h"
+
+#include <memory>
+
+class GLFWcursor;
 
 namespace Redopera {
 
-class RCursor : public RResource
+class RCursor
 {
     friend void swap(RCursor &cs1, RCursor &cs2);
 
@@ -23,9 +26,9 @@ public:
         Custom
     };
 
-    RCursor();
-    explicit RCursor(const RImage &image, const std::string &name = "Cursor", int xhot = 0, int yhot = 0);
-    explicit RCursor(Shape shape, const std::string &name = "Cursor");
+    RCursor() = default;
+    explicit RCursor(const RImage &image, int xhot = 0, int yhot = 0);
+    explicit RCursor(Shape shape);
     RCursor(const RCursor &cursor);
     RCursor(const RCursor &&cursor);
     RCursor& operator=(RCursor cursor);
@@ -42,7 +45,7 @@ public:
 
 private:
     std::shared_ptr<GLFWcursor> data_;
-    Shape shape_ = Shape::Custom;
+    Shape shape_;
 };
 
 } // Redopera

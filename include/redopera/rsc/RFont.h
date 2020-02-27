@@ -2,16 +2,15 @@
 #define RFONT_H
 
 #include "RResource.h"
-#include "../dependents/stb_truetype.h"
 
-#include <vector>
+#include <memory>
 #include <map>
+
+class stbtt_fontinfo;
 
 namespace Redopera {
 
-// RFont在不同线程拥有各自的缺省设置
-
-class RFont : public RResource
+class RFont
 {
     using RChar = int;
 
@@ -27,14 +26,8 @@ public:
         std::unique_ptr<const RData[]> data = nullptr;
     };
 
-    struct FontResource
-    {
-        std::shared_ptr<RData[]> font;
-        stbtt_fontinfo info;
-    };
-
     // sourceCodePro()定义在字体资源文件中 (SourceCodePro.cpp)
-    static const RFont& sourceCodePro();
+    static RFont sourceCodePro();
 
     static void setCasheSize(unsigned size);
     static void setDefaultFontSize(unsigned size);
@@ -42,8 +35,8 @@ public:
     static const RFont& getDefaulteFont();
 
     RFont();
-    explicit RFont(const std::string &path, const std::string &name = "Font", unsigned fsize = 14);
-    RFont(const RData* data, const size_t size, const std::string &name = "Font", unsigned fsize = 14);
+    explicit RFont(const std::string &path, unsigned fsize = 14);
+    RFont(const RData* data, const size_t size, unsigned fsize = 14);
     RFont(const RFont &font);
     RFont(const RFont &&font);
     RFont& operator=(RFont font);
@@ -55,19 +48,24 @@ public:
     const Glyph *getFontGlyph(RChar c) const;
 
     void setSize(unsigned size);
-    bool load(const std::string &path);
+    bool load(std::string path);
     bool load(const RData *data, size_t size);
     void release();
-    void clearFontDataCache() const;
+    void clearCache() const;
 
 private:
-    thread_local static std::unique_ptr<RFont> defaultFont;
-
+    static std::unique_ptr<RFont> defaultFont;
     static unsigned cacheMaxSize_;
 
-    std::shared_ptr<FontResource> resource_;
-    std::shared_ptr<std::map<RChar, Glyph>> caches_;
-    unsigned size_ = 14;
+    struct {
+        std::shared_ptr<RData[]> file;
+        std::shared_ptr<stbtt_fontinfo> info;
+    } data_;
+
+    struct {
+        std::shared_ptr<std::map<RChar, Glyph>> caches;
+        unsigned fsize = 14;
+    } cache_;
 };
 
 } // Redopera

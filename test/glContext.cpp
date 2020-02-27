@@ -9,7 +9,8 @@ int main()
 {
     rDebug << "======== OpenGL Context Create Test ========\n";
 
-    if(check(!RContext::initialization(), "Failure initialization OpenGL context!"))
+    RContext contex;
+    if(check(!contex, "Failure initialization OpenGL context!"))
         exit(EXIT_FAILURE);
 
     rDebug << "Try Create OpenGL3.3 Context...";
@@ -17,18 +18,17 @@ int main()
     format.versionMajor = 3;
     format.versionMinor = 3;
 
-    if(RContext::setContexAsThisThread(format))
-        std::cout << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created" << std::endl;
+    if(contex.setContex(format))
+        rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created";
 
-    RContext::destroyContexAsThisThread();
     format.versionMajor = 4;
     rDebug << "\nTry create high version...";
     for(int i = 0; i <= 6; ++i)
     {
         format.versionMinor = i;
 
-        if(RContext::setContexAsThisThread(format))
-            std::cout << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created" << std::endl;
+        if(contex.setContex(format))
+            rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created";
         else
             break;
     }

@@ -2,27 +2,24 @@
 #define RMP3_H
 
 #include "RResource.h"
+#include <memory>
 
-namespace minimp3 {
-
-#include "../dependents/minimp3.h"
-#include "../dependents/minimp3_ex.h"
-
-}
+typedef struct Mp3dec_t mp3dec_t;
+typedef int16_t mp3d_sample_t;
 
 namespace Redopera {
 
-class RMp3 : public RResource
+class RMp3
 {
-    using Decoder = std::unique_ptr<minimp3::mp3dec_t>;
+    using Decoder = std::unique_ptr<mp3dec_t>;
     friend void swap(RMp3 &img1, RMp3 &img2);
 
 public:
-    using Sample = minimp3::mp3d_sample_t;
+    using Sample = mp3d_sample_t;
 
-    RMp3();
-    explicit RMp3(const std::string &path, const std::string &name = "Mp3");
-    RMp3(const RData *data, size_t size, const std::string &name = "Mp3");
+    RMp3() = default;
+    explicit RMp3(const std::string &path);
+    RMp3(const RData *data, size_t size);
     RMp3(const RMp3 &mp3);
     RMp3(const RMp3 &&mp3);
     RMp3& operator=(RMp3 mp3);
@@ -35,7 +32,7 @@ public:
     int channel() const;
     Sample* data() const;
 
-    bool load(const std::string &path);
+    bool load(std::string path);
     bool load(const RData *data, size_t size);
     void release();
 

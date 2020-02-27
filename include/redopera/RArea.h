@@ -1,9 +1,9 @@
 #ifndef RAREA_H
 #define RAREA_H
 
-#include "RPoint.h"
-#include "RSize.h"
-#include "RRect.h"
+#include <RPoint.h>
+#include <RSize.h>
+#include <RRect.h>
 
 namespace Redopera {
 
@@ -38,39 +38,43 @@ public:
 
     struct Format
     {
-        RSize size;
-        RPoint pos;
-        struct { int t, b, l, r;
-               } margin { 0, 0, 0, 0 }, padding { 0, 0, 0, 0 };
-        struct { Align v, h;
-               } align { Align::Top, Align::Left};
+        struct {
+            bool h, v;
+        } flip { false, false };
+
         Mode mode = Mode::Auto;
-        struct { float x, y, z;
-               } rotate { 0.0f, 0.0f, 0.0f };
-        bool flipH = false;
-        bool flipV = false;
-        int dirty = Move | Typeset | Rotate | Scale;
+
+        struct {
+            Align v, h;
+        } align { Align::Top, Align::Left};
+
+        struct {
+            int t, b, l, r;
+        } margin { 0, 0, 0, 0 }, padding { 0, 0, 0, 0 };
+
+        struct {
+            float x, y, z;
+        } rotate { 0.0f, 0.0f, 0.0f };
+
         int minW = 0;
         int minH = 0;
         int maxW = ~0u >> 1;
         int maxH = ~0u >> 1;
     };
 
-    static void setDefaultArea(Format area);
-    static Format getDefaultArea();
+    static void setDefaultArea(Format fmt);
+    static const Format& getDefaultArea();
 
     RArea();
-    RArea(int width, int height, int x, int y, int z = 0);
-    RArea(int width, int height, const RPoint &pos);
-    RArea(const RSize &size, const RPoint &pos);
-    explicit RArea(const RRect &rect, int z = 0);
-    explicit RArea(const Format &area);
+    RArea(int width, int height, int x, int y, int z = 0, const Format &area = areaFmt);
+    RArea(int width, int height, const RPoint &pos, const Format &area = areaFmt);
+    RArea(const RSize &size, const RPoint &pos, const Format &area = areaFmt);
+    explicit RArea(const RRect &rect, int z = 0, const Format &area = areaFmt);
     RArea(const RArea &area);
-    RArea(const RArea &&area);
     RArea& operator=(const RArea &area);
-    virtual ~RArea() = default;
+    ~RArea() = default;
 
-    void setArea(Format format);
+    void setFormat(Format fmt);
 
     void setMinSize(int minw, int minh);
     void setMinSize(const RSize &size);
@@ -88,10 +92,12 @@ public:
     void setY(int y);
     void setZ(int z);
 
-    void setOuterPos(const RPoint &pos);
-    void setInnerPos(const RPoint &pos);
+    void setOuterPos(const RPoint2 &pos);
+    void setOuterPos(int x, int y);
+    void setInnerPos(const RPoint2 &pos);
+    void setInnerPos(int x, int y);
 
-    void setCenterPos(const RPoint &pos);
+    void setCenterPos(const RPoint2 &pos);
     void setCenterPosX(int x);
     void setCenterPosY(int y);
 
@@ -154,13 +160,17 @@ public:
     bool isFlipV() const;
     bool isFlipH() const;
 
-    const Format &area() const;
+    const Format &areaFormat() const;
 
 private:
-    static Format areaFormat;
+    static Format areaFmt;
+
+    RSize size_;
+    RPoint pos_;
     Format format_;
+    int dirty_ = Move | Typeset | Rotate | Scale;
 };
 
-} // Redopera
+} //ns Redopera
 
 #endif // RAREA_H

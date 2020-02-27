@@ -1,25 +1,20 @@
 #include <RWindow.h>
+#include <RInputModule.h>
+#include <RController.h>
+#include <cmath>
 
 using namespace Redopera;
 
-class TestWin : public RWindow
+void inputEvent(InputEvent e)
 {
-public:
-    TestWin(const Format &format):
-        RWindow(format)
-    {}
+    if(e.press(Keys::KEY_ESCAPE))
+        e.sender->breakLoop();
+}
 
-    void control() override
-    {
-        glClearColor(std::sin(glfwGetTime()), 0, 0, 1.0f);
-    }
-protected:
-    void inputEvent(RInputEvent &e) override
-    {
-        if(e.press(Keys::KEY_ESCAPE))
-            breakLoop();
-    }
-};
+void control()
+{
+    glClearColor(0, std::sin(glfwGetTime()) * .7f, 0, 1.0f);
+}
 
 int main()
 {
@@ -28,10 +23,10 @@ int main()
     format.versionMajor = 4;
     format.versionMinor = 3;
     format.fix = true;
-    format.initWidth = 250;
-    format.initHeight = 250;
 
-    TestWin window(format);
+    RWindow window(250, 250, "Window", format);
+    window.ctrl()->setControlFunc(control);
+    window.ctrl()->setInputFunc(inputEvent);
     window.show();
 
     return window.exec();

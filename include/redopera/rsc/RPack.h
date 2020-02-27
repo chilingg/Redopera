@@ -2,11 +2,12 @@
 #define RPACK_H
 
 #include "RResource.h"
+#include <memory>
 #include <map>
 
 namespace Redopera {
 
-class RPack : public RResource
+class RPack
 {
     friend void swap(RPack &pack1, RPack &pack2);
 
@@ -35,8 +36,8 @@ public:
         std::shared_ptr<RData[]> data;
     };
 
-    RPack();
-    RPack(const std::string &path, const std::string &name = "Pack");
+    RPack() = default;
+    RPack(const std::string &path);
     RPack(const RPack &&pack);
     void swap(RPack &pack);
     bool operator==(const RPack &pack);
@@ -49,10 +50,11 @@ public:
     size_t size() const;
     const FInfo* getFileInfo(const std::string &file);
 
-    bool load(const std::string &path);
-    bool packing(const std::shared_ptr<RData[]> &buffer, size_t size, const std::string &name);
-    bool packing(const std::string &path, const std::string &name);
-    bool save(const std::string &path);
+    bool load(std::string path);
+    bool packing(const RData *buffer, size_t size, const std::string &name);
+    bool packing(std::shared_ptr<RData[]> buffer, size_t size, const std::string &name);
+    bool packing(std::string path, const std::string &name);
+    bool save(std::string path);
     void release();
 
     // 检查两个Pack文件之间的校验码是否全部相同
@@ -68,9 +70,9 @@ protected:
     // 生成文件校验码
     virtual uint64_t generateCheckCode(const RData *buffer, size_t size);
      // 打包算法
-    virtual std::shared_ptr<RData[]> packingOperation(const std::shared_ptr<RData[]> &buffer, size_t &size);
+    virtual void packingOperation(std::shared_ptr<RData[]> &buffer, size_t &size);
      // 解包算法
-    virtual std::shared_ptr<RData[]> unpackingOperation(const std::shared_ptr<RData[]> &buffer, size_t &size);
+    virtual void unpackingOperation(std::shared_ptr<RData[]> &buffer, size_t &size);
 
 private:
     std::map<uint64_t, FInfo> fileInfo_;

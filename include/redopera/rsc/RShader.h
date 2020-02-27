@@ -2,11 +2,12 @@
 #define RSHADER_H
 
 #include "RResource.h"
-#include "../ROpenGL.h"
+#include "ROpenGL.h"
+#include <memory>
 
 namespace Redopera {
 
-class RShader : public RResource
+class RShader
 {
     friend void swap(RShader &shader1, RShader &shader2);
 
@@ -23,8 +24,8 @@ public:
 
     static const std::string& shaderTypeName(Type type);
 
-    RShader();
-    RShader(const std::string &shader, Type type, const std::string &name = "Shader");
+    RShader() = default;
+    RShader(const std::string &shader, Type type);
     RShader(const RShader &shader);
     RShader(const RShader &&shader);
     RShader& operator=(RShader shader);

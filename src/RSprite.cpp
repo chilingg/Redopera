@@ -2,34 +2,28 @@
 
 using namespace Redopera;
 
-RSprite::RSprite(int width, int height, int x, int y, int z, const std::vector<RTexture> &texs):
-    RPlane(width, height, x, y, z)
+RSprite::RSprite(int width, int height, int x, int y, int z, const RArea::Format &area):
+    RSprite(RSize(width, height), RPoint(x, y, z), area)
 {
-    add(texs);
+
 }
 
-RSprite::RSprite(int width, int height, const RPoint &pos, const std::vector<RTexture> &texs):
-    RPlane(width, height, pos)
+RSprite::RSprite(int width, int height, const RPoint &pos, const RArea::Format &area):
+    RSprite(RSize(width, height), pos, area)
 {
-    add(texs);
+
 }
 
-RSprite::RSprite(const RSize &size, const RPoint &pos, const std::vector<RTexture> &texs):
-    RPlane(size, pos)
+RSprite::RSprite(const RSize &size, const RPoint &pos, const RArea::Format &area):
+    RPlane(size, pos, area)
 {
-    add(texs);
+    renderControl = std::bind(&RSprite::spriteControl, this, std::placeholders::_1, std::placeholders::_2);
 }
 
-RSprite::RSprite(const RRect &rect, int z, const std::vector<RTexture> &texs):
-    RPlane(rect, z)
+RSprite::RSprite(const RRect &rect, int z, const RArea::Format &area):
+    RSprite(rect.size(), RPoint(rect.bottomLeft(), z), area)
 {
-    add(texs);
-}
 
-RSprite::RSprite(const RArea::Format &format, const std::vector<RTexture> &texs):
-    RPlane(format)
-{
-    add(texs);
 }
 
 RSprite::RSprite(const RSprite &sprite):
@@ -46,10 +40,10 @@ RSprite::RSprite(const RSprite &sprite):
 RSprite::RSprite(const RSprite &&sprite):
     RPlane(std::move(sprite)),
     frames_(std::move(sprite.frames_)),
-    interval_(std::move(sprite.interval_)),
-    delta_(std::move(sprite.delta_)),
-    index_(std::move(sprite.index_)),
-    playing_(std::move(sprite.playing_))
+    interval_(sprite.interval_),
+    delta_(sprite.delta_),
+    index_(sprite.index_),
+    playing_(sprite.playing_)
 {
 
 }
@@ -105,7 +99,7 @@ void RSprite::stop()
     playing_ = false;
 }
 
-void RSprite::renderControl(const RShaderProg &shaders, GLuint mLoc)
+void RSprite::spriteControl(const RShaderProg &shaders, GLuint mLoc)
 {
     if(frames_.empty())
         RPlane::renderControl(shaders, mLoc);

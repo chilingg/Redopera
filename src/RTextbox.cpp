@@ -1,43 +1,538 @@
 #include "RTextbox.h"
-#include "RPlane.h"
+#include "rsc/RImage.h"
 
 using namespace Redopera;
 
-std::wstring_convert<std::codecvt_utf8<wchar_t>> RTextsbxo::strcnv;
+RTextsbox::Format RTextsbox::fontFmt;
+thread_local std::weak_ptr<RTextsbox::RenderTool> RTextsbox::tRenderTool;
 
-thread_local RShaderProg RTextsbxo::tTextShaders;
-thread_local GLuint RTextsbxo::MODEL_LOC;
-thread_local GLuint RTextsbxo::EDGING_LOC;
-thread_local GLuint RTextsbxo::COLOR_LOC;
-thread_local GLuint RTextsbxo::TEXT_LOC;
-
-void flipVertical(RData *data, int width, int height)
+void RTextsbox::setDefaultFontFmt(RTextsbox::Format fmt)
 {
-    for(int h = 0, h2 = height - 1; h < height/2; ++h, --h2)
-    {
-        for(int w = 0, w2 = 0; w < width; ++w, ++w2)
-        {
-            std::swap(data[h*width+w], data[h2*width+w2]);
-        }
-    }
+    fontFmt = fmt;
 }
 
-void rotate90(RData *dest, const RData *src, int width, int height)
+const RTextsbox::Format &RTextsbox::getDefaultFontFmt()
 {
-    for(int w = 0; w < width; ++w)
-    {
-        for(int h = height - 1; h >= 0; --h)
-        {
-            *dest++ = src[h * width + w];
-        }
-    }
+    return fontFmt;
 }
 
-const RTextsbxo::RenderTool &RTextsbxo::textboxRenderTool()
+void deleteRenderTool(RTextsbox::RenderTool *p)
 {
-    if(!tTextShaders.isValid())
+    glDeleteVertexArrays(2, &p->vao);
+    glDeleteBuffers(2, &p->vbo);
+    delete p;
+}
+
+const std::shared_ptr<RTextsbox::RenderTool> RTextsbox::renderTool()
+{
+    if(tRenderTool.expired())
     {
-        static const GLchar *vCode = {
+        auto rt = std::make_unique<RenderTool>(createRenderTool());
+        std::shared_ptr<RenderTool> srt(rt.release(), deleteRenderTool);
+        tRenderTool = srt;
+        return srt;
+    }
+    else
+        return tRenderTool.lock();
+}
+
+RTextsbox::RTextsbox():
+    RTextsbox(L"Text Label", 82, 18, 0, 0)
+{
+
+}
+
+RTextsbox::RTextsbox(const std::wstring &text, int width, int height, int x, int y, int z, const RArea::Format &area):
+    RTextsbox(text, RSize(width, height), RPoint(x, y, z), area)
+{
+
+}
+
+RTextsbox::RTextsbox(const std::wstring &text, int width, int height, const RPoint &pos, const RArea::Format &area):
+    RTextsbox(text, RSize(width, height), pos, area)
+{
+
+}
+
+RTextsbox::RTextsbox(const std::wstring &text, const RSize &size, const RPoint &pos, const RArea::Format &area):
+    RArea(size, pos, area),
+    renderTool_(renderTool()),
+    backTex_(renderTool()->defaultBack),
+    texts_(text),
+    model_{ glm::mat4(1), glm::mat4(1) },
+    format_(fontFmt)
+{
+
+}
+
+RTextsbox::RTextsbox(const std::wstring &text, const RRect &rect, int z, const RArea::Format &area):
+    RTextsbox(text, rect.size(), RPoint(rect.bottomLeft(), z), area)
+{
+
+}
+
+RTextsbox::RTextsbox(const RTextsbox &box):
+    backTex_(box.backTex_),
+    texts_(box.texts_),
+    model_(box.model_),
+    format_(box.format_),
+    textTex_(box.textTex_),
+    resetting_(box.resetting_),
+    typesetting(box.typesetting)
+{
+
+}
+
+RTextsbox::RTextsbox(RTextsbox &&box):
+    backTex_(std::move(box.backTex_)),
+    texts_(std::move(box.texts_)),
+    model_(std::move(box.model_)),
+    format_(box.format_),
+    textTex_(std::move(box.textTex_)),
+    resetting_(box.resetting_),
+    typesetting(box.typesetting)
+{
+
+}
+
+RTextsbox &RTextsbox::operator=(const RTextsbox &box)
+{
+    RArea::operator=(box);
+    backTex_ = box.backTex_;
+    textTex_ = box.textTex_;
+    texts_ = box.texts_;
+    format_ = box.format_;
+    model_ = box.model_;
+    resetting_ = box.resetting_;
+    typesetting = box.typesetting;
+    return *this;
+}
+
+RTextsbox &RTextsbox::operator=(const RTextsbox &&box)
+{
+    RArea::operator=(box);
+    backTex_ = std::move(box.backTex_);
+    textTex_ = std::move(box.textTex_);
+    texts_ = std::move(box.texts_);
+    format_ = std::move(box.format_);
+    model_ = std::move(box.model_);
+    resetting_ = box.resetting_;
+    typesetting = box.typesetting;
+    return *this;
+}
+
+const RShaderProg &RTextsbox::textsShader()
+{
+    return renderTool_->shaders;
+}
+
+RTextsbox::Typeset RTextsbox::typeset() const
+{
+    return format_.typeset;
+}
+
+RColor RTextsbox::fontColor() const
+{
+    return RColor(format_.fcolor[0]*255, format_.fcolor[0]*255, format_.fcolor[0]*255, format_.fcolor[0]*255);
+}
+
+const RFont &RTextsbox::font() const
+{
+    return format_.font;
+}
+
+unsigned RTextsbox::fontSize() const
+{
+    return format_.font.size();
+}
+
+float RTextsbox::lineSpacing() const
+{
+    return format_.lSpacing;
+}
+
+float RTextsbox::wordSpacing() const
+{
+    return format_.wSpacing;
+}
+
+float RTextsbox::spacing() const
+{
+    return format_.spacing;
+}
+
+RTextsbox::Format RTextsbox::textFormat() const
+{
+    return format_;
+}
+
+const RTexture &RTextsbox::textTexture() const
+{
+    return textTex_;
+}
+
+bool RTextsbox::isSeting() const
+{
+    return resetting_;
+}
+
+void RTextsbox::setFontColor(R_RGB rgb)
+{
+    RColor color(rgb << 8);
+    format_.fcolor = { color.r()/255.f, color.g()/255.f, color.b()/255.f};
+}
+
+void RTextsbox::setFontColor(const RColor &color)
+{
+    format_.fcolor = { color.r()/255.f, color.g()/255.f, color.b()/255.f };
+}
+
+void RTextsbox::setFontColor(unsigned r, unsigned g, unsigned b)
+{
+    format_.fcolor = { r/255.f, g/255.f, b/255.f };
+}
+
+void RTextsbox::setBackColor(R_RGBA rgba)
+{
+    const RData *colorData = reinterpret_cast<RData*>(&rgba);
+    backTex_.load(colorData, 1, 1, 4, RTexture::Nearest4);
+}
+
+void RTextsbox::setBackColor(const RColor &color)
+{
+    setBackColor(color.rgba());
+}
+
+void RTextsbox::setBackColor(unsigned r, unsigned g, unsigned b, unsigned a)
+{
+    setBackColor(RColor(r, g, b, a));
+}
+
+void RTextsbox::setTexts(std::wstring texts)
+{
+    texts_ = texts;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setFontSize(unsigned size)
+{
+    format_.font.setSize(size);
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setFont(RFont font)
+{
+    format_.font = font;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setlineSpacing(float value)
+{
+    value = std::max(0.0f, value);
+    format_.lSpacing = value;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setWordSpacing(float value)
+{
+    value = std::max(0.0f, value);
+    format_.wSpacing = value;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setSpacing(float value)
+{
+    value = std::max(0.0f, value);
+    format_.spacing = value;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setTextFormat(Format format)
+{
+    typesetting = format.typeset == Typeset::Vertical ?
+                &RTextsbox::verticalTextToTexture : &RTextsbox::horizontalTextToTexture;
+    format_ = format;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setEllipsis(bool b)
+{
+    format_.ellipsis = b;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::setTexture(const RTexture &tex)
+{
+    textTex_ = tex;
+}
+
+void RTextsbox::setPixScale(float x, float y)
+{
+    format_.pixScale = { x, y };
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::verticalTypeset()
+{
+    typesetting = &RTextsbox::verticalTextToTexture;
+    format_.typeset = Typeset::Vertical;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::horizontalTypeset()
+{
+    typesetting = &RTextsbox::horizontalTextToTexture;
+    format_.typeset = Typeset::Horizontal;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::reseting()
+{
+    resetting_ = true;
+}
+
+void RTextsbox::resetingNow()
+{
+    (this->*typesetting)();
+}
+
+void RTextsbox::complete()
+{
+    resetting_ = false;
+}
+
+void RTextsbox::update()
+{
+    float w = (innerWidth() + 10) / format_.pixScale.x;
+    float h = (innerHeight() + 10) / format_.pixScale.y;
+
+    float x, y;
+    switch(areaFormat().align.h)
+    {
+    case RArea::Align::Left:
+        x = w / 2.0f + areaFormat().padding.l - (5 / format_.pixScale.x);
+        break;
+    case RArea::Align::Right:
+        x = width() - w/2.0f - areaFormat().padding.r + (5 / format_.pixScale.x);
+        break;
+    default: // RArea::Align::Mind
+        x = width() / 2.0f;
+        break;
+    }
+    switch(areaFormat().align.v)
+    {
+    case RArea::Align::Bottom:
+        y = h / 2.0f + areaFormat().padding.b - (5 / format_.pixScale.y);
+        break;
+    case RArea::Align::Top:
+        y = height() - h/2.0f - areaFormat().padding.t + (5 / format_.pixScale.y);
+        break;
+    default: // RArea::Align::Mind
+        y = height() / 2.0f;
+        break;
+    }
+
+    model_ = { glm::mat4(1), glm::mat4(1) };
+    model_[1] = glm::translate(model_[1], { this->x() + x, this->y() + y, 0 });
+    model_[1] = model_[1] * glm::mat4_cast(glm::qua<float>(glm::vec3{ areaFormat().rotate.x, areaFormat().rotate.y, areaFormat().rotate.z }));
+    model_[1] = glm::scale(model_[1], { w, h, 0.0f });
+
+    if(areaFormat().flip.h)
+    {
+        model_[1] [0][0] *= -1;
+        model_[1] [0][1] *= -1;
+        model_[1] [0][2] *= -1;
+        model_[1] [0][3] *= -1;
+    }
+    if(areaFormat().flip.v)
+    {
+        model_[1] [1][0] *= -1;
+        model_[1] [1][1] *= -1;
+        model_[1] [1][2] *= -1;
+        model_[1] [1][3] *= -1;
+    }
+
+    model_[0] = glm::translate(model_[0], { this->x() + width()/2, this->y() + height()/2, z() });
+    model_[0] = model_[0] * glm::mat4_cast(glm::qua<float>(glm::vec3{ areaFormat().rotate.x, areaFormat().rotate.y, areaFormat().rotate.z }));
+    model_[0] = glm::scale(model_[0], { width(), height(), 0 });
+
+    if(dirty() & (RArea::Scale | RArea::Typeset) || resetting_)
+    {
+        (this->*typesetting)();
+        complete();
+    }
+    clearDirty();
+}
+
+void RTextsbox::render()
+{
+    if(dirty()) update();
+    else if(isSeting())
+        (this->*typesetting)();
+
+    auto rt = renderTool();
+    glBindVertexArray(rt->vao);
+
+    RInterface inter = rt->shaders.useInterface();
+    inter.setUniform(rt->edgingLoc, 0);
+    inter.setUniformMatrix(rt->modelLoc, model_.data(), 2);
+    inter.setUniform(rt->colorLoc, format_.fcolor);
+    inter.setUniform(rt->textLoc, 1);
+    textTex_.bind(1);
+    backTex_.bind(0);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 2);
+
+    glBindVertexArray(0);
+}
+
+void RTextsbox::render(const RShaderProg &shaders, GLuint mLoc)
+{
+    if(dirty()) update();
+    else if(isSeting())
+        (this->*typesetting)();
+
+    auto rt = renderTool();
+    glBindVertexArray(rt->vao);
+
+    RInterface inter = shaders.useInterface();
+    inter.setUniformMatrix(mLoc, model_.data(), 2);
+    textTex_.bind(1);
+    backTex_.bind(0);
+    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 2);
+
+    glBindVertexArray(0);
+}
+
+void RTextsbox::edging(const RColor &color)
+{
+    if(dirty()) update();
+
+    auto rt = renderTool();
+    glBindVertexArray(rt->edgingVAO);
+
+    glm::mat4 mat(1);
+    mat = glm::translate(mat, { x(), y(), z() });
+    mat = glm::scale(mat, { width(), height(), 0 });
+
+    RInterface inter = rt->shaders.useInterface();
+    inter.setUniformMatrix(rt->modelLoc, mat);
+    inter.setUniform(rt->edgingLoc, 1);
+    inter.setUniform(rt->colorLoc, color.r()/255.f, color.g()/255.f, color.b()/255.f);
+
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+    glBindVertexArray(0);
+}
+
+void RTextsbox::edging(const RShaderProg &shaders, GLuint mLoc)
+{
+    if(dirty()) update();
+
+    auto rt = renderTool();
+    glBindVertexArray(rt->edgingVAO);
+
+    glm::mat4 mat(1);
+    mat = glm::translate(mat, { x(), y(), z() });
+    mat = glm::scale(mat, { width(), height(), 0 });
+
+    RInterface inter = shaders.useInterface();
+    inter.setUniformMatrix(mLoc, mat);
+
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+    glBindVertexArray(0);
+}
+
+void RTextsbox::edgingAll()
+{
+    if(dirty()) update();
+
+    auto rt = renderTool();
+    glBindVertexArray(rt->edgingVAO);
+
+    glm::mat4 mats[3] { glm::mat4(1), glm::mat4(1), glm::mat4(1)};
+
+    mats[0] = glm::translate(mats[0], { x(), y(), z() });
+    mats[0] = glm::scale(mats[0], { width(), height(), 0 });
+    mats[1] = glm::translate(mats[1], { innerPos().x(), innerPos().y(), z() });
+    mats[1] = glm::scale(mats[1], { innerWidth(), innerHeight() , 0 });
+    mats[2] = glm::translate(mats[2], { outerPos().x(), outerPos().y(), z() });
+    mats[2] = glm::scale(mats[2], { outerWidth(), outerHeight() , 0 });
+
+    RInterface inter = rt->shaders.useInterface();
+    inter.setUniformMatrix(rt->modelLoc, mats, 3);
+    inter.setUniform(rt->edgingLoc, 3);
+
+    glDrawArraysInstanced(GL_LINE_LOOP, 0, 4, 3);
+    glBindVertexArray(0);
+}
+
+void RTextsbox::edgingAll(const RShaderProg &shaders, GLuint mLoc)
+{
+    if(dirty()) update();
+
+    auto rt = renderTool();
+    glBindVertexArray(rt->edgingVAO);
+
+    glm::mat4 mats[3] { glm::mat4(1), glm::mat4(1), glm::mat4(1)};
+
+    mats[0] = glm::translate(mats[0], { x(), y(), z() });
+    mats[0] = glm::scale(mats[0], { width(), height(), 0 });
+    mats[1] = glm::translate(mats[1], { innerPos().x(), innerPos().y(), z() });
+    mats[1] = glm::scale(mats[1], { innerWidth(), innerHeight() , 0 });
+    mats[2] = glm::translate(mats[2], { outerPos().x(), outerPos().y(), z() });
+    mats[2] = glm::scale(mats[2], { outerWidth(), outerHeight() , 0 });
+
+    RInterface inter = shaders.useInterface();
+    inter.setUniformMatrix(mLoc, mats, 3);
+
+    glDrawArraysInstanced(GL_LINE_LOOP, 0, 4, 3);
+    glBindVertexArray(0);
+}
+
+RTextsbox::Vertexs RTextsbox::createVaertexObject()
+{
+    Vertexs v;
+
+    glGenVertexArrays(2, &v.ao1);
+    glGenBuffers(2, &v.bo1);
+
+    float plane[24]{
+            0.5f,-0.5f, 0.0f, 1.0f, 0.0f,//右下
+            0.5f, 0.5f, 0.0f, 1.0f, 1.0f,//右上
+           -0.5f,-0.5f, 0.0f, 0.0f, 0.0f,//左下
+           -0.5f, 0.5f, 0.0f, 0.0f, 1.0f,//左上
+    };
+
+    glBindVertexArray(v.ao1);
+    glBindBuffer(GL_ARRAY_BUFFER, v.bo1);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(plane), plane, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), nullptr);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), bufOff(3*sizeof(float)));
+    glBindVertexArray(0);
+
+    float edge[12]{
+            1.0f, 0.0f, 0.0f,//右下
+            1.0f, 1.0f, 0.0f,//右上
+            0.0f, 1.0f, 0.0f,//左上
+            0.0f, 0.0f, 0.0f,//左下
+    };
+
+    glBindVertexArray(v.ao2);
+    glBindBuffer(GL_ARRAY_BUFFER, v.bo2);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(edge), edge, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), nullptr);
+    glBindVertexArray(0);
+
+    return v;
+}
+
+RTextsbox::RenderTool RTextsbox::createRenderTool()
+{
+    Vertexs v = createVaertexObject();
+
+    static const GLchar *vCode =
             "#version 330 core\n"
             "layout(location = 0) in vec3 aPos;\n"
             "layout(location = 1) in vec2 aTexCoor;\n"
@@ -51,9 +546,8 @@ const RTextsbxo::RenderTool &RTextsbxo::textboxRenderTool()
                 "texCoor = aTexCoor;\n"
                 "instance = gl_InstanceID;\n"
                 "gl_Position = projection * view * model[gl_InstanceID] * vec4(aPos, 1.0);\n"
-            "}\n"
-        };
-        static const GLchar *fCode = {
+            "}\n";
+    static const GLchar *fCode =
             "#version 330 core\n"
             "in vec2 texCoor;\n"
             "out vec4 outColor;\n"
@@ -81,575 +575,31 @@ const RTextsbxo::RenderTool &RTextsbxo::textboxRenderTool()
                     "else\n"
                         "outColor = vec4(0, 0, 1.0, 1.0);\n"
                 "}\n"
-            "}\n"
-        };
-
-        tTextShaders.releaseShader();
-        tTextShaders.rename("TextShaders");
-        tTextShaders.attachShader({ RShader(vCode, RShader::Type::Vertex, "Text-VS"),
-                                    RShader(fCode, RShader::Type::Fragment, "Text-FS")});
-        tTextShaders.linkProgram();
-        auto inter = tTextShaders.useInterface();
-        MODEL_LOC = tTextShaders.getUniformLocation("model");
-        EDGING_LOC = tTextShaders.getUniformLocation("edging");
-        COLOR_LOC = tTextShaders.getUniformLocation("color");
-        TEXT_LOC = tTextShaders.getUniformLocation("text");
-        inter.setCameraMove(tTextShaders.getUniformLocation("view"), 0, 0, 0);
-    }
-
-    thread_local static RenderTool tool { tTextShaders, MODEL_LOC, COLOR_LOC, TEXT_LOC, EDGING_LOC };
-
-    return tool;
-}
-
-void RTextsbxo::setTextBoxShadersAsThread(const RShaderProg &shaders, GLuint modelLoc, GLuint edgingLoc)
-{
-    tTextShaders = shaders;
-    MODEL_LOC = modelLoc;
-    EDGING_LOC = edgingLoc;
-}
-
-const RShaderProg &RTextsbxo::textboxShader()
-{
-    return textboxRenderTool().shaders;
-}
-
-RTextsbxo::RTextsbxo():
-    RTextsbxo(L"Text Label", 82, 18, 0, 0)
-{
-
-}
-
-RTextsbxo::RTextsbxo(const std::wstring &text, int width, int height, int x, int y, int z):
-    RArea(width, height, x, y, z),
-    backTex_(RTexture::transTex()),
-    texts_(text),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::string &text, int width, int height, int x, int y, int z):
-    RArea(width, height, x, y, z),
-    backTex_(RTexture::transTex()),
-    texts_(strcnv.from_bytes(text)),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::wstring &text, int width, int height, const RPoint &pos):
-    RArea(width, height, pos),
-    backTex_(RTexture::transTex()),
-    texts_(text),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::string &text, int width, int height, const RPoint &pos):
-    RArea(width, height, pos),
-    backTex_(RTexture::transTex()),
-    texts_(strcnv.from_bytes(text)),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::wstring &text, const RSize &size, const RPoint &pos):
-    RArea(size, pos),
-    backTex_(RTexture::transTex()),
-    texts_(text),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::string &text, const RSize &size, const RPoint &pos):
-    RArea(size, pos),
-    backTex_(RTexture::transTex()),
-    texts_(strcnv.from_bytes(text)),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::wstring &text, const RRect &rect, int z):
-    RArea(rect, z),
-    backTex_(RTexture::transTex()),
-    texts_(text),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::string &text, const RRect &rect, int z):
-    RArea(rect, z),
-    backTex_(RTexture::transTex()),
-    texts_(strcnv.from_bytes(text)),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::wstring &text, const RArea::Format &area):
-    RArea(area),
-    backTex_(RTexture::transTex()),
-    texts_(text),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const std::string &text, const RArea::Format &area):
-    RArea(area),
-    backTex_(RTexture::transTex()),
-    texts_(strcnv.from_bytes(text)),
-    model_{ glm::mat4(1), glm::mat4(1) }
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(const RTextsbxo &box):
-    backTex_(box.backTex_),
-    textTex_(box.textTex_),
-    texts_(box.texts_),
-    format_(box.format_),
-    model_(box.model_),
-    resetting_(box.resetting_),
-    typesetting(box.typesetting)
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo::RTextsbxo(RTextsbxo &&box):
-    backTex_(std::move(box.backTex_)),
-    textTex_(std::move(box.textTex_)),
-    texts_(std::move(box.texts_)),
-    format_(std::move(box.format_)),
-    model_(std::move(box.model_)),
-    resetting_(box.resetting_),
-    typesetting(box.typesetting)
-{
-    backTex_.rename("Textsbox-Back");
-    textTex_.rename("Textsbox-Text");
-}
-
-RTextsbxo &RTextsbxo::operator=(const RTextsbxo &box)
-{
-    RArea::operator=(box);
-    backTex_ = box.backTex_;
-    textTex_ = box.textTex_;
-    texts_ = box.texts_;
-    format_ = box.format_;
-    model_ = box.model_;
-    resetting_ = box.resetting_;
-    typesetting = box.typesetting;
-    return *this;
-}
-
-RTextsbxo &RTextsbxo::operator=(const RTextsbxo &&box)
-{
-    RArea::operator=(box);
-    backTex_ = std::move(box.backTex_);
-    textTex_ = std::move(box.textTex_);
-    texts_ = std::move(box.texts_);
-    format_ = std::move(box.format_);
-    model_ = std::move(box.model_);
-    resetting_ = box.resetting_;
-    typesetting = box.typesetting;
-    return *this;
-}
-
-RTextsbxo::Typeset RTextsbxo::typeset() const
-{
-    return format_.typeset;
-}
-
-RColor RTextsbxo::fontColor() const
-{
-    return RColor(format_.color[0]*255, format_.color[0]*255, format_.color[0]*255, format_.color[0]*255);
-}
-
-const RFont &RTextsbxo::font() const
-{
-    return format_.font;
-}
-
-unsigned RTextsbxo::fontSize() const
-{
-    return format_.font.size();
-}
-
-float RTextsbxo::lineSpacing() const
-{
-    return format_.lSpacing;
-}
-
-float RTextsbxo::wordSpacing() const
-{
-    return format_.wSpacing;
-}
-
-float RTextsbxo::spacing() const
-{
-    return format_.spacing;
-}
-
-RTextsbxo::Format RTextsbxo::textFormat() const
-{
-    return format_;
-}
-
-const RTexture &RTextsbxo::textTexture() const
-{
-    return textTex_;
-}
-
-bool RTextsbxo::isSeting() const
-{
-    return resetting_;
-}
-
-void RTextsbxo::setFontColor(R_RGBA rgba)
-{
-    RColor color(rgba);
-    format_.color = { color.r()/255.f, color.g()/255.f, color.b()/255.f };
-}
-
-void RTextsbxo::setFontColor(const RColor &color)
-{
-    format_.color = { color.r()/255.f, color.g()/255.f, color.b()/255.f };
-}
-
-void RTextsbxo::setFontColor(unsigned r, unsigned g, unsigned b)
-{
-    format_.color = { r/255.f, g/255.f, b/255.f };
-}
-
-void RTextsbxo::setBackColor(R_RGBA rgba)
-{
-    const RData *colorData = reinterpret_cast<RData*>(&rgba);
-    backTex_.load(colorData, 1, 1, 4, RTexture::NearestTex);
-}
-
-void RTextsbxo::setBackColor(const RColor &color)
-{
-    setBackColor(color.rgba());
-}
-
-void RTextsbxo::setBackColor(unsigned r, unsigned g, unsigned b, unsigned a)
-{
-    setBackColor(RColor(r, g, b, a));
-}
-
-void RTextsbxo::setTexts(std::wstring texts)
-{
-    texts_ = texts;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setTexts(std::string texts)
-{
-    texts_ = strcnv.from_bytes(texts);
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setFontSize(unsigned size)
-{
-    format_.font.setSize(size);
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setFont(RFont font)
-{
-    format_.font = font;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setlineSpacing(float value)
-{
-    value = std::max(0.0f, value);
-    format_.lSpacing = value;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setWordSpacing(float value)
-{
-    value = std::max(0.0f, value);
-    format_.wSpacing = value;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setSpacing(float value)
-{
-    value = std::max(0.0f, value);
-    format_.spacing = value;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setTextFormat(Format format)
-{
-    typesetting = format.typeset == Typeset::Vertical ?
-                &RTextsbxo::verticalTextToTexture : &RTextsbxo::horizontalTextToTexture;
-    format_ = format;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setEllipsis(bool b)
-{
-    format_.ellipsis = b;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::setTexture(const RTexture &tex)
-{
-    textTex_ = tex;
-}
-
-void RTextsbxo::setTextureName(const std::string &name)
-{
-    backTex_.rename(name + "...Back");
-    textTex_.rename(name + "...Text");
-}
-
-void RTextsbxo::setPixScale(float x, float y)
-{
-    format_.pixScale = { x, y };
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::verticalTypeset()
-{
-    typesetting = &RTextsbxo::verticalTextToTexture;
-    format_.typeset = Typeset::Vertical;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::horizontalTypeset()
-{
-    typesetting = &RTextsbxo::horizontalTextToTexture;
-    format_.typeset = Typeset::Horizontal;
-    addDirty(RArea::Typeset);
-}
-
-void RTextsbxo::reseting()
-{
-    resetting_ = true;
-}
-
-void RTextsbxo::resetingNow()
-{
-    (this->*typesetting)();
-}
-
-void RTextsbxo::complete()
-{
-    resetting_ = false;
-}
-
-void RTextsbxo::update()
-{
-    float w = (innerWidth() + 10) / format_.pixScale.x;
-    float h = (innerHeight() + 10) / format_.pixScale.y;
-
-    float x, y;
-    switch(area().align.h)
-    {
-    case RArea::Align::Left:
-        x = w / 2.0f + area().padding.l - (5 / format_.pixScale.x);
-        break;
-    case RArea::Align::Right:
-        x = width() - w/2.0f - area().padding.r + (5 / format_.pixScale.x);
-        break;
-    default: // RArea::Align::Mind
-        x = width() / 2.0f;
-        break;
-    }
-    switch(area().align.v)
-    {
-    case RArea::Align::Bottom:
-        y = h / 2.0f + area().padding.b - (5 / format_.pixScale.y);
-        break;
-    case RArea::Align::Top:
-        y = height() - h/2.0f - area().padding.t + (5 / format_.pixScale.y);
-        break;
-    default: // RArea::Align::Mind
-        y = height() / 2.0f;
-        break;
-    }
-
-    model_ = { glm::mat4(1), glm::mat4(1) };
-    model_[1] = glm::translate(model_[1], { area().pos.x() + x, area().pos.y() + y, 0 });
-    model_[1] = model_[1] * glm::mat4_cast(glm::qua<float>(glm::vec3{ area().rotate.x, area().rotate.y, area().rotate.z }));
-    model_[1] = glm::scale(model_[1], { w, h, 0.0f });
-
-    if(area().flipH)
-    {
-        model_[1] [0][0] *= -1;
-        model_[1] [0][1] *= -1;
-        model_[1] [0][2] *= -1;
-        model_[1] [0][3] *= -1;
-    }
-    if(area().flipV)
-    {
-        model_[1] [1][0] *= -1;
-        model_[1] [1][1] *= -1;
-        model_[1] [1][2] *= -1;
-        model_[1] [1][3] *= -1;
-    }
-
-    model_[0] = glm::translate(model_[0], { area().pos.x() + width()/2, area().pos.y() + height()/2, area().pos.z() });
-    model_[0] = model_[0] * glm::mat4_cast(glm::qua<float>(glm::vec3{ area().rotate.x, area().rotate.y, area().rotate.z }));
-    model_[0] = glm::scale(model_[0], { width(), height(), 0 });
-
-    if(dirty() & (RArea::Scale | RArea::Typeset) || resetting_)
-    {
-        (this->*typesetting)();
-        complete();
-    }
-    clearDirty();
-}
-
-void RTextsbxo::render()
-{
-    if(dirty()) update();
-    else if(isSeting())
-        (this->*typesetting)();
-
-    const RPlane::RenderTool &rt = RPlane::planeRenderTool();
-    glBindVertexArray(rt.vao);
-
-    const RenderTool &tbrt = textboxRenderTool();
-    RInterface inter = tbrt.shaders.useInterface();
-    inter.setUniform(tbrt.edgingLoc, 0);
-    inter.setUniformMatrix(tbrt.modelLoc, model_.data(), 2);
-    inter.setUniform(tbrt.colorLoc, format_.color);
-    inter.setUniform(tbrt.textLoc, 1);
-    textTex_.bind(1);
-    backTex_.bind(0);
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 2);
-
-    glBindVertexArray(0);
-}
-
-void RTextsbxo::render(const RShaderProg &shaders, GLuint mLoc)
-{
-    if(dirty()) update();
-    else if(isSeting())
-        (this->*typesetting)();
-
-    const RPlane::RenderTool &rt = RPlane::planeRenderTool();
-    glBindVertexArray(rt.vao);
-
+            "}\n";
+
+    RShaderProg shaders({ RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment) });
+    GLint mloc = shaders.getUniformLocation("model");
+    GLint eloc = shaders.getUniformLocation("edging");
+    GLint cloc = shaders.getUniformLocation("color");
+    GLint tloc = shaders.getUniformLocation("text");
     RInterface inter = shaders.useInterface();
-    inter.setUniformMatrix(mLoc, model_.data(), 2);
-    textTex_.bind(1);
-    backTex_.bind(0);
-    glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, 2);
+    inter.setCameraMove(shaders.getUniformLocation("view"), 0, 0, 0);
 
-    glBindVertexArray(0);
+    return { shaders, v.ao1, v.ao2, mloc, eloc, cloc, tloc, v.bo1, v.bo2 , RTexture::transTex() };
 }
 
-void RTextsbxo::edging(const RColor &color)
+void rotate90(RData *dest, const RData *src, int width, int height)
 {
-    if(dirty()) update();
-
-    const RPlane::RenderTool &rt = RPlane::planeRenderTool();
-    glBindVertexArray(rt.edgingVAO);
-
-    glm::mat4 mat(1);
-    mat = glm::translate(mat, { area().pos.x(), area().pos.y(), area().pos.z() });
-    mat = glm::scale(mat, { width(), height(), 0 });
-
-    const RenderTool &tbrt = textboxRenderTool();
-    RInterface inter = tbrt.shaders.useInterface();
-    inter.setUniformMatrix(tbrt.modelLoc, mat);
-    inter.setUniform(tbrt.edgingLoc, 1);
-    inter.setUniform(tbrt.colorLoc, color.r()/255.f, color.g()/255.f, color.b()/255.f);
-
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
-    glBindVertexArray(0);
+    for(int w = 0; w < width; ++w)
+    {
+        for(int h = height - 1; h >= 0; --h)
+        {
+            *dest++ = src[h * width + w];
+        }
+    }
 }
 
-void RTextsbxo::edging(const RShaderProg &shaders, GLuint mLoc)
-{
-    if(dirty()) update();
-
-    const RPlane::RenderTool &rt = RPlane::planeRenderTool();
-    glBindVertexArray(rt.edgingVAO);
-
-    glm::mat4 mat(1);
-    mat = glm::translate(mat, { area().pos.x(), area().pos.y(), area().pos.z() });
-    mat = glm::scale(mat, { width(), height(), 0 });
-
-    RInterface inter = shaders.useInterface();
-    inter.setUniformMatrix(mLoc, mat);
-
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
-    glBindVertexArray(0);
-}
-
-void RTextsbxo::edgingAll()
-{
-    if(dirty()) update();
-
-    const RPlane::RenderTool &rt = RPlane::planeRenderTool();
-    glBindVertexArray(rt.edgingVAO);
-
-    glm::mat4 mats[3] { glm::mat4(1), glm::mat4(1), glm::mat4(1)};
-
-    mats[0] = glm::translate(mats[0], { area().pos.x(), area().pos.y(), area().pos.z() });
-    mats[0] = glm::scale(mats[0], { width(), height(), 0 });
-    mats[1] = glm::translate(mats[1], { innerPos().x(), innerPos().y(), area().pos.z() });
-    mats[1] = glm::scale(mats[1], { innerWidth(), innerHeight() , 0 });
-    mats[2] = glm::translate(mats[2], { outerPos().x(), outerPos().y(), area().pos.z() });
-    mats[2] = glm::scale(mats[2], { outerWidth(), outerHeight() , 0 });
-
-    const RenderTool &tbrt = textboxRenderTool();
-    RInterface inter = tbrt.shaders.useInterface();
-    inter.setUniformMatrix(tbrt.modelLoc, mats, 3);
-    inter.setUniform(tbrt.edgingLoc, 3);
-
-    glDrawArraysInstanced(GL_LINE_LOOP, 0, 4, 3);
-    glBindVertexArray(0);
-}
-
-void RTextsbxo::edgingAll(const RShaderProg &shaders, GLuint mLoc)
-{
-    if(dirty()) update();
-
-    const RPlane::RenderTool &rt = RPlane::planeRenderTool();
-    glBindVertexArray(rt.edgingVAO);
-
-    glm::mat4 mats[3] { glm::mat4(1), glm::mat4(1), glm::mat4(1)};
-
-    mats[0] = glm::translate(mats[0], { area().pos.x(), area().pos.y(), area().pos.z() });
-    mats[0] = glm::scale(mats[0], { width(), height(), 0 });
-    mats[1] = glm::translate(mats[1], { innerPos().x(), innerPos().y(), area().pos.z() });
-    mats[1] = glm::scale(mats[1], { innerWidth(), innerHeight() , 0 });
-    mats[2] = glm::translate(mats[2], { outerPos().x(), outerPos().y(), area().pos.z() });
-    mats[2] = glm::scale(mats[2], { outerWidth(), outerHeight() , 0 });
-
-    RInterface inter = shaders.useInterface();
-    inter.setUniformMatrix(mLoc, mats, 3);
-
-    glDrawArraysInstanced(GL_LINE_LOOP, 0, 4, 3);
-    glBindVertexArray(0);
-}
-
-void RTextsbxo::verticalTextToTexture()
+void RTextsbox::verticalTextToTexture()
 {
     unsigned advanceL = format_.font.size() * format_.lSpacing; // 行步进
     unsigned advanceW = 0; // 宽步进
@@ -725,7 +675,8 @@ void RTextsbxo::verticalTextToTexture()
     // 四方预留5px
     lenMax += 10;
     lineMax += 10;
-    std::vector<RData> loader(lenMax * lineMax, 0);
+    RImage loader(nullptr, lineMax, lenMax, 1);
+    loader.full(0);
 
     if(hAlign() == RArea::Align::Left) linepos = lineMax - ((lines.size()-1) * advanceL + fsize) - 5;
     else if(hAlign() == RArea::Align::Mind) linepos = (((lines.size()-1) * advanceL + fsize) + lineMax) / 2;
@@ -781,7 +732,7 @@ void RTextsbxo::verticalTextToTexture()
                 {
                     if(!glyph->data.get()[y * glyph->width + x])
                         continue;
-                    loader[(starty + y) * lineMax + startx + x] = glyph->data.get()[y*glyph->width+x];
+                    loader.data()[(starty + y) * lineMax + startx + x] = glyph->data.get()[y*glyph->width+x];
                 }
             }
 
@@ -801,19 +752,19 @@ void RTextsbxo::verticalTextToTexture()
         {
             for(unsigned y = lenMax - 5; y < lenMax; ++y)
                 for(unsigned x = 0; x < 5; ++x)
-                    loader[y * lineMax + x] = '\xff';
+                    loader.data()[y * lineMax + x] = '\xff';
         }
     }
 
-    flipVertical(loader.data(), lineMax, lenMax);
+    loader.flipV();
     if(lineMax != static_cast<unsigned>(textTex_.width()) || lenMax != static_cast<unsigned>(textTex_.height()))
-        textTex_.load(loader.data(), lineMax, lenMax, 1, RTexture::SingleTex);
+        textTex_.load(loader.data(), lineMax, lenMax, 1, RTexture::SingleL);
     else
         textTex_.reload(loader.data());
     complete();
 }
 
-void RTextsbxo::horizontalTextToTexture()
+void RTextsbox::horizontalTextToTexture()
 {
     unsigned advanceL = format_.font.size() * format_.lSpacing; // 行步进
     unsigned advanceW = 0; // 宽步进
@@ -882,7 +833,8 @@ void RTextsbxo::horizontalTextToTexture()
     // 四方预留5px
     lenMax += 10;  // 纹理行宽
     lineMax += 10;    // 纹理行高
-    std::vector<RData> loader(lenMax * lineMax, 0);
+    RImage loader(nullptr, lenMax, lineMax, 1);
+    loader.full(0);
 
     if(vAlign() == RArea::Align::Bottom) linepos = lineMax - ((lines.size()-1) * advanceL + fsize) - 5;
     else if(vAlign() == RArea::Align::Mind) linepos = (lineMax - ((lines.size()-1) * advanceL + fsize)) / 2;
@@ -926,7 +878,7 @@ void RTextsbxo::horizontalTextToTexture()
                 {
                     if(!glyph->data.get()[y * glyph->width + x])
                         continue;
-                    loader[(starty + y) * lenMax + startx + x] = glyph->data.get()[y*glyph->width+x];
+                    loader.data()[(starty + y) * lenMax + startx + x] = glyph->data.get()[y*glyph->width+x];
                 }
             }
 
@@ -946,13 +898,13 @@ void RTextsbxo::horizontalTextToTexture()
         {
             for(unsigned y = lineMax - 5; y < lineMax; ++y)
                 for(unsigned x = lenMax - 5; x < lenMax; ++x)
-                    loader[y * lenMax + x] = '\xff';
+                    loader.data()[y * lenMax + x] = '\xff';
         }
     }
 
-    flipVertical(loader.data(), lenMax, lineMax);
+    loader.flipV();
     if(lenMax != static_cast<unsigned>(textTex_.width()) || lineMax != static_cast<unsigned>(textTex_.height()))
-        textTex_.load(loader.data(), lenMax, lineMax, 1, RTexture::SingleTex);
+        textTex_.load(loader.data(), lenMax, lineMax, 1, RTexture::SingleL);
     else
         textTex_.reload(loader.data());
     complete();

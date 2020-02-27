@@ -28,6 +28,10 @@ public:
     void setSize(int width, int height);
     void setWidth(int width);
     void setHeight(int height);
+    void setPos(RPoint2 pos);
+    void setPos(int x, int y);
+    void setPosX(int x);
+    void setPosY(int y);
     void setBottomLeft(const RPoint2 &pos);
     void setBottomLeft(int x, int y);
     void setTopRight(const RPoint2 &pos);
@@ -37,15 +41,15 @@ public:
     void setTop(int top);
     void setRight(int right);
 
-    void move(RPoint2 pos);
-    void move(int x, int y);
-
     void setCenter(const RPoint2 &pos);
     void setCenter(int x, int y);
     void setCenterX(int x);
     void setCenterY(int y);
     void set(int width, int height, int x, int y);
     void set(const RSize &size, const RPoint2 &bottomLeft);
+
+    void move(RPoint2 pos);
+    void move(int x, int y);
 
     int top() const;
     int bottom() const;
@@ -56,6 +60,8 @@ public:
     RPoint2 topLeft() const;
     RPoint2 topRIght() const;
     RPoint2 center() const;
+    int centerX() const;
+    int centerY() const;
     int width() const;
     int height() const;
     RSize size() const;
@@ -69,9 +75,6 @@ public:
     bool contains(int x, int y);
 
     bool overlap(const RRect &rect);
-
-    RRect mirrorH(int axis = 0);
-    RRect mirrorV(int axis = 0);
 
 private:
     RSize size_;
@@ -97,7 +100,7 @@ inline RRect::RRect(const RSize &size, const RPoint2 &bottomLeft) noexcept:
 {}
 
 inline RRect::RRect(const RPoint2 &bottomLeft, const RPoint2 &topRight) noexcept:
-    size_(bottomLeft.x() - topRight.x(), topRight.y() - bottomLeft.y()),
+    size_(topRight.x() - bottomLeft.x(), topRight.y() - bottomLeft.y()),
     pos_(bottomLeft)
 {}
 
@@ -153,6 +156,26 @@ inline void RRect::setHeight(int height)
     size_.setHeight(height);
 }
 
+inline void RRect::setPos(RPoint2 pos)
+{
+    pos_ = pos;
+}
+
+inline void RRect::setPos(int x, int y)
+{
+    pos_.set(x, y);
+}
+
+inline void RRect::setPosX(int x)
+{
+    pos_.setX(x);
+}
+
+inline void RRect::setPosY(int y)
+{
+    pos_.setY(y);
+}
+
 inline void RRect::setBottomLeft(const RPoint2 &pos)
 {
     RPoint2 p = pos_ - pos;
@@ -198,17 +221,6 @@ inline void RRect::setRight(int right)
     pos_.setX(right);
 }
 
-inline void RRect::move(RPoint2 pos)
-{
-    pos_ += pos;
-}
-
-inline void RRect::move(int x, int y)
-{
-    pos_.rx() += x;
-    pos_.ry() += y;
-}
-
 inline void RRect::setCenter(const RPoint2 &pos)
 {
     pos_.set(pos.x() - size_.width()/2, pos.y() - size_.height()/2);
@@ -239,6 +251,17 @@ inline void RRect::set(const RSize &size, const RPoint2 &bottomLeft)
 {
     size_ = size;
     pos_ = bottomLeft;
+}
+
+inline void RRect::move(RPoint2 pos)
+{
+    pos_ += pos;
+}
+
+inline void RRect::move(int x, int y)
+{
+    pos_.rx() += x;
+    pos_.ry() += y;
 }
 
 inline int RRect::top() const
@@ -284,6 +307,16 @@ inline RPoint2 RRect::topRIght() const
 inline RPoint2 RRect::center() const
 {
     return RPoint2(pos_.x() + size_.width()/2, pos_.y() + size_.height()/2);
+}
+
+inline int RRect::centerX() const
+{
+    return pos_.x() + size_.width() / 2;
+}
+
+inline int RRect::centerY() const
+{
+    return pos_.y() + size_.height() / 2;
 }
 
 inline int RRect::width() const
@@ -337,18 +370,6 @@ inline bool RRect::overlap(const RRect &rect)
     return rect.bottom() < top() && rect.top() > bottom() && rect.left() < right() && rect.right() > left();
 }
 
-inline RRect RRect::mirrorH(int axis)
-{
-    int x = (axis - pos_.x()) * 2 + pos_.x() - size_.width();
-    return RRect(size_, RPoint2(x, pos_.y()));
-}
-
-inline RRect RRect::mirrorV(int axis)
-{
-    int y = (axis - pos_.y()) * 2 + pos_.y() - size_.height();
-    return RRect(size_, RPoint2(pos_.x(), y));
-}
-
-} // Redopera
+} // ns Redopera
 
 #endif // RRECT_H

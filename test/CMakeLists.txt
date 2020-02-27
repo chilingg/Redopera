@@ -25,8 +25,16 @@ target_link_libraries(opengl redopera)
 add_executable(share share.cpp)
 target_link_libraries(share redopera)
 
-find_file(UNIT_TEST unitTest.cpp .)
-if(UNIT_TEST)
-    add_executable(unitTest unitTest.cpp)
-    target_link_libraries(unitTest redopera)
+add_executable(input input.cpp)
+target_link_libraries(input redopera)
+
+add_executable(unitTest unitTest.cpp)
+target_link_libraries(unitTest redopera)
+
+find_file(R_TEST rtest.cpp .)
+if(R_TEST)
+    add_executable(rtest rtest.cpp)
+    target_link_libraries(rtest redopera)
 endif()
+
+file(COPY TestFile/ DESTINATION ${CMAKE_BINARY_DIR}/test/TestFile)

@@ -2,6 +2,7 @@
 #define RLUASCRIPT_H
 
 #include "RResource.h"
+#include <memory>
 
 extern "C" {
 
@@ -27,14 +28,14 @@ enum class LuaType
     Thread = LUA_TTHREAD
 };
 
-class RLuaScript : public RResource
+class RLuaScript
 {
     friend void swap(RLuaScript &rls1, RLuaScript &rls2);
 
 public:
-    RLuaScript();
-    RLuaScript(const std::string &lua, const std::string &name = "Script");
-    RLuaScript(const RData *data, size_t size, const std::string &name = "Script");
+    RLuaScript() = default;
+    RLuaScript(const std::string &lua);
+    RLuaScript(const RData *data, size_t size, const std::string &name = "RLua");
     RLuaScript(const RLuaScript &scp);
     RLuaScript(const RLuaScript &&scp);
     RLuaScript& operator=(RLuaScript scp);
@@ -74,13 +75,14 @@ public:
     void popTopToGlobal(const std::string &name);
     void setStackSize(int size);
     void setGlobalAsTop(const std::string &name);
+    void cleanStack();
 
     bool call(const std::string &func, std::initializer_list<double> numList = {}, std::initializer_list<const char *> strList = {}, int resultN = 1);
 
     bool load(const std::string &lua);
-    bool load(const RData *buff, size_t size, const std::string &name);
+    bool load(const RData *buff, size_t size, const std::string &name = "RLua");
     bool import(const std::string &lua);
-    bool import(const RData *buff, size_t size, const std::string &name);
+    bool import(const RData *buff, size_t size, const std::string &name = "RLua");
     void release();
 
     int absIndex(int idx);

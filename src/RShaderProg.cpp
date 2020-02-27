@@ -327,14 +327,7 @@ RInterface::RInterface(GLuint id)
     glUseProgram(id);
 }
 
-RShaderProg::RShaderProg():
-    RResource("ShaderProgram", Type::ShaderProg)
-{
-
-}
-
-RShaderProg::RShaderProg(std::initializer_list<RShader> list, const std::string &name):
-    RResource(name, Type::ShaderProg)
+RShaderProg::RShaderProg(std::initializer_list<RShader> list)
 {
     for(auto &shader : list)
         shaders_.emplace(shader.type(), shader);
@@ -342,7 +335,6 @@ RShaderProg::RShaderProg(std::initializer_list<RShader> list, const std::string 
 }
 
 RShaderProg::RShaderProg(const RShaderProg &program):
-    RResource(program),
     progID_(program.progID_),
     shaders_(program.shaders_)
 {
@@ -350,7 +342,6 @@ RShaderProg::RShaderProg(const RShaderProg &program):
 }
 
 RShaderProg::RShaderProg(const RShaderProg &&program):
-    RResource(std::move(program)),
     progID_(std::move(program.progID_)),
     shaders_(std::move(program.shaders_))
 {
@@ -365,7 +356,6 @@ RShaderProg &RShaderProg::operator=(RShaderProg program)
 
 void RShaderProg::swap(RShaderProg &program)
 {
-    RResource::swap(program);
     progID_.swap(program.progID_);
     shaders_.swap(program.shaders_);
 }
@@ -418,7 +408,7 @@ bool RShaderProg::linkProgram()
 
     int success;
     glGetProgramiv(*id, GL_LINK_STATUS, &success);
-    if(check(!success, "Failed to link shader program <" + name() + '>'))
+    if(check(!success, "Failed to link shader program"))
     {
         char infoLog[256];
         glGetProgramInfoLog(*id, sizeof(infoLog), nullptr, infoLog);
@@ -426,8 +416,6 @@ bool RShaderProg::linkProgram()
         return false;
     }
 
-    if(!progID_.unique())
-        resetRscID();
     progID_.swap(id);
     return true;
 }
@@ -485,4 +473,36 @@ glm::mat4 Redopera::perspective(float left, float right, float bottom, float top
     mat[3][3] = mat[3][2] + 1;
 
     return mat;
+}
+
+std::string Redopera::toStdString(glm::vec3 vec)
+{
+    std::string str('(' + std::to_string(vec.x) + ", "
+                    + std::to_string(vec.y) + ", "
+                    + std::to_string(vec.z) + ") ");
+    return str;
+}
+
+std::string Redopera::toStdString(glm::vec4 vec)
+{
+    std::string str('(' + std::to_string(vec.x) + ", "
+                    + std::to_string(vec.y) + ", "
+                    + std::to_string(vec.z) + ", "
+                    + std::to_string(vec.w) + ") ");
+    return str;
+}
+
+std::string Redopera::toStdString(glm::mat4 mat)
+{
+    char buf[256];
+    std::snprintf(buf, sizeof(buf),
+                  "mat:(%10.3f, %10.3f, %10.3f, %10.3f)\n"
+                  "    (%10.3f, %10.3f, %10.3f, %10.3f)\n"
+                  "    (%10.3f, %10.3f, %10.3f, %10.3f)\n"
+                  "    (%10.3f, %10.3f, %10.3f, %10.3f). ",
+                  mat[0][0], mat[1][0], mat[2][0], mat[3][0],
+                  mat[0][1], mat[1][1], mat[2][1], mat[3][1],
+                  mat[0][2], mat[1][2], mat[2][2], mat[3][2],
+                  mat[0][3], mat[1][3], mat[2][3], mat[3][3]);
+    return std::string(buf);
 }

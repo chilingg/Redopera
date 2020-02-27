@@ -19,6 +19,7 @@ public:
     RThreadPool(const RThreadPool&) = delete;
     RThreadPool& operator=(const RThreadPool&) = delete;
 
+    bool isRun() const;
     bool isIdle() const;
     int threadNumber() const;
 

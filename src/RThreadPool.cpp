@@ -7,28 +7,17 @@ RThreadPool::RThreadPool(int tNum):
     done_(false),
     index_(0)
 {
-    if(tNum < 1)
-        tNum = std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() : 1;
-    assert(tNum > 0);
-
-    stacks_.reserve(tNum);
-    threads_.reserve(tNum);
-    try {
-        for(int i = 0; i < tNum; ++i)
-        {
-            stacks_.emplace_back(std::make_unique<RThreadStack<RFunction<void()>>>());
-            threads_.emplace_back(&RThreadPool::workerThread, this, stacks_[i].get());
-        }
-    }
-    catch(...) {
-        done_ = true;
-        throw;
-    }
+    start(tNum);
 }
 
 RThreadPool::~RThreadPool()
 {
     done_ = true;
+}
+
+bool RThreadPool::isRun() const
+{
+    return !done_;
 }
 
 bool RThreadPool::isIdle() const
@@ -71,16 +60,25 @@ void RThreadPool::waitingForDone()
 
 void RThreadPool::start(int tNum)
 {
-    if(!done_) return;
+    done_ = false;
 
     if(tNum < 1)
         tNum = std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() : 1;
     assert(tNum > 0);
 
-    done_ = false;
+    stacks_.reserve(tNum);
     threads_.reserve(tNum);
-    for(int i = 0; i < tNum; ++i)
-        threads_.emplace_back(&RThreadPool::workerThread, this, stacks_[i].get());
+    try {
+        for(int i = 0; i < tNum; ++i)
+        {
+            stacks_.emplace_back(std::make_unique<RThreadStack<RFunction<void()>>>());
+            threads_.emplace_back(&RThreadPool::workerThread, this, stacks_[i].get());
+        }
+    }
+    catch(...) {
+        done_ = true;
+        throw;
+    }
 }
 
 void RThreadPool::workerThread(RThreadStack<RFunction<void ()> > *stack)

@@ -1,8 +1,8 @@
 #ifndef REVENT_H
 #define REVENT_H
 
-#include "RInputModule.h"
-#include <assert.h>
+#include "RPoint.h"
+#include "RSize.h"
 
 namespace Redopera {
 
@@ -11,108 +11,71 @@ class RController;
 // 事件通知类集合 ********************
 
 // 循环开始事件
-class RStartEvent
+class StartEvent
 {
 public:
-    explicit RStartEvent(RController *sender):
+    explicit StartEvent(RController *sender = nullptr):
         sender(sender) {}
     RController *sender;
 };
 
 // 循环结束事件
-class RFinishEvent
+class FinishEvent
 {
 public:
-    explicit RFinishEvent(RController *sender):
+    explicit FinishEvent(RController *sender = nullptr):
         sender(sender) {}
     RController *sender;
 };
 
 // 申请关闭事件
-class RCloseEvent
+class CloseEvent
 {
 public:
-    explicit RCloseEvent(RController *sender):
+    explicit CloseEvent(RController *sender = nullptr):
         sender(sender) {}
     RController *sender;
     bool stop = false; // true驳回关闭申请
 };
 
-class RInputEvent
+struct TransEvent
 {
-public:
-    RInputEvent(RController *sender):
+    RController *sender;
+    const RSize size;
+    const RPoint pos = RPoint(0);
+    struct {
+        float x, y, z;
+    } const rotate { 0.0f, 0.0f, 0.0f };
+};
+
+enum class Keys;
+enum class MouseBtn;
+enum class GamepadBtn;
+enum class BtnAct;
+enum class GamepadAxes;
+
+struct InputEvent
+{
+    InputEvent(RController *sender = nullptr):
         sender(sender) {}
 
-    ButtonAction status(Keys key) {
-        return RInputModule::instance().keyInputs_[key].action;
-    }
-    ButtonAction status(MouseButtons btn) {
-        return RInputModule::instance().mouseInputs_[btn].action;
-    }
-    ButtonAction status(GamepadBtn btn, unsigned p = 0) {
-        if(RInputModule::instance().gamepadInputs_.empty()) return ButtonAction::RELEASE;
+    BtnAct status(Keys key);
+    BtnAct status(MouseBtn btn);
+    BtnAct status(GamepadBtn btn, unsigned p = 0);
+    float status(GamepadAxes axis, unsigned p = 0);
 
-        RInputModule::instance().gamepadInputs_[p].status.buttons[static_cast<unsigned>(btn)] = 2;
-        return RInputModule::toButtonAction(1);
-    }
-    float status(GamepadAxes axis, unsigned p = 0) {
-        if(RInputModule::instance().gamepadInputs_.empty())
-        {
-            if(axis == GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER || axis == GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER)
-                return -1.f;
-            else
-                return 0.f;
-        }
+    bool press(Keys key);
+    bool press(MouseBtn btn);
+    bool press(GamepadBtn btn, unsigned p = 0);
 
-        return RInputModule::instance().gamepadInputs_[p].status.axes[static_cast<unsigned>(axis)];
-    }
+    bool release(Keys key);
+    bool release(MouseBtn btn);
+    bool release(GamepadBtn btn, unsigned p = 0);
 
-    bool press(Keys key) {
-        return RInputModule::instance().keyInputs_[key].action == ButtonAction::PRESS
-                && RInputModule::instance().keyInputs_[key].action
-                != RInputModule::instance().keyInputs_[key].preAction;
-    }
-    bool press(MouseButtons btn) {
-        return RInputModule::instance().mouseInputs_[btn].action == ButtonAction::PRESS
-                && RInputModule::instance().mouseInputs_[btn].action
-                != RInputModule::instance().mouseInputs_[btn].preAction;
-    }
-    bool press(GamepadBtn btn, unsigned p = 0) {
-        if(RInputModule::instance().gamepadInputs_.empty()) return false;
-
-        unsigned index = static_cast<unsigned>(btn);
-        return RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-                == static_cast<unsigned char>(ButtonAction::PRESS)
-                && RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-                != RInputModule::instance().gamepadInputs_[p].preButtons[index];
-    }
-
-    bool release(Keys key) {
-        return RInputModule::instance().keyInputs_[key].action == ButtonAction::RELEASE
-                && RInputModule::instance().keyInputs_[key].action
-                != RInputModule::instance().keyInputs_[key].preAction;
-    }
-    bool release(MouseButtons btn) {
-        return RInputModule::instance().mouseInputs_[btn].action == ButtonAction::RELEASE
-                && RInputModule::instance().mouseInputs_[btn].action
-                != RInputModule::instance().mouseInputs_[btn].preAction;
-    }
-    bool release(GamepadBtn btn, unsigned p = 0) {
-        if(RInputModule::instance().gamepadInputs_.empty()) return false;
-
-        unsigned index = static_cast<unsigned>(btn);
-        return RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-                == static_cast<unsigned char>(ButtonAction::RELEASE)
-                && RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-                != RInputModule::instance().gamepadInputs_[p].preButtons[index];
-    }
-
-    RPoint2 pos() { return RInputModule::instance().cursorPos_[0]; }
-    RPoint2 prePos() { return RInputModule::instance().cursorPos_[1]; }
+    RPoint2 pos();
+    RPoint2 prePos();
 
     RController *sender;
-    void *userData;
 };
 
 } // Redopera

@@ -5,7 +5,7 @@
 
 namespace Redopera {
 
-template<typename Func>
+template<typename Result, typename ... Args>
 class RFunction;
 
 // 包装只可移动的函数对象
@@ -37,7 +37,7 @@ public:
     RFunction& operator=(RFunction&& func) { impl_ = std::move(func.impl_); return *this; }
 
     template<typename F>
-    RFunction(F f): impl_(new ImplementType<F>(std::forward<F>(f))) {}
+    RFunction(F f): impl_(std::make_unique<ImplementType<F>>(std::forward<F>(f))) {}
 
     Result operator()(Args ... args) { return impl_->call(std::forward<Args>(args)...); }
 

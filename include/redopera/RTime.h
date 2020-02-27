@@ -78,7 +78,7 @@ public:
      * %z，%Z 时区名称，如果不能得到时区名称则返回空字符。
      * %% 百分号
      */
-    std::string toString() const
+    std::string toStdString() const
     {
         static char buffer[64] {0};
         std::strftime(buffer, sizeof(buffer), format.c_str(), &time_);
@@ -97,6 +97,11 @@ private:
     std::tm time_;
 
 };
+
+std::string toStdString(const RTime &time)
+{
+    return time.toStdString();
+}
 
 } // Redopera
 

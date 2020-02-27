@@ -8,17 +8,27 @@ class RSize
 public:
     RSize() noexcept: RSize(0, 0) {}
     RSize(int width, int height) noexcept : width_(width), height_(height) {}
+
     bool operator==(const RSize &size) { return width_ == size.width_ && height_ == size.height_; }
     bool operator!=(const RSize &size) { return width_ != size.width_ || height_ != size.height_; }
+
+    RSize& operator*=(const double value) { width_ *= value; height_ *= value; return *this; }
+    RSize& operator/=(const double value) { width_ /= value; height_ /= value; return *this; }
+
+    RSize& operator*=(const float value) { width_ *= value; height_ *= value; return *this; }
+    RSize& operator/=(const float value) { width_ /= value; height_ /= value; return *this; }
 
     RSize& operator*=(const int value) { width_ *= value; height_ *= value; return *this; }
     RSize& operator/=(const int value) { width_ /= value; height_ /= value; return *this; }
 
-    RSize operator*(const double value) { return RSize(width_ *= value, height_ *= value); }
-    RSize operator/(const double value) { return RSize(width_ /= value, height_ /= value); }
+    RSize operator*(const double value) { return RSize(width_ * value, height_ * value); }
+    RSize operator/(const double value) { return RSize(width_ / value, height_ / value); }
 
-    RSize operator*(const float value) { return RSize(width_ *= value, height_ *= value); }
-    RSize operator/(const float value) { return RSize(width_ /= value, height_ /= value); }
+    RSize operator*(const float value) { return RSize(width_ * value, height_ * value); }
+    RSize operator/(const float value) { return RSize(width_ / value, height_ / value); }
+
+    RSize operator*(const int value) { return RSize(width_ * value, height_ * value); }
+    RSize operator/(const int value) { return RSize(width_ / value, height_ / value); }
 
     int width() const { return width_; }
     int height() const { return height_; }
@@ -38,6 +48,6 @@ private:
     int height_;
 };
 
-} // Redopera
+} // ns Redopera
 
 #endif // RSIZE_H

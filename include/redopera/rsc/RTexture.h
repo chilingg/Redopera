@@ -2,14 +2,16 @@
 #define RTEXTURE_H
 
 #include "RResource.h"
-#include "RImage.h"
-#include "RSize.h"
 #include "../ROpenGL.h"
-#include <array>
+
+#include <memory>
 
 namespace Redopera {
 
-class RTexture : public RResource
+class RImage;
+class RSize;
+
+class RTexture
 {
     friend void swap(RTexture &texture1, RTexture &texture2);
 
@@ -44,35 +46,39 @@ public:
         Linear = GL_LINEAR
     };
 
-    struct TexFormat
+    struct Format
     {
-        Filter filterMax = Filter::Linear;
-        Filter filterMin = Filter::Linear;
+        struct {
+            Filter max, min;
+        } filter { Filter::Nearest, Filter::Nearest };
+
         int inChannel = 4;
-        Wrap wrapS = Wrap::ClampToBorder;
-        Wrap wrapT = Wrap::ClampToBorder;
+
+        struct {
+            Wrap s, t;
+        } wrap { Wrap::ClampToBorder, Wrap::ClampToBorder };
+
         std::array<GLuint, 4> edgeColor { 0, 0, 0, 0 };
     };
 
-    using Format = std::shared_ptr<TexFormat>;
+    static const Format Linear4;
+    static const Format Linear3;
+    static const Format Nearest4;
+    static const Format Nearest3;
+    static const Format SingleL;
+    static const Format SingleN;
 
-    static const Format LinearTex;
-    static const Format NearestTex;
-    static const Format SingleTex;
-
-    static const RTexture& whiteTex();
-    static const RTexture& blackTex();
-    static const RTexture& transTex();
+    static RTexture whiteTex();
+    static RTexture blackTex();
+    static RTexture transTex();
 
     static void setDefaultTextureFomat(const Format &format);
-    static Format makeTexFormat();
     static void unbindTexture();
 
-    RTexture();
-    RTexture(const std::string &path, const std::string &name = "Texture", const Format &format = textureFormat);
-    RTexture(const RImage &img, const std::string &name = "Texture", const Format &format = textureFormat);
-    RTexture(const RData *data, int width, int height, int channel,
-             const std::string &name = "Texture", const Format &format = textureFormat);
+    RTexture() = default;
+    RTexture(const std::string &path, const Format &format = textureFormat);
+    RTexture(const RImage &img, const Format &format = textureFormat);
+    RTexture(const RData *data, int width, int height, int channel, const Format &format = textureFormat);
     RTexture(const RTexture &tex);
     RTexture(const RTexture &&tex);
     RTexture& operator=(RTexture tex);

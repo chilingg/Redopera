@@ -182,7 +182,7 @@ enum class GamepadAxes
     GAMEPAD_AXIS_LAST = GAMEPAD_AXIS_RIGHT_TRIGGER
 };
 
-enum class MouseButtons
+enum class MouseBtn
 {
     MOUSE_BUTTON_LEFT = GLFW_MOUSE_BUTTON_LEFT,
     MOUSE_BUTTON_RIGHT,
@@ -190,7 +190,7 @@ enum class MouseButtons
     MOUSE_LAST = MOUSE_BUTTON_MIDDLE,
 };
 
-enum class ButtonAction
+enum class BtnAct
 {
     RELEASE = GLFW_RELEASE,
     PRESS = GLFW_PRESS,
@@ -224,17 +224,17 @@ enum class RJoystickPresent
     JOYSTICK_DISCONNECTED = GLFW_DISCONNECTED
 };
 
-class RInputEvent;
+struct InputEvent;
 
 class RInputModule
 {
-    friend RInputEvent;
+    friend InputEvent;
 
 public:
     struct MouseButtonValue
     {
-        ButtonAction action = ButtonAction::RELEASE;
-        ButtonAction preAction = ButtonAction::RELEASE;
+        BtnAct action = BtnAct::RELEASE;
+        BtnAct preAction = BtnAct::RELEASE;
     };
 
     using KeyValue = MouseButtonValue;
@@ -250,11 +250,11 @@ public:
 
     static RInputModule& instance();
 
-    static ButtonAction toButtonAction(unsigned char action);
-    static ButtonAction toButtonAction(int action);
+    static BtnAct toButtonAction(unsigned char action);
+    static BtnAct toButtonAction(int action);
     static Keys toKey(int key);
     static Modifier toKeyModifier(int mod);
-    static MouseButtons toMouseButtons(int button);
+    static MouseBtn toMouseButtons(int button);
     static JoystickID toJoystickID(int jid);
 
     static const char *gamepadMappingCode0;
@@ -276,7 +276,7 @@ private:
     RInputModule() = default;
 
     std::map<Keys, KeyValue> keyInputs_;
-    std::map<MouseButtons, MouseButtonValue> mouseInputs_;
+    std::map<MouseBtn, MouseButtonValue> mouseInputs_;
     std::vector<GamepadValue> gamepadInputs_;
     std::array<RPoint2, 2> cursorPos_;
 };

@@ -1,5 +1,12 @@
 #include "RWindow.h"
+#include "RController.h"
+#include "RInputModule.h"
+#include "REvent.h"
 #include "RDebug.h"
+#include "rsc/RCursor.h"
+
+#include <fstream>
+#include <sstream>
 
 using namespace Redopera;
 
@@ -18,10 +25,27 @@ void RWindow::setDefaultWindowFormat(const Format &format)
     windowFormat = format;
 }
 
-bool RWindow::updateGamepadMappings(const std::string &path)
+bool RWindow::updateGamepadMappings(std::string path)
 {
-    std::string mappingCode = RResource::getTextFileContent(path);
-    if(glfwUpdateGamepadMappings(mappingCode.c_str()) == GLFW_FALSE)
+    std::string code;
+    RResource::rscpath(path);
+    std::ifstream file;
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        file.open(path);
+        //读取文件缓冲到数据流
+        std::stringstream sstream;
+        sstream << file.rdbuf();
+
+        file.close();
+        code = sstream.str();
+    }
+    catch(...)
+    {
+        code.clear();
+    }
+
+    if(glfwUpdateGamepadMappings(code.c_str()) == GLFW_FALSE)
     {
         prError("Failed to update gamepad mapping! In path: " + path + '\n' +
                    "To https://github.com/gabomdq/SDL_GameControllerDB download gamecontrollerdb.txt file.");
@@ -30,27 +54,28 @@ bool RWindow::updateGamepadMappings(const std::string &path)
         return true;
 }
 
-RWindow::RWindow(RController *parent, const std::string &name):
-    RWindow(windowFormat, parent, name)
+RWindow::RWindow():
+    RWindow(800, 540, "Redopera", windowFormat)
 {
 
 }
 
-RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::string &name):
-    RController(parent, name),
+std::mutex mutex;
+
+RWindow::RWindow(int width, int height, const std::string title, const RWindow::Format &format):
+    ctrl_(std::make_unique<RController>(nullptr, this)),
     format_(format),
     eventPool([]{}),
     window_(nullptr, glfwDestroyWindow),
     vOffset_(0),
     size_(0, 0), // 真正的尺寸在循环时决定
-    resize_(RSize(format.initWidth, format.initHeight)),
+    resize_(RSize(width, height)),
     focused_(false)
 {
-    std::call_once(init, std::bind(initMainWindow, this));
+    if(!context_)
+        throw std::runtime_error("Failed to initialize GLFW");
 
-    // 一个线程窗口只能有一个窗口
-    if(check(RContext::contex != nullptr, "A thread can only have one context!"))
-        exit(EXIT_FAILURE);
+    std::call_once(init, std::bind(initMainWindow, this));
 
     // Debug Context 需要OpenGL4.3以上版本
     if(format_.versionMajor * 10 + format_.versionMinor < 43)
@@ -77,23 +102,27 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
         glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
         glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-        window_.reset(glfwCreateWindow(mode->width, mode->height, name.c_str(), nullptr, format_.shared));
+        window_.reset(glfwCreateWindow(mode->width, mode->height, title.c_str(), nullptr, format_.shared));
     }
     else
-        window_.reset(glfwCreateWindow(format.initWidth, format.initHeight, name.c_str(), nullptr, format_.shared));
+        window_.reset(glfwCreateWindow(width, height, title.c_str(), nullptr, format_.shared));
 
-    if(check(window_ == nullptr, "Fainled to create GLFW window!"))
-        exit(EXIT_FAILURE);
+    if(!window_)
+        throw std::runtime_error("Fainled to create GLFW window");
+
+    {
+    std::lock_guard<std::mutex> guard(mutex);
+    // 一个线程只能有一个窗口
+    if(glfwGetCurrentContext())
+        throw std::runtime_error("A thread can only have one window context");
+    glfwMakeContextCurrent(window_.get());
+    }
 
     //绑定上下文与this指针
     glfwSetWindowUserPointer(window_.get(), this);
-    glfwMakeContextCurrent(window_.get());
 
-    if(check(!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)), "Failed to initialize GLAD"))
-    {
-        terminateTree(Status::Error);
-        exit(EXIT_FAILURE);
-    }
+    if(!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+        throw std::runtime_error("Failed to initialize GLAD");
 
     // 申请到的OpenGL版本
     format_.versionMajor = GLVersion.major;
@@ -102,8 +131,8 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     //若启用 OpenGL Debug
     if(format_.debug && GL_CONTEXT_FLAG_DEBUG_BIT)
     {
-        rDebug << printFormat::green << printFormat::bold << name << ": " << glGetString(GL_VERSION) << printFormat::non;
-        rDebug << printFormat::green << printFormat::bold << "Enable OpenGL debug output" << printFormat::non;
+        rDebug << EscCtl::green << EscCtl::bold << "Window " << title << ": " << glGetString(GL_VERSION)
+        << "\nEnable OpenGL debug output" << EscCtl::non;
         glEnable(GL_DEBUG_OUTPUT);
         glDebugMessageCallback(openglDebugMessageCallback, nullptr);
         //过滤着色器编译成功消息通知
@@ -118,7 +147,7 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //默认背景色
-    RColor color(format_.background);
+    RColor color(format_.background << 8);
     glClearColor(color.r()/255.0f, color.g()/255.0f, color.b()/255.0f, 1.0f);
     //禁用字节对齐限制
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -129,6 +158,9 @@ RWindow::RWindow(const RWindow::Format &format, RController *parent, const std::
     RImage img = RImage::redoperaIcon();
     GLFWimage icon{ img.width(), img.height(), img.data() };
     glfwSetWindowIcon(window_.get(), 1, &icon);
+
+    ctrl_->setCloseFunc([this](CloseEvent &e){ if(e.stop) glfwSetWindowShouldClose(window_.get(), GLFW_FALSE); });
+    ctrl_->setExecFunc(std::bind(&RWindow::exec, this));
 }
 
 void RWindow::setWindowSize(int width, int height)
@@ -192,8 +224,9 @@ void RWindow::setFullScreenWindow(bool b)
         resizeCallback(window_.get(), vidmode->width, vidmode->height);
     }
     else {
-        glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width - format_.initWidth)/2,
-                             (vidmode->height - format_.initHeight)/2, format_.initWidth, format_.initHeight, vidmode->refreshRate);
+        glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width - format_.defaultWidth)/2,
+                             (vidmode->height - format_.defaultHeight)/2, format_.defaultWidth,
+                             format_.defaultHeight, vidmode->refreshRate);
     }
 
 }
@@ -237,10 +270,10 @@ void RWindow::setBackColor(const RColor &color)
     glClearColor(color.r() / 255.0f, color.g() / 255.0f, color.b() / 255.0f, 1.0f);
 }
 
-void RWindow::setBackColor(R_RGBA rgba)
+void RWindow::setBackColor(R_RGB rgb)
 {
-    RColor color(rgba);
-    format_.background = rgba;
+    RColor color(rgb << 8);
+    format_.background = rgb;
     glClearColor(color.r() / 255.0f, color.g() / 255.0f, color.b() / 255.0f, 1.0f);
 }
 
@@ -333,6 +366,16 @@ bool RWindow::isFullScreen() const
     return format_.fullScreen;
 }
 
+RController *RWindow::ctrl()
+{
+    return ctrl_.get();
+}
+
+const RController *RWindow::ctrl() const
+{
+    return ctrl_.get();
+}
+
 void RWindow::closeWindow()
 {
     glfwSetWindowShouldClose(window_.get(), GLFW_TRUE);
@@ -359,23 +402,21 @@ void RWindow::hide()
 
 int RWindow::exec()
 {
-    assert(!isLooping());
-
     // 主窗口关闭时所有窗口都会得到通知
     if(mainWindow != this)
-       mainWindow->closed.connect(this, &RController::breakLoop);
+       mainWindow->ctrl_->closed.connect(ctrl_.get(), &RController::breakLoop);
 
     // Windows下若初始全屏则无法获取初始焦点，所以统一在此全屏
     if(format_.fullScreen)
         setFullScreenWindow();
 
-    RStartEvent sEvent(this);
-    dispatchEvent(sEvent);
+    StartEvent sEvent(ctrl_.get());
+    ctrl_->dispatchEvent(sEvent);
 
     // 防止全屏焦点丢失
     if(!focused_) glfwFocusWindow(window_.get());
 
-    while(loopingCheck() == Status::Looping)
+    while(ctrl_->loopingCheck() == RController::Status::Looping)
     {
         eventPool(); // GLFW更新事件
 
@@ -420,83 +461,57 @@ int RWindow::exec()
                 }
                 case Viewport::Fix:
                 {
-                    glViewport((size.width() - size_.width()) / 2.0, (size.height() - size_.height()) / 2.0, size_.width(), size_.height());
+                    glViewport((size.width() - size_.width()) / 2.0, (size.height() - size_.height()) / 2.0,
+                               size_.width(), size_.height());
                     vOffset_.set((size.width() - size_.width()) / 2.0, (size.height() - size_.height()) / 2.0);
                     break;
                 }
                 }
 
                 // 传递Translation info
-                TranslationInfo info = { this, { size_.width(), size_.height() } };
-                translation(info);
+                ctrl_->translation({ ctrl_.get(), { size_.width(), size_.height() } });
             }
         }
 
-        if(focused_) //更新输入
+        if(focused_) // 更新输入
         {
-            //更新手柄输入
+            // 更新手柄输入
             RInputModule::instance().updateGamepad();
-            //更新键鼠输入
+            // 更新键鼠输入
             RInputModule::instance().updateKeyboardInput(window_.get());
             RInputModule::instance().updateMouseInput(window_.get());
-            //光标位置
+            // 光标位置
             double xpos, ypos;
             glfwGetCursorPos(window_.get(), &xpos, &ypos);
             RInputModule::instance().updateCursorPos(static_cast<int>(xpos) - vOffset_.x(),
                                                      static_cast<int>(ypos) - vOffset_.y());
-            //发布输入事件
-            RInputEvent e(this);
-            dispatchEvent(e);
+            // 传递输入
+            InputEvent input(ctrl_.get());
+            ctrl_->dispatchEvent(input);
         }
 
-        //清屏 清除颜色缓冲和深度缓冲
+        // 清屏 清除颜色缓冲和深度缓冲
         glClear(clearMask);
 
-        activeOnce();
+        ctrl_->activeOnce();
+
+        if(glfwWindowShouldClose(window_.get()))
+            ctrl_->breakLoop();
 
         glfwSwapBuffers(window_.get());
     }
 
-    RFinishEvent fEvent(this);
-    dispatchEvent(fEvent);
-    closed.emit();
+    FinishEvent fEvent(ctrl_.get());
+    ctrl_->dispatchEvent(fEvent);
+    ctrl_->closed.emit();
 
-    if(check(status() == Status::Error, "The Loop has unexpectedly finished"))
+    if(check(ctrl_->status() == RController::Status::Error, "The Loop has unexpectedly finished"))
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
 }
 
-void RWindow::translation(const RController::TranslationInfo &info)
-{
-    // RWindow不会转递上层发送的变换信息
-    if(info.sender == this)
-        RController::translation(info);
-}
-
-RController::Status RWindow::loopingCheck()
-{
-    if(status() == Status::Finished || isShouldCloused())
-    {
-        RCloseEvent e(this);
-        dispatchEvent(e);
-        if(e.stop)
-        {
-            setStatus(Status::Looping);
-            glfwSetWindowShouldClose(window_.get(), GLFW_FALSE);
-        }
-    }
-
-    return status();
-}
-
 void RWindow::initMainWindow(RWindow *window)
 {
-    // glfw错误回调
-    glfwSetErrorCallback(glfwErrorCallback);
-    // 初始化GLFW
-    if(check(!RContext::initialization(), "Failed to initialize GLFW"))
-        exit(EXIT_FAILURE);
-
     // 加载手柄映射
     std::string mappingCode = std::string() + RInputModule::gamepadMappingCode0
             + RInputModule::gamepadMappingCode1 + RInputModule::gamepadMappingCode2;
@@ -515,11 +530,6 @@ void RWindow::initMainWindow(RWindow *window)
     // GLFW事件触发
     window->eventPool = &glfwPollEvents;
     mainWindow = window;
-}
-
-void RWindow::glfwErrorCallback(int error, const char *description)
-{
-    prError("Error " + std::to_string(error) + ": " + description);
 }
 
 void RWindow::openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei , const GLchar *message, const void *)
@@ -545,43 +555,42 @@ void RWindow::openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, 
     switch (type)
     {
     case GL_DEBUG_TYPE_ERROR:
-        typeStr = "-Error"; break;
+        typeStr = "Error"; break;
     case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        typeStr = "-Deprecated Behaviour"; break;
+        typeStr = "Deprecated Behaviour"; break;
     case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        typeStr = "-Undefined Behaviour"; break;
+        typeStr = "Undefined Behaviour"; break;
     case GL_DEBUG_TYPE_PORTABILITY:
-        typeStr = "-Portability"; break;
+        typeStr = "Portability"; break;
     case GL_DEBUG_TYPE_PERFORMANCE:
-        typeStr = "-Performance"; break;
+        typeStr = "Performance"; break;
     case GL_DEBUG_TYPE_MARKER:
-        typeStr = "-Marker"; break;
+        typeStr = "Marker"; break;
     case GL_DEBUG_TYPE_PUSH_GROUP:
-        typeStr = "-Push Group"; break;
+        typeStr = "Push Group"; break;
     case GL_DEBUG_TYPE_POP_GROUP:
-        typeStr = "-Pop Group"; break;
+        typeStr = "Pop Group"; break;
     case GL_DEBUG_TYPE_OTHER:
-        typeStr = "-Other"; break;
+        typeStr = "Other"; break;
     }
 
     switch (severity)
     {
     case GL_DEBUG_SEVERITY_HIGH:
-        std::cerr << '(' << id << ')' << sourceStr << typeStr << "-high " << ">> "
-                  << message << std::endl;
-        terminateTree(Status::Error);
+        fprintf(stderr, "(%d)%s-%s-high: %s\n", id, sourceStr.c_str(), typeStr.c_str(), message);
+        RController::terminateTree(RController::Status::Error);
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
-        std::cout << printFormat::red << '(' << id << ')' << sourceStr << typeStr << "-medium "
-                  << ">> " << message << printFormat::non << std::endl;
+        rDebug << EscCtl::yellow << EscCtl::bold << '(' << id << ')' << sourceStr << typeStr << "-medium: "
+               << message << EscCtl::non;
         break;
     case GL_DEBUG_SEVERITY_LOW:
-        std::cout << printFormat::yellow << printFormat::bold << '(' << id << ')' << sourceStr << typeStr << "-low "
-                  << ">> " << message << printFormat::non << std::endl;
+        rDebug << EscCtl::yellow << EscCtl::bold << '(' << id << ')' << sourceStr << typeStr << "-low "
+               << message << EscCtl::non;
         break;
     case GL_DEBUG_SEVERITY_NOTIFICATION:
-        std::cout << printFormat::green << printFormat::bold << '(' << id << ')' << sourceStr << typeStr << "-notification "
-                  << ">> " << message << printFormat::non << std::endl;
+        rDebug << EscCtl::green << '(' << id << ')' << sourceStr << typeStr << "-notification "
+               << message << EscCtl::non;
         break;
     }
 }
@@ -606,7 +615,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
 
 void RWindow::keyboardCollback(GLFWwindow *window, int key, int , int action, int mods)
 {
-    getWindowUserCtrl(window)->entered.emit(static_cast<Keys>(key), static_cast<ButtonAction>(action), static_cast<Modifier>(mods));
+    getWindowUserCtrl(window)->entered.emit(static_cast<Keys>(key), static_cast<BtnAct>(action), static_cast<Modifier>(mods));
 }
 
 void RWindow::mouseScrollCallback(GLFWwindow *window, double , double y)
@@ -623,7 +632,7 @@ void RWindow::windowFocusCallback(GLFWwindow *window, int focused)
 void RWindow::windowCloseCallback(GLFWwindow *window)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
-    wctrl->breakLoop();
+    wctrl->ctrl_->breakLoop();
 }
 
 RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)

@@ -2,7 +2,7 @@
 #define RSPRITE_H
 
 #include "RPlane.h"
-#include <vector>
+#include <initializer_list>
 
 namespace Redopera {
 
@@ -10,14 +10,13 @@ class RSprite : public RPlane
 {
 public:
     RSprite() = default;
-    RSprite(int width, int height, int x, int y, int z = 0, const std::vector<RTexture> &texs = {});
-    RSprite(int width, int height, const RPoint &pos, const std::vector<RTexture> &texs = {});
-    RSprite(const RSize &size, const RPoint &pos, const std::vector<RTexture> &texs = {});
-    explicit RSprite(const RRect &rect, int z = 0, const std::vector<RTexture> &texs = {});
-    explicit RSprite(const Format &area, const std::vector<RTexture> &texs = {});
+    RSprite(int width, int height, int x, int y, int z = 0, const RArea::Format &area = RArea::getDefaultArea());
+    RSprite(int width, int height, const RPoint &pos, const RArea::Format &area = RArea::getDefaultArea());
+    RSprite(const RSize &size, const RPoint &pos, const RArea::Format &area = RArea::getDefaultArea());
+    explicit RSprite(const RRect &rect, int z = 0, const RArea::Format &area = RArea::getDefaultArea());
     RSprite(const RSprite &sprite);
     RSprite(const RSprite &&sprite);
-    ~RSprite() override = default;
+    ~RSprite() = default;
 
     size_t frameCount();
     size_t currentIndex();
@@ -29,11 +28,12 @@ public:
     void clear();
     void add(const RTexture &frame);
     void add(const std::vector<RTexture> &texs);
+    void add(std::initializer_list<RTexture> texs);
     void play();
     void stop();
 
 protected:
-    void renderControl(const RShaderProg &shaders, GLuint mLoc) override;
+    void spriteControl(const RShaderProg &shaders, GLuint mLoc);
 
 private:
     std::vector<RTexture> frames_;

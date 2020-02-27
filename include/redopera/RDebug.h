@@ -5,6 +5,13 @@
 
 namespace Redopera {
 
+class RColor;
+class RPoint2;
+class RPoint3;
+class RSize;
+class RRect;
+class RArea;
+
 class RDebug
 {
 public:
@@ -15,8 +22,6 @@ public:
 
     RDebug(const RDebug&) = delete;
     RDebug& operator=(const RDebug&) = delete;
-
-    RDebug& append(const std::string &str);
 
     RDebug& operator<<(int value);
     RDebug& operator<<(long value);
@@ -40,26 +45,36 @@ public:
     RDebug& operator<<(wchar_t *str);
     RDebug& operator<<(const std::wstring &str);
 
+    RDebug& operator<<(const RColor &color);
+    RDebug& operator<<(const RPoint2 &pos);
+    RDebug& operator<<(const RPoint3 &pos);
+    RDebug& operator<<(const RSize &size);
+    RDebug& operator<<(const RRect &rect);
+    RDebug& operator<<(const RArea &area);
+
     template<typename T>
     RDebug& operator<<(T *ptr)
     {
-        index_ += std::snprintf(data_ + index_, DATA_SIZE - index_ - 1, "(add: %p) ", ptr);
+        char str[64];
+        int i = std::snprintf(str, sizeof(str), "(add: %p) ", ptr);
+        str[i] = '\0';
+        buf_ += str;
         return *this;
     }
 
     template<typename T>
     RDebug& operator<<(const T& input)
     {
-        return append(input.toStr());
+        buf_ += toStdString(input);
+        return *this;
     }
 
 private:
     constexpr static unsigned DATA_SIZE = 512;
 
-    RDebug() = default;
+    RDebug();
 
-    char data_[DATA_SIZE];
-    unsigned index_ = 0;
+    std::string buf_;
 };
 
 void prError(const std::string &err);

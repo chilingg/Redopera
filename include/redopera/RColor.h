@@ -5,52 +5,52 @@
 
 namespace Redopera {
 
-using R_ARGB = uint32_t;
+using R_RGBA = uint32_t;
 using R_RGB = uint32_t;
 
 class RColor
 {
 public:
-    explicit RColor(R_ARGB argb = 0xff000000u) noexcept
+    explicit RColor(R_RGBA rgba = 0x000000ffu) noexcept
     {
-        argb_ = argb;
+        rgba_ = rgba;
     }
 
     RColor(unsigned r, unsigned g, unsigned b, unsigned a = 0xffu) noexcept
     {
-        argb_ = b & 0xffu;
-        argb_ |= (0xffu & g) << 8;
-        argb_ |= (0xffu & r) << 16;
-        argb_ |= a << 24;
+        rgba_ = a & 0xffu;
+        rgba_ |= (0xffu & b) << 8;
+        rgba_ |= (0xffu & g) << 16;
+        rgba_ |= r << 24;
     }
 
     bool operator==(const RColor &color)
     {
-        return argb_ == color.argb_;
+        return rgba_ == color.rgba_;
     }
 
     bool operator!=(const RColor &color)
     {
-        return argb_ != color.argb_;
+        return rgba_ != color.rgba_;
     }
 
-    unsigned char a() const { return argb_ >> 24; }
-    unsigned char r() const { return argb_ >> 16 & 0xffu; }
-    unsigned char g() const { return argb_ >> 8 & 0xffu; }
-    unsigned char b() const { return argb_ & 0xffu; }
+    unsigned char r() const { return rgba_ >> 24; }
+    unsigned char g() const { return rgba_ >> 16 & 0xffu; }
+    unsigned char b() const { return rgba_ >> 8 & 0xffu; }
+    unsigned char a() const { return rgba_ & 0xffu; }
 
-    R_ARGB argb() const { return argb_; }
-    R_RGB rgb() const { return argb_ & 0xffffff; }
+    R_RGBA rgba() const { return rgba_; }
+    R_RGB rgb() const { return rgba_ >> 8; }
 
-    void setA(unsigned a) { argb_ = (argb_ & 0xffffff) | a << 24; }
-    void setR(unsigned r) { argb_ = (argb_ & 0xff00ffff) | (0xffu & r) << 16; }
-    void setG(unsigned g) { argb_ = (argb_ & 0xffff00ff) | (0xffu & g) << 8; }
-    void setB(unsigned b) { argb_ = (argb_ & 0xffffff00) | (b & 0xffu); }
-    void setRGBA(R_ARGB argb) { argb_ = argb; }
-    void setRGB(R_RGB rgb) { argb_ &= 0xff000000; argb_ &= rgb; }
+    void setR(unsigned r) { rgba_ = (rgba_ & 0xffffff) | r << 24; }
+    void setG(unsigned g) { rgba_ = (rgba_ & 0xff00ffff) | (0xffu & g) << 16; }
+    void setB(unsigned b) { rgba_ = (rgba_ & 0xffff00ff) | (0xffu & b) << 8; }
+    void setA(unsigned a) { rgba_ = (rgba_ & 0xffffff00) | (a & 0xffu); }
+    void setRGBA(R_RGBA rgba) { rgba_ = rgba; }
+    void setRGB(R_RGB rgb) { rgba_ &= 0x000000ff; rgba_ |= (rgb << 8); }
 
 private:
-    R_ARGB argb_ = 0xff000000u;
+    R_RGBA rgba_ = 0x000000ffu;
 };
 
 } // ns Redopera

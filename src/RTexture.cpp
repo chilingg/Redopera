@@ -1,29 +1,31 @@
 #include "rsc/RTexture.h"
+#include "rsc/RImage.h"
+#include "RSize.h"
 
 using namespace Redopera;
 
-const RTexture::Format RTexture::LinearTex = std::make_shared<RTexture::TexFormat>(TexFormat{ Filter::Linear, Filter::Nearest });
-const RTexture::Format RTexture::NearestTex = std::make_shared<RTexture::TexFormat>(TexFormat{ Filter::Nearest, Filter::Nearest });
-const RTexture::Format RTexture::SingleTex = std::make_shared<RTexture::TexFormat>(TexFormat{ Filter::Linear, Filter::Nearest, 1 });;
+const RTexture::Format RTexture::Linear4 { { Filter::Linear, Filter::Nearest }, 4 };
+const RTexture::Format RTexture::Linear3 { { Filter::Linear, Filter::Nearest }, 3 };
+const RTexture::Format RTexture::Nearest4 { { Filter::Nearest, Filter::Nearest }, 4 };
+const RTexture::Format RTexture::Nearest3 { { Filter::Nearest, Filter::Nearest }, 3 };
+const RTexture::Format RTexture::SingleL { { Filter::Linear, Filter::Nearest }, 1 };
+const RTexture::Format RTexture::SingleN { { Filter::Nearest, Filter::Nearest }, 1 };
 
-RTexture::Format RTexture::textureFormat = makeTexFormat();
+RTexture::Format RTexture::textureFormat;
 
-const RTexture &RTexture::whiteTex()
+RTexture RTexture::whiteTex()
 {
-    thread_local static const RTexture WHITE_TEX(reinterpret_cast<const RData*>("\xff\xff\xff\xff"), 1, 1, 4, "WhiteTex", RTexture::NearestTex);
-    return WHITE_TEX;
+    return { reinterpret_cast<const RData*>("\xff\xff\xff"), 1, 1, 3, RTexture::Nearest3 };
 }
 
-const RTexture &RTexture::blackTex()
+RTexture RTexture::blackTex()
 {
-    thread_local static const RTexture BLACK_TEX(reinterpret_cast<const RData*>("\x0\x0\x0\xff"), 1, 1, 4, "BlackTex", RTexture::NearestTex);
-    return BLACK_TEX;
+    return { reinterpret_cast<const RData*>("\x0\x0\x0"), 1, 1, 3, RTexture::Nearest3 };
 }
 
-const RTexture &RTexture::transTex()
+RTexture RTexture::transTex()
 {
-    thread_local static const RTexture TRANS_TEX(reinterpret_cast<const RData*>("\x0\x0\x0\x0"), 1, 1, 4, "TransTex", RTexture::NearestTex);
-    return TRANS_TEX;
+    return { reinterpret_cast<const RData*>("\x0\x0\x0\x0"), 1, 1, 4, RTexture::Nearest4 };
 }
 
 void RTexture::setDefaultTextureFomat(const RTexture::Format &format)
@@ -31,42 +33,27 @@ void RTexture::setDefaultTextureFomat(const RTexture::Format &format)
     textureFormat = format;
 }
 
-RTexture::Format RTexture::makeTexFormat()
-{
-    return std::make_shared<RTexture::TexFormat>();
-}
-
 void RTexture::unbindTexture()
 {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-RTexture::RTexture():
-    RResource("Texture", Type::Texture)
-{
-
-}
-
-RTexture::RTexture(const std::string &path, const std::string &name, const RTexture::Format &format):
-    RResource(name, Type::Texture)
+RTexture::RTexture(const std::string &path, const RTexture::Format &format)
 {
     load(path, format);
 }
 
-RTexture::RTexture(const RImage &img, const std::string &name, const RTexture::Format &format):
-    RResource(name, Type::Texture)
+RTexture::RTexture(const RImage &img, const RTexture::Format &format)
 {
     load(img, format);
 }
 
-RTexture::RTexture(const RData *data, int width, int height, int channel, const std::string &name, const RTexture::Format &format):
-    RResource(name, Type::Texture)
+RTexture::RTexture(const RData *data, int width, int height, int channel, const RTexture::Format &format)
 {
     load(data, width, height, channel, format);
 }
 
 RTexture::RTexture(const RTexture &tex):
-    RResource(tex),
     textureID_(tex.textureID_),
     format_(tex.format_),
     width_(tex.width_),
@@ -76,7 +63,6 @@ RTexture::RTexture(const RTexture &tex):
 }
 
 RTexture::RTexture(const RTexture &&tex):
-    RResource(std::move(tex)),
     textureID_(std::move(tex.textureID_)),
     format_(std::move(tex.format_)),
     width_(tex.width_),
@@ -93,9 +79,8 @@ RTexture &RTexture::operator=(RTexture tex)
 
 void RTexture::swap(RTexture &tex)
 {
-    RResource::swap(tex);
     textureID_.swap(tex.textureID_);
-    format_.swap(tex.format_);
+    format_ = tex.format_;
 }
 
 bool RTexture::isValid() const
@@ -131,8 +116,6 @@ void RTexture::bind(unsigned unit) const
 
 bool RTexture::load(const RData *data, int width, int height, int echannel, const RTexture::Format &format)
 {
-    if(!textureID_.unique() && textureID_ != nullptr)
-        resetRscID();
     GLuint id;
     glGenTextures(1, &id);
     textureID_.reset(new GLuint(id), deleteTexture);
@@ -153,7 +136,7 @@ bool RTexture::load(const RData *data, int width, int height, int echannel, cons
     }
 
     inFormat iformat;
-    switch(format->inChannel)
+    switch(format.inChannel)
     {
     case 4:
         iformat = inFormat::RGBA8; break;
@@ -164,15 +147,15 @@ bool RTexture::load(const RData *data, int width, int height, int echannel, cons
     case 1:
         iformat = inFormat::R8; break;
     default:
-        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format->inChannel));
+        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format.inChannel));
     }
 
     glBindTexture(GL_TEXTURE_2D, *textureID_);
-    glTexParameterIuiv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, format->edgeColor.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, static_cast<GLint>(format->wrapS));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, static_cast<GLint>(format->wrapT));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<GLint>(format->filterMin));
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, static_cast<GLint>(format->filterMax));
+    glTexParameterIuiv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, format.edgeColor.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, static_cast<GLint>(format.wrap.s));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, static_cast<GLint>(format.wrap.t));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<GLint>(format.filter.min));
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, static_cast<GLint>(format.filter.max));
 
     glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(iformat), width, height, 0, static_cast<GLenum>(eformat), GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -196,11 +179,11 @@ bool RTexture::load(const std::string &path, const RTexture::Format &format)
 void RTexture::reload(const RData *data)
 {
     if(!textureID_.unique())
-        load(data, width_, height_, format_->inChannel, format_);
+        load(data, width_, height_, format_.inChannel, format_);
 
     ExtFormat eformat;
     inFormat iformat;
-    switch(format_->inChannel)
+    switch(format_.inChannel)
     {
     case 4:
         eformat = ExtFormat::RGBA;
@@ -215,11 +198,12 @@ void RTexture::reload(const RData *data)
         eformat = ExtFormat::RED;
         iformat = inFormat::R8; break;
     default:
-        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format_->inChannel));
+        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format_.inChannel));
     }
 
     glBindTexture(GL_TEXTURE_2D, *textureID_);
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(iformat), width_, height_, 0, static_cast<GLenum>(eformat), GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(iformat), width_, height_, 0,
+                 static_cast<GLenum>(eformat), GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

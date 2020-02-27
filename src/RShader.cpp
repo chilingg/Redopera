@@ -1,5 +1,9 @@
 #include "rsc/RShader.h"
 #include "RDebug.h"
+#include "ROpenGL.h"
+
+#include <fstream>
+#include <sstream>
 
 using namespace Redopera;
 
@@ -30,20 +34,12 @@ const std::string &RShader::shaderTypeName(Type type)
     return compute;
 }
 
-RShader::RShader():
-    RResource("Shader", RResource::Type::Shader)
-{
-
-}
-
-RShader::RShader(const std::string &shader, Type type, const std::string &name):
-    RResource(name, RResource::Type::Shader)
+RShader::RShader(const std::string &shader, Type type)
 {
     load(shader, type);
 }
 
 RShader::RShader(const RShader &shader):
-    RResource(shader),
     shaderID_(shader.shaderID_),
     type_(shader.type_)
 {
@@ -51,7 +47,6 @@ RShader::RShader(const RShader &shader):
 }
 
 RShader::RShader(const RShader &&shader):
-    RResource(std::move(shader)),
     shaderID_(std::move(shader.shaderID_)),
     type_(shader.type_)
 {
@@ -66,7 +61,6 @@ RShader &RShader::operator=(RShader shader)
 
 void RShader::swap(RShader &shader)
 {
-    RResource::swap(shader);
     shaderID_.swap(shader.shaderID_);
     using std::swap;
     swap(type_, shader.type_);
@@ -94,7 +88,26 @@ GLuint RShader::shaderID() const
 
 bool RShader::load(const std::string &shader, Type type)
 {
-    std::string code = getTextFileContent(shader);
+    std::string code;
+
+    std::string path = shader;
+    RResource::rscpath(path);
+    std::ifstream file;
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        file.open(path);
+        //读取文件缓冲到数据流
+        std::stringstream sstream;
+        sstream << file.rdbuf();
+
+        file.close();
+        code = sstream.str();
+    }
+    catch(...)
+    {
+        code.clear();
+    }
+
     if(code.empty())
         code = shader;
 
@@ -105,7 +118,7 @@ bool RShader::load(const std::string &shader, Type type)
 
     int success;
     glGetShaderiv(*id, GL_COMPILE_STATUS, &success);
-    if(check(!success, "Failed to load " + shaderTypeName(type) + '<' + name() + "> in:\n" + shader))
+    if(check(!success, "Failed to load " + shaderTypeName(type) + " in:\n" + shader))
     {
         char infoLog[256];
         glGetShaderInfoLog(*id, sizeof(infoLog), nullptr, infoLog);
@@ -114,8 +127,6 @@ bool RShader::load(const std::string &shader, Type type)
     }
 
     type_ = type;
-    if(!shaderID_.unique())
-        resetRscID();
     shaderID_.swap(id);
     return true;
 }

@@ -6073,8 +6073,7 @@ const RData data[] = {
         0x5d,0xbf,0xa6,0xaf,
 };
 
-const RFont& RFont::sourceCodePro()
+RFont RFont::sourceCodePro()
 {
-    static RFont font(data, FILE_SIZE, "SourceCodePro-Font");
-    return font;
+    return RFont(data, FILE_SIZE);
 }

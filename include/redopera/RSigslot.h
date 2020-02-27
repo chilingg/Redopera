@@ -12,30 +12,27 @@ class RSlot
 {
 public:
     RSlot(size_t typeHash):
-        sloterTypeHash(typeHash),
-        slotFlag(std::make_shared<bool>(true))
+        typeHash(typeHash),
+        flag(std::make_shared<bool>(true))
     {}
 
-    RSlot(RSlot &slot):
-        sloterTypeHash(slot.sloterTypeHash),
-        slotFlag(std::make_shared<bool>(true))
-    {}
+    RSlot(RSlot &slot) = delete;
 
-    RSlot& operator=(RSlot &) { return *this; }
+    RSlot& operator=(RSlot &) = delete;
 
     ~RSlot()
     {
-        while(!slotFlag.unique())
+        while(!flag.unique())
             ; // 等待所有槽函数执行完毕才会销毁RSlot，若一直有槽函数执行则死循
-        slotFlag.reset();
+        flag.reset();
     }
 
-    std::weak_ptr<bool> clone() const { return std::weak_ptr<bool>(slotFlag); }
+    std::weak_ptr<bool> clone() const { return std::weak_ptr<bool>(flag); }
 
-    const size_t sloterTypeHash; // 拥有RSlot的类的指针的类型哈希值，用于在connect中确定该类有自己的RSlot而不是继承而来的
+    const size_t typeHash; // 拥有RSlot的类的指针的类型哈希值，用于在connect中确定该类有自己的RSlot而不是继承而来的
 
 private:
-    std::shared_ptr<bool> slotFlag; // 存活标志
+    std::shared_ptr<bool> flag; // 存活标志
 };
 
 // 在需要使用槽函数的类声明尾部展开宏 _RSLOT_TAIL_
@@ -46,8 +43,9 @@ class RSignal
 {
 public:
     RSignal() = default;
-    RSignal(RSignal &&sig): mutex_(std::move(sig.mutex_)), slots_(std::move(sig.slots_)) {}
-    RSignal& operator=(RSignal &&sig) { mutex_ = std::move(sig.mutex_); slots_ = std::move(sig.slots_); };
+
+    RSignal(RSignal &) = delete;
+    RSignal& operator=(RSignal &) = delete ;
 
     void operator()(Args ... args)
     {
@@ -72,7 +70,7 @@ public:
     void connect(Sloter *sloter, void (Sloter2::*slot)(Args ... args))
     {
         // 使用槽函数的类需要在声明尾部展开宏_RSLOT_TAIL_
-        if(typeid(Sloter*).hash_code() != sloter->__RSLOT__.sloterTypeHash)
+        if(typeid(Sloter*).hash_code() != sloter->__RSLOT__.typeHash)
             throw std::logic_error(std::string(typeid(Sloter).name())
                                    + ": Using slot functions need to expand the macro _RSLOT_TAIL_ at the tail of the declaration");
 
@@ -112,6 +110,8 @@ private:
     std::mutex mutex_;
     std::unordered_multimap<void*, std::function<bool(Args ... args)>> slots_;
 };
+
+extern template class RSignal<>;
 
 } // Redopera
 

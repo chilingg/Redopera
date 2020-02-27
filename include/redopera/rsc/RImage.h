@@ -2,24 +2,24 @@
 #define RIMAGE_H
 
 #include "RResource.h"
-#include "../RColor.h"
-#include "../RSize.h"
-#include "../dependents/stb_image.h"
+#include <memory>
 
 namespace Redopera {
 
-class RImage : public RResource
+class RSize;
+class RColor;
+
+class RImage
 {
     friend void swap(RImage &img1, RImage &img2);
 
 public:
     static const RImage& redoperaIcon();
 
-    RImage();
-    explicit RImage(const std::string &path, const std::string &name = "Image", bool flip = false);
-    RImage(const RData *data, size_t size, const std::string &name = "Image", bool flip = false);
-    RImage(const RData *data, int width, int height, int channel, const std::string &name = "Image");
-    RImage(std::shared_ptr<RData> data, int width, int height, int channel, const std::string &name = "Image");
+    RImage() = default;
+    explicit RImage(const std::string &path, bool flip = false);
+    RImage(const RData *data, size_t size, bool flip = false);
+    RImage(const RData *data, int width, int height, int channel);
     RImage(const RImage &img);
     RImage(const RImage &&img);
     RImage& operator=(RImage img);
@@ -33,20 +33,19 @@ public:
     int channel() const;
     RData* data() const;
 
-    bool load(const std::string path, bool flip = false);
+    bool load(std::string path, bool flip = false);
     bool load(const RData *buf, size_t size, bool flip = false);
     bool load(const RData *data, int width, int height, int channel);
-    bool load(std::shared_ptr<RData> data, int width, int height, int channel);
-    void flipVertical();
-    void flipHorizontal();
-    void full(const RColor &color);
+    void flipV();
+    void flipH();
+    void rotate90();
+    void full(RData r, RData g = 0, RData b = 0, RData a = 0);
     void release();
-
-protected:
-    void copyOnWrite();
 
 private:
     static const RData REDOPERA_ICON[];
+
+    void copyOnWrite();
 
     std::shared_ptr<RData> data_;
     int width_ = 0;

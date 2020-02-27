@@ -8,21 +8,21 @@ RInputModule &RInputModule::instance()
     return inputRegister;
 }
 
-ButtonAction RInputModule::toButtonAction(unsigned char action)
+BtnAct RInputModule::toButtonAction(unsigned char action)
 {
     return toButtonAction(static_cast<int>(action));
 }
 
-ButtonAction RInputModule::toButtonAction(int action)
+BtnAct RInputModule::toButtonAction(int action)
 {
     switch(action)
     {
     case GLFW_RELEASE:
-        return ButtonAction::RELEASE;
+        return BtnAct::RELEASE;
     case GLFW_PRESS:
-        return ButtonAction::PRESS;
+        return BtnAct::PRESS;
     case GLFW_REPEAT:
-        return ButtonAction::REPEAT;
+        return BtnAct::REPEAT;
     default:
         throw std::invalid_argument("Invalid value: " + std::to_string(action) + " to Enum ButtonAction!");
     }
@@ -302,16 +302,16 @@ Modifier RInputModule::toKeyModifier(int mod)
     }
 }
 
-MouseButtons RInputModule::toMouseButtons(int button)
+MouseBtn RInputModule::toMouseButtons(int button)
 {
     switch(button)
     {
     case GLFW_MOUSE_BUTTON_LEFT:
-        return MouseButtons::MOUSE_BUTTON_LEFT;
+        return MouseBtn::MOUSE_BUTTON_LEFT;
     case GLFW_MOUSE_BUTTON_RIGHT:
-        return MouseButtons::MOUSE_BUTTON_RIGHT;
+        return MouseBtn::MOUSE_BUTTON_RIGHT;
     case GLFW_MOUSE_BUTTON_MIDDLE:
-        return MouseButtons::MOUSE_BUTTON_MIDDLE;
+        return MouseBtn::MOUSE_BUTTON_MIDDLE;
     default:
         throw std::invalid_argument("Invalid value: " + std::to_string(button) + " to Enum MouseButtons!");
     }

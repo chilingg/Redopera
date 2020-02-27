@@ -3,19 +3,15 @@
 
 #include "RArea.h"
 #include "RColor.h"
-#include "RMath.h"
 #include "rsc/RFont.h"
 #include "rsc/RTexture.h"
 #include "rsc/RShaderProg.h"
-
-#include <codecvt>
-#include <locale>
 
 namespace Redopera {
 
 // 使用utf-8编码保存字符串
 
-class RTextsbxo : public RArea
+class RTextsbox : public RArea
 {
 public:
     enum class Typeset
@@ -30,54 +26,48 @@ public:
         float wSpacing = 1.0f;
         float spacing = 0.6f;   // 空格
         Typeset typeset = Typeset::Horizontal;
-        glm::vec3 color = { 1.f, 1.f, 1.f };
+        glm::vec3 fcolor = { 1.f, 1.f, 1.f };
         RFont font;
-        struct { float x, y;
-               } pixScale { 1.0f, 1.0f };
-        bool ellipsis = true;   //若不能显示所有字符，在末尾添加一个5x5方框
+        struct {
+            float x, y;
+        } pixScale { 1.0f, 1.0f };
+        bool ellipsis = true;   // 若不能显示所有字符，在末尾添加一个5x5方框
     };
 
     struct RenderTool
     {
-        RShaderProg &shaders;
-        GLuint &modelLoc;
-        GLuint &colorLoc;
-        GLuint &textLoc;
-        GLuint &edgingLoc;
+        RShaderProg shaders;
+        GLuint vao;
+        GLuint edgingVAO;
+        GLint modelLoc;
+        GLint edgingLoc;
+        GLint colorLoc;
+        GLint textLoc;
+        GLuint vbo;
+        GLuint edgingVBO;
+        RTexture defaultBack;
     };
 
-    static const RenderTool& textboxRenderTool();
-    static void setTextBoxShadersAsThread(const RShaderProg &shaders, GLuint modelLoc, GLuint edgingLoc = -1);
-    static const RShaderProg& textboxShader();
+    static void setDefaultFontFmt(Format fmt);
+    static const Format& getDefaultFontFmt();
 
-    static std::wstring_convert<std::codecvt_utf8<wchar_t>> strcnv;
+    static const std::shared_ptr<RenderTool> renderTool();
 
-    RTextsbxo();
+    RTextsbox();
 
-    RTextsbxo(const std::wstring &text, int width, int height, int x, int y, int z = 0);
-    RTextsbxo(const std::string &text, int width, int height, int x, int y, int z = 0);
+    RTextsbox(const std::wstring &text, int width, int height, int x, int y, int z = 0, const RArea::Format &area = RArea::getDefaultArea());
+    RTextsbox(const std::wstring &text, int width, int height, const RPoint &pos, const RArea::Format &area = RArea::getDefaultArea());
+    RTextsbox(const std::wstring &text, const RSize &size, const RPoint &pos, const RArea::Format &area = RArea::getDefaultArea());
+    RTextsbox(const std::wstring &text, const RRect &rect, int z = 0, const RArea::Format &area = RArea::getDefaultArea());
+    RTextsbox(const RTextsbox &box);
+    RTextsbox(RTextsbox &&box);
 
-    RTextsbxo(const std::wstring &text, int width, int height, const RPoint &pos);
-    RTextsbxo(const std::string &text, int width, int height, const RPoint &pos);
+    RTextsbox& operator=(const RTextsbox &box);
+    RTextsbox& operator=(const RTextsbox &&box);
 
-    RTextsbxo(const std::wstring &text, const RSize &size, const RPoint &pos);
-    RTextsbxo(const std::string &text, const RSize &size, const RPoint &pos);
+    ~RTextsbox() = default;
 
-    RTextsbxo(const std::wstring &text, const RRect &rect, int z = 0);
-    RTextsbxo(const std::string &text, const RRect &rect, int z = 0);
-
-    RTextsbxo(const std::wstring &text, const RArea::Format &area);
-    RTextsbxo(const std::string &text, const RArea::Format &area);
-
-    RTextsbxo(const RTextsbxo &box);
-    RTextsbxo(RTextsbxo &&box);
-
-    RTextsbxo& operator=(const RTextsbxo &box);
-
-    RTextsbxo& operator=(const RTextsbxo &&box);
-
-    ~RTextsbxo() override = default;
-
+    const RShaderProg& textsShader();
     Typeset typeset() const;
     RColor fontColor() const;
     const RFont& font() const;
@@ -89,7 +79,7 @@ public:
     const RTexture& textTexture() const;
     bool isSeting() const;
 
-    void setFontColor(R_RGBA rgba);
+    void setFontColor(R_RGB rgb);
     void setFontColor(const RColor &color);
     void setFontColor(unsigned r, unsigned g, unsigned b);
 
@@ -98,7 +88,6 @@ public:
     void setBackColor(unsigned r, unsigned g, unsigned b, unsigned a = 255u);
 
     void setTexts(std::wstring texts);
-    void setTexts(std::string texts);
     void setFontSize(unsigned size);
     void setFont(RFont font);
     void setlineSpacing(float value);
@@ -107,7 +96,6 @@ public:
     void setTextFormat(Format format);
     void setEllipsis(bool b);
     void setTexture(const RTexture &tex);
-    void setTextureName(const std::string &name);
     void setPixScale(float x, float y);
 
     void verticalTypeset();
@@ -126,23 +114,26 @@ public:
     void edgingAll(const RShaderProg &shaders, GLuint mLoc);
 
 private:
-    thread_local static RShaderProg tTextShaders;
-    thread_local static GLuint MODEL_LOC;
-    thread_local static GLuint COLOR_LOC;
-    thread_local static GLuint TEXT_LOC;
-    thread_local static GLuint EDGING_LOC;
+    static Format fontFmt;
+    thread_local static std::weak_ptr<RenderTool> tRenderTool;
+
+    struct Vertexs { GLuint ao1, ao2, bo1, bo2; };
 
     void verticalTextToTexture();
     void horizontalTextToTexture();
 
+    static Vertexs createVaertexObject();
+    static RenderTool createRenderTool();
+
+    std::shared_ptr<RenderTool> renderTool_;
     RTexture backTex_;
-    RTexture textTex_;
     std::wstring texts_;
+    std::array<glm::mat4, 2> model_;
     Format format_;
 
-    std::array<glm::mat4, 2> model_;
+    RTexture textTex_;
     bool resetting_ = true;
-    void (RTextsbxo::*typesetting)() = &RTextsbxo::horizontalTextToTexture;
+    void (RTextsbox::*typesetting)() = &RTextsbox::horizontalTextToTexture;
 };
 
 } // Redopera

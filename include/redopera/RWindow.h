@@ -1,15 +1,25 @@
 #ifndef RWINDOW_H
 #define RWINDOW_H
 
-#include "RController.h"
 #include "RContext.h"
-#include "rsc/RCursor.h"
+#include "RColor.h"
+#include "RSize.h"
+#include "RPoint.h"
+#include "RSigslot.h"
 
 #include <atomic>
 
 namespace Redopera {
 
-class RWindow : public RController
+class RCursor;
+class RImage;
+class RController;
+
+enum class Keys;
+enum class BtnAct;
+enum class Modifier;
+
+class RWindow
 {
 public:
     enum class Viewport
@@ -33,9 +43,9 @@ public:
         bool keysSigal      = false;    // 键盘响应信号(entered)
         bool fullScreen     = false;    // 全屏
         Viewport viewport   = Viewport::Full;  // 视口模式
-        R_RGBA background   = 0x121212; // 背景色
-        int initWidth       = 800;      // 初始窗口大小
-        int initHeight      = 540;      // 初始窗口大小
+        R_RGB background   = 0x121212;  // 背景色
+        int defaultWidth       = 800;   // 初始窗口大小
+        int defaultHeight      = 540;   // 初始窗口大小
         double vRatio_      = 16.0/9.0; // 视口比例 (Scale 模式)
         CursorMode cMode    = CursorMode::Normal;
     };
@@ -45,13 +55,14 @@ public:
     static RWindow* getMainWindow();
 
     static void setDefaultWindowFormat(const Format &format);
-    static bool updateGamepadMappings(const std::string &path);
+    static bool updateGamepadMappings(std::string path);
 
-    explicit RWindow(RController *parent = nullptr, const std::string &name = defaultName());
-    explicit RWindow(const Format &format, RController *parent = nullptr, const std::string &name = defaultName());
-    ~RWindow() override = default;
+    explicit RWindow();
+    explicit RWindow(int width, int height, const std::string title = "Redopera", const Format &format = windowFormat);
+    ~RWindow() = default;
 
-    void translation(const TranslationInfo &info) override;
+    RWindow(RWindow &) = delete;
+    RWindow& operator=(RWindow &) = delete;
 
     void setWindowSize(int width, int height);
     void setWindowMinimumSize(int minW, int minH);
@@ -72,7 +83,7 @@ public:
 
     void setBackColor(unsigned r, unsigned g, unsigned b);
     void setBackColor(const RColor &color);
-    void setBackColor(R_RGBA rgba);
+    void setBackColor(R_RGB rgb);
 
     void setViewportSize(int width, int height);
     void setViewportRatio(double ratio);
@@ -92,6 +103,8 @@ public:
     bool isFocus() const;
     bool isShouldCloused() const;
     bool isFullScreen() const;
+    RController* ctrl();
+    const RController* ctrl() const;
 
     void closeWindow();
     // 调用showWindow()之后才会连接回调
@@ -99,16 +112,11 @@ public:
     void hide();
     int exec();
 
-    RSignal<Keys, ButtonAction, Modifier> entered;
+    RSignal<Keys, BtnAct, Modifier> entered;
     RSignal<int> rolled;
-
-protected:
-    Status loopingCheck();
 
 private:
     static void initMainWindow(RWindow *window);
-    // GLFW错误回调
-    static void glfwErrorCallback(int error, const char* description);
     // OpenGL Debug信息
     static void openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
                                            GLsizei length, const GLchar *message, const void *userParam);
@@ -132,6 +140,8 @@ private:
     static std::once_flag init;
     static RWindow* mainWindow;
 
+    RContext context_;
+    std::unique_ptr<RController> ctrl_;
     Format format_;
     std::function<void()> eventPool; //主线程中为glfwPoolEvent，其余线程中为空
     std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> window_;

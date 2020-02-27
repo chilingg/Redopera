@@ -9,20 +9,16 @@ template <typename T>
 class RKeeper
 {
 public:
-    RKeeper(const T &value, const std::function<void(T)> &func):
+    RKeeper(T value, std::function<void(T)> func):
         free_(func),
-        value_(value) {}
-
-    RKeeper(T &&value, const std::function<void(T)> &func):
-        free_(func),
-        value_(std::move(value)) {}
+        value_(std::forward<T>(value)) {}
 
     RKeeper(const RKeeper &keeper) = delete;
     RKeeper& operator=(const RKeeper &keeper) = delete;
 
     RKeeper(RKeeper &&keeper):
         free_(std::move(keeper.free_)),
-        value_(std::move(keeper.value_))
+        value_(std::forward<T>(keeper.value_))
     { keeper.free_ = std::function<void(T)>(); }
 
     RKeeper& operator=(RKeeper &&keeper)

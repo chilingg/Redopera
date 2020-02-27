@@ -13,8 +13,9 @@ int main()
 
     char c;
     do {
-        std::cout << "\nEntry a character ('q' quit): ";
-        std::cin >> c;
+        rDebug << "\nEntry a character ('q' quit): ";
+        std::scanf("%c", &c);
+        std::getchar();
         const RFont::Glyph *glyph = font.getFontGlyph(c);
         rDebug << "\ncharacter:" << c << " width:" << glyph->width << " height:" << glyph->height
                << " xoff:" << glyph->xoff << " yoff:" << glyph->yoff << '\n';
@@ -22,10 +23,10 @@ int main()
         for (int j = 0; j < glyph->height; ++j)
         {
            for (int i = 0; i < glyph->width; ++i)
-               std::cout << " ':0IM%@"[glyph->data[j*glyph->width+i] >> 5] << ' ';
-           std::cout << '\n';
+               printf("%c ", " ':0IM%@"[glyph->data[j*glyph->width+i] >> 5]);
+           printf("\n");
         }
-        std::cout  << std::endl;
+        printf("\n");
     } while(c != L'q');
 
     return 0;

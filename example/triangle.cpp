@@ -1,4 +1,6 @@
 #include <RWindow.h>
+#include <RInputModule.h>
+#include <RController.h>
 #include <RKeeper.h>
 #include <RDebug.h>
 #include <rsc/RShaderProg.h>
@@ -30,16 +32,21 @@ const char *fCode =
         "   fragColor = vec4(color, 1.0);\n"
         "}\n";
 
-class TestCtl: public RController
+class TestCtl
 {
 public:
-    TestCtl(RController *parent, const std::string &name):
-        RController(parent, name),
+    TestCtl(RController *parent):
+        ctrl(parent, this),
         shaders({RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}),
         model(glm::mat4(1))
-    {}
+    {
+        ctrl.setControlFunc(std::bind(&TestCtl::control, this));
+        ctrl.setStartFunc(std::bind(&TestCtl::startEvent, this, std::placeholders::_1));
+        ctrl.setFinishFunc(std::bind(&TestCtl::finishEvent, this, std::placeholders::_1));
+        ctrl.setInputFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
+    }
 
-    void control() override
+    void control()
     {
         model = glm::rotate(model, 0.05f, { 0.0f, 1.0f, 0.0f });
         auto itf = shaders.useInterface();
@@ -48,8 +55,7 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
-protected:
-    void startEvent(RStartEvent &) override
+    void startEvent(StartEvent)
     {
         // start事件在调用exce()时发起
         GLuint vao, vbo;
@@ -81,20 +87,21 @@ protected:
         intf.setPerspective(projection, -30.0f, 30.0f, 0.0f, 60.0f, 0.0f, 1500.0f);
     }
 
-    void finishEvent(RFinishEvent &) override
+    void finishEvent(FinishEvent)
     {
         // finish事件在exce()退出时发起
         shaders.release(); // 显式释放不是必须的，再次只是示范
     }
 
-    void inputEvent(RInputEvent &e) override
+    void inputEvent(InputEvent e)
     {
         // inputEvent只能监测感兴趣的按键
         if(e.press(Keys::KEY_ESCAPE))
-            getParent()->breakLoop();
+            ctrl.getParent()->breakLoop();
     }
 
 private:
+    RController ctrl;
     RKeeper<GLuint> VAO, VBO;
     RShaderProg shaders;
     GLuint modelLoc;
@@ -102,9 +109,9 @@ private:
 };
 
 RWindow *p; // entered信号才能实时监测按键事件
-bool observeKeyboard(Keys, ButtonAction, Modifier)
+bool observeKeyboard(Keys, BtnAct, Modifier)
 {
-    p->breakLoop();
+    p->closeWindow();
     return true;
 }
 
@@ -113,13 +120,11 @@ int main()
     RWindow::Format format;
     format.decorate = false;
     format.keysSigal = true;
-    format.initWidth = 500;
-    format.initHeight = 500;
-    format.background = 0x181010;
-    RWindow window(format, nullptr, "Triangle");
+    format.background = 0x101018;
+    RWindow window(500, 500, "Triangle", format);
     p = &window;
 
-    TestCtl t(&window, "ChildNode");
+    TestCtl t(window.ctrl());
 
     window.entered.connect(observeKeyboard);
 
