@@ -123,7 +123,7 @@ bool RFont::load(std::string path)
     try {
         file.open(path, std::ios::binary | std::ios::ate);
         size_t size = file.tellg();
-        data = std::make_shared<RData[]>(size);
+        data.reset(new RData[size]);
         file.seekg(0, std::ios::beg);
         file.read(reinterpret_cast<char*>(data.get()), size);
         file.close();
