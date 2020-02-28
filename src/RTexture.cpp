@@ -81,6 +81,8 @@ void RTexture::swap(RTexture &tex)
 {
     textureID_.swap(tex.textureID_);
     format_ = tex.format_;
+    width_ = tex.width_;
+    height_ = tex.height_;
 }
 
 bool RTexture::isValid() const
