@@ -206,6 +206,12 @@ void RArea::setCenterPos(const RPoint2 &pos)
     addDirty(Move);
 }
 
+void RArea::setCenterPos(int x, int y)
+{
+    pos_.set(x-size_.width()/2, y-size_.height()/2, pos_.z());
+    addDirty(Move);
+}
+
 void RArea::setCenterPosX(int x)
 {
     pos_.setX(x - size_.width()/2);

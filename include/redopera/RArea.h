@@ -98,6 +98,7 @@ public:
     void setInnerPos(int x, int y);
 
     void setCenterPos(const RPoint2 &pos);
+    void setCenterPos(int x, int y);
     void setCenterPosX(int x);
     void setCenterPosY(int y);
 
