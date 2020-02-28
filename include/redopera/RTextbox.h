@@ -77,6 +77,7 @@ public:
     Format textFormat() const;
     const RTexture& textTexture() const;
     bool isSeting() const;
+    const std::wstring& getTexts() const;
 
     void setFontColor(R_RGB rgb);
     void setFontColor(const RColor &color);

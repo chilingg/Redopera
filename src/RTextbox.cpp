@@ -180,6 +180,11 @@ bool RTextsbox::isSeting() const
     return resetting_;
 }
 
+const std::wstring &RTextsbox::getTexts() const
+{
+    return texts_;
+}
+
 void RTextsbox::setFontColor(R_RGB rgb)
 {
     RColor color(rgb << 8);
