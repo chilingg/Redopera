@@ -137,6 +137,8 @@ public:
     int& rz();
 
     RPoint centerPos() const;
+    int centerPosX() const;
+    int centerPosY() const;
 
     RRect outerRect() const;
     RSize outerSize() const;

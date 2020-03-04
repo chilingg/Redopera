@@ -380,6 +380,16 @@ RPoint RArea::centerPos() const
     return RPoint(pos_.x() + size_.width()/2, pos_.y() + size_.height()/2, pos_.z());
 }
 
+int RArea::centerPosX() const
+{
+    return pos_.x() + size_.width()/2;
+}
+
+int RArea::centerPosY() const
+{
+    return pos_.y() + size_.height()/2;
+}
+
 RRect RArea::outerRect() const
 {
     return RRect(outerSize(), outerPos());
