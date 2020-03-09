@@ -45,7 +45,7 @@ public:
     RPlane& operator=(const RPlane &&plane);
     ~RPlane() = default;
 
-    const RShaderProg& planeShader();
+    const RShaderProg& planeShader() const;
     const glm::mat4& modelMat() const;
     const ModelMat& modelMats() const;
     const RTexture& texture() const;

@@ -204,7 +204,7 @@ RPlane &RPlane::operator=(const RPlane &&plane)
     return *this;
 }
 
-const RShaderProg &RPlane::planeShader()
+const RShaderProg &RPlane::planeShader() const
 {
     return renderTool()->shaders;
 }
