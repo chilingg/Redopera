@@ -6,6 +6,7 @@
 #include "RSize.h"
 #include "RPoint.h"
 #include "RSigslot.h"
+#include "RController.h"
 
 #include <atomic>
 
@@ -13,7 +14,6 @@ namespace Redopera {
 
 class RCursor;
 class RImage;
-class RController;
 
 enum class Keys;
 enum class BtnAct;

@@ -1,5 +1,4 @@
 #include "RWindow.h"
-#include "RController.h"
 #include "RInputModule.h"
 #include "REvent.h"
 #include "RDebug.h"
@@ -60,8 +59,6 @@ RWindow::RWindow():
 
 }
 
-std::mutex mutex;
-
 RWindow::RWindow(int width, int height, const std::string title, const RWindow::Format &format):
     ctrl_(std::make_unique<RController>(this)),
     format_(format),
@@ -110,13 +107,9 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
     if(!window_)
         throw std::runtime_error("Fainled to create GLFW window");
 
-    {
-    std::lock_guard<std::mutex> guard(mutex);
-    // 一个线程只能有一个窗口
     if(glfwGetCurrentContext())
         throw std::runtime_error("A thread can only have one window context");
     glfwMakeContextCurrent(window_.get());
-    }
 
     //绑定上下文与this指针
     glfwSetWindowUserPointer(window_.get(), this);
