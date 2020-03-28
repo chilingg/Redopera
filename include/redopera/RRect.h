@@ -55,6 +55,7 @@ public:
     int bottom() const;
     int left() const;
     int right() const;
+    RPoint2 pos() const;
     RPoint2 bottomLeft() const;
     RPoint2 bottomRight() const;
     RPoint2 topLeft() const;
@@ -282,6 +283,11 @@ inline int RRect::left() const
 inline int RRect::right() const
 {
     return pos_.x() + size_.width();
+}
+
+inline RPoint2 RRect::pos() const
+{
+    return pos_;
 }
 
 inline RPoint2 RRect::bottomLeft() const
