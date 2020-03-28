@@ -1,6 +1,8 @@
 #include "rsc/RTexture.h"
 #include "rsc/RImage.h"
 #include "RSize.h"
+#include "RPoint.h"
+#include "RRect.h"
 
 using namespace Redopera;
 
@@ -31,6 +33,11 @@ RTexture RTexture::transTex()
 void RTexture::setDefaultTextureFomat(const RTexture::Format &format)
 {
     textureFormat = format;
+}
+
+const RTexture::Format &RTexture::defaultFormat()
+{
+    return textureFormat;
 }
 
 void RTexture::unbindTexture()
@@ -184,28 +191,65 @@ void RTexture::reload(const RData *data)
         load(data, width_, height_, format_.inChannel, format_);
 
     ExtFormat eformat;
-    inFormat iformat;
     switch(format_.inChannel)
     {
     case 4:
         eformat = ExtFormat::RGBA;
-        iformat = inFormat::RGBA8; break;
+        break;
     case 3:
         eformat = ExtFormat::RGB;
-        iformat = inFormat::RGB8; break;
+        break;
     case 2:
         eformat = ExtFormat::RG;
-        iformat = inFormat::RG8; break;
+        break;
     case 1:
         eformat = ExtFormat::RED;
-        iformat = inFormat::R8; break;
+        break;
     default:
         throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format_.inChannel));
     }
 
     glBindTexture(GL_TEXTURE_2D, *textureID_);
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(iformat), width_, height_, 0,
-                 static_cast<GLenum>(eformat), GL_UNSIGNED_BYTE, data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width_, height_, static_cast<GLint>(eformat), GL_UNSIGNED_BYTE, data);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void RTexture::setSubTexture(const RRect &rect, const RData *data)
+{
+    setSubTexture(rect.width(), rect.height(), rect.left(), rect.bottom(), data);
+}
+
+void RTexture::setSubTexture(const RSize &size, const RPoint2 &pos, const RData *data)
+{
+    setSubTexture(size.width(), size.height(), pos.x(), pos.y(), data);
+}
+
+void RTexture::setSubTexture(int width, int height, int x, int y, const RData *data)
+{
+    if(!textureID_.unique())
+        load(data, width_, height_, format_.inChannel, format_);
+
+    ExtFormat eformat;
+    switch(format_.inChannel)
+    {
+    case 4:
+        eformat = ExtFormat::RGBA;
+        break;
+    case 3:
+        eformat = ExtFormat::RGB;
+        break;
+    case 2:
+        eformat = ExtFormat::RG;
+        break;
+    case 1:
+        eformat = ExtFormat::RED;
+        break;
+    default:
+        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format_.inChannel));
+    }
+
+    glBindTexture(GL_TEXTURE_2D, *textureID_);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, static_cast<GLint>(eformat), GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 

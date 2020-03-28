@@ -10,6 +10,8 @@ namespace Redopera {
 
 class RImage;
 class RSize;
+class RRect;
+class RPoint2;
 
 class RTexture
 {
@@ -73,6 +75,7 @@ public:
     static RTexture transTex();
 
     static void setDefaultTextureFomat(const Format &format);
+    static const Format& defaultFormat();
     static void unbindTexture();
 
     RTexture() = default;
@@ -97,6 +100,9 @@ public:
     bool load(const RImage &img, const Format &format = textureFormat);
     bool load(const std::string &path, const Format &format = textureFormat);
     void reload(const RData* data);
+    void setSubTexture(const RRect &rect, const RData* data);
+    void setSubTexture(const RSize &size, const RPoint2 &pos, const RData* data);
+    void setSubTexture(int width, int height, int x, int y, const RData* data);
     void release();
 
 private:

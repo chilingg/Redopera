@@ -53,8 +53,10 @@ public:
     void setColorTexture(const RColor &color);
     void setColorTexture(R_RGBA rgba);
     void setColorTexture(unsigned r, unsigned g, unsigned b, unsigned a = 0xffu);
-    void setTexture(const RImage &img);
+    void setTexture(const RImage &img, RTexture::Format format = RTexture::defaultFormat());
     void setTexture(const RTexture &tex);
+    void setSubTexture(const RSize &size, const RPoint2 &pos, const RData *data);
+    void reloadTexture(const RData *data);
 
     void update();
     void render();

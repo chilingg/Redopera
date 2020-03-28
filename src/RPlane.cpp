@@ -1,4 +1,5 @@
 #include "RPlane.h"
+#include "rsc/RImage.h"
 
 using namespace Redopera;
 
@@ -243,14 +244,26 @@ void RPlane::setColorTexture(unsigned r, unsigned g, unsigned b, unsigned a)
     setColorTexture(color.rgba());
 }
 
-void RPlane::setTexture(const RImage &img)
+void RPlane::setTexture(const RImage &img, RTexture::Format format)
 {
-    texture_.load(img);
+    texture_.load(img, format);
+    addDirty(RArea::Typeset);
 }
 
 void RPlane::setTexture(const RTexture &tex)
 {
     texture_ = tex;
+    addDirty(RArea::Typeset);
+}
+
+void RPlane::setSubTexture(const RSize &size, const RPoint2 &pos, const RData *data)
+{
+    texture_.setSubTexture(size, pos, data);
+}
+
+void RPlane::reloadTexture(const RData *data)
+{
+    texture_.reload(data);
 }
 
 void RPlane::update()
