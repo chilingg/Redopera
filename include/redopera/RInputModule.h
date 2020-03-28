@@ -140,7 +140,7 @@ enum class Keys
     KEY_LAST = GLFW_KEY_LAST
 };
 
-enum class Modifier
+enum Modifier : int
 {
     MOD_NONE = 0,
     MOD_SHIFT = GLFW_MOD_SHIFT,
