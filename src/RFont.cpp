@@ -18,8 +18,9 @@ void RFont::setCasheSize(unsigned size)
 
 void RFont::setDefaultFontSize(unsigned size)
 {
-    if(defaultFont)
-        defaultFont->setSize(size);
+    if(!defaultFont)
+        getDefaulteFont();
+    defaultFont->setSize(size);
 }
 
 const RFont &RFont::getDefaulteFont()
