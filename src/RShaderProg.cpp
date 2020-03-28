@@ -475,7 +475,7 @@ glm::mat4 Redopera::perspective(float left, float right, float bottom, float top
     return mat;
 }
 
-std::string Redopera::toStdString(glm::vec3 vec)
+std::string toStdString(glm::vec3 vec)
 {
     std::string str('(' + std::to_string(vec.x) + ", "
                     + std::to_string(vec.y) + ", "
@@ -483,7 +483,7 @@ std::string Redopera::toStdString(glm::vec3 vec)
     return str;
 }
 
-std::string Redopera::toStdString(glm::vec4 vec)
+std::string toStdString(glm::vec4 vec)
 {
     std::string str('(' + std::to_string(vec.x) + ", "
                     + std::to_string(vec.y) + ", "
@@ -492,7 +492,7 @@ std::string Redopera::toStdString(glm::vec4 vec)
     return str;
 }
 
-std::string Redopera::toStdString(glm::mat4 mat)
+std::string toStdString(glm::mat4 mat)
 {
     char buf[256];
     std::snprintf(buf, sizeof(buf),

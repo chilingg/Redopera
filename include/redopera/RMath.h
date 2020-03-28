@@ -21,9 +21,10 @@ void* bufOff(size_t off);
 
 glm::mat4 perspective(float left, float right, float bottom, float top, float near, float far);
 
+}
+
 std::string toStdString(glm::vec3 vec);
 std::string toStdString(glm::vec4 vec);
 std::string toStdString(glm::mat4 vec);
 
-}
 #endif // RMATHS_H
