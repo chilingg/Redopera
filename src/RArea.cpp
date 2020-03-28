@@ -484,3 +484,20 @@ const RArea::Format &RArea::areaFormat() const
 {
     return format_;
 }
+
+std::string RArea::toStdString() const
+{
+    std::string s;
+    s += "Area:( " + std::to_string(pos_.x()) + ", " + std::to_string(pos_.y()) + ", " + std::to_string(pos_.z())
+            + " | W: " + std::to_string(size_.width()) + " H: " + std::to_string(size_.height())
+            + " | M: " + std::to_string(format_.margin.t) + ' ' + std::to_string(format_.margin.b)
+            + ' ' + std::to_string(format_.margin.l) + ' ' + std::to_string(format_.margin.r)
+            + " | P: " + std::to_string(format_.padding.t) + ' ' + std::to_string(format_.padding.b)
+            + ' ' + std::to_string(format_.padding.l) + ' ' + std::to_string(format_.padding.r) + ") ";
+    return s;
+}
+
+std::string toStdString(const RArea &area)
+{
+    return area.toStdString();
+}

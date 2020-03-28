@@ -63,9 +63,9 @@ public:
     }
 
     template<typename T>
-    RDebug& operator<<(const T& input)
+    RDebug& operator<<(T input)
     {
-        buf_ += toStdString(input);
+        buf_ += toStdString(std::forward<T>(input));
         return *this;
     }
 

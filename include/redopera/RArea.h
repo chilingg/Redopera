@@ -165,6 +165,8 @@ public:
 
     const Format &areaFormat() const;
 
+    std::string toStdString() const;
+
 private:
     static Format areaFmt;
 
@@ -175,5 +177,7 @@ private:
 };
 
 } //ns Redopera
+
+std::string toStdString(const Redopera::RArea &area);
 
 #endif // RAREA_H

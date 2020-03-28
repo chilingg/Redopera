@@ -1,4 +1,4 @@
-#include <RDebug.h>
+#include "RDebug.h"
 
 #include <cstdio>
 #include <cstring>
@@ -11,154 +11,156 @@
 #include <RRect.h>
 #include <RArea.h>
 
+using namespace Redopera;
+
 static std::wstring_convert<std::codecvt_utf8<wchar_t>> strcnv;
 
-Redopera::RDebug::~RDebug()
+RDebug::~RDebug()
 {
     std::printf("%s\n", buf_.c_str());
     fflush(stdout);
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(int value)
+RDebug &RDebug::operator<<(int value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(long value)
+RDebug &RDebug::operator<<(long value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(long long value)
+RDebug &RDebug::operator<<(long long value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(unsigned value)
+RDebug &RDebug::operator<<(unsigned value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(unsigned long value)
+RDebug &RDebug::operator<<(unsigned long value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(unsigned long long value)
+RDebug &RDebug::operator<<(unsigned long long value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(double value)
+RDebug &RDebug::operator<<(double value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(float value)
+RDebug &RDebug::operator<<(float value)
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(unsigned char c)
+RDebug &RDebug::operator<<(unsigned char c)
 {
     buf_ += std::to_string(c*1) + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(bool b)
+RDebug &RDebug::operator<<(bool b)
 {
     buf_ += b ? "true " : "false ";
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(char c)
+RDebug &RDebug::operator<<(char c)
 {
     buf_ = buf_ + c + ' ';
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const char *str)
+RDebug &RDebug::operator<<(const char *str)
 {
     buf_ += str;
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(char *str)
+RDebug &RDebug::operator<<(char *str)
 {
     buf_ += str;
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const std::string &str)
+RDebug &RDebug::operator<<(const std::string &str)
 {
     buf_ += str;
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(wchar_t c)
+RDebug &RDebug::operator<<(wchar_t c)
 {
     buf_ += strcnv.to_bytes(c);
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const wchar_t *str)
+RDebug &RDebug::operator<<(const wchar_t *str)
 {
     buf_ += strcnv.to_bytes(str);
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(wchar_t *str)
+RDebug &RDebug::operator<<(wchar_t *str)
 {
     buf_ += strcnv.to_bytes(str);
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const std::wstring &str)
+RDebug &RDebug::operator<<(const std::wstring &str)
 {
     buf_ += strcnv.to_bytes(str);
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const Redopera::RColor &color)
+RDebug &RDebug::operator<<(const RColor &color)
 {
     buf_ += "(r:" + std::to_string(color.r()) + "g:" + std::to_string(color.g()) + "b:" + std::to_string(color.b()) + ") ";
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const Redopera::RPoint2 &pos)
+RDebug &RDebug::operator<<(const RPoint2 &pos)
 {
     buf_ += '(' + std::to_string(pos.x()) + ", " + std::to_string(pos.y()) + ") ";
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const Redopera::RPoint3 &pos)
+RDebug &RDebug::operator<<(const RPoint3 &pos)
 {
     buf_ += '(' + std::to_string(pos.x()) + ", " + std::to_string(pos.y()) + ", " + std::to_string(pos.z()) + ") ";
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const Redopera::RSize &size)
+RDebug &RDebug::operator<<(const RSize &size)
 {
     buf_ += "(w: " + std::to_string(size.width()) + " h: " + std::to_string(size.height()) + ") ";
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const Redopera::RRect &rect)
+RDebug &RDebug::operator<<(const RRect &rect)
 {
     buf_ += "(" + std::to_string(rect.left()) + ", " + std::to_string(rect.bottom())
             + " | w: " + std::to_string(rect.width()) + " h: " + std::to_string(rect.height()) + ") ";
     return *this;
 }
 
-Redopera::RDebug &Redopera::RDebug::operator<<(const Redopera::RArea &area)
+RDebug &RDebug::operator<<(const RArea &area)
 {
     buf_ += "Area:( " + std::to_string(area.x()) + ", " + std::to_string(area.y()) + ", " + std::to_string(area.z())
             + " | W: " + std::to_string(area.width()) + " H: " + std::to_string(area.height())
@@ -169,7 +171,7 @@ Redopera::RDebug &Redopera::RDebug::operator<<(const Redopera::RArea &area)
     return *this;
 }
 
-Redopera::RDebug::RDebug()
+RDebug::RDebug()
 {
     buf_.reserve(256);
 }
