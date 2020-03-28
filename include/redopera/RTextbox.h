@@ -30,7 +30,11 @@ public:
         struct {
             float x, y;
         } pixScale { 1.0f, 1.0f };
+#ifdef R_DEBUG
         bool ellipsis = true;   // 若不能显示所有字符，在末尾添加一个5x5方框
+#else
+        bool ellipsis = false;
+#endif
     };
 
     struct RenderTool
@@ -97,6 +101,10 @@ public:
     void setEllipsis(bool b);
     void setTexture(const RTexture &tex);
     void setPixScale(float x, float y);
+
+    void append(int code);
+    void append(wchar_t c);
+    void append(std::wstring str);
 
     void verticalTypeset();
     void horizontalTypeset();

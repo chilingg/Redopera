@@ -282,6 +282,24 @@ void RTextsbox::setPixScale(float x, float y)
     addDirty(RArea::Typeset);
 }
 
+void RTextsbox::append(int code)
+{
+    texts_ += static_cast<int>(code);
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::append(wchar_t c)
+{
+    texts_ += c;
+    addDirty(RArea::Typeset);
+}
+
+void RTextsbox::append(std::wstring str)
+{
+    texts_ += str;
+    addDirty(RArea::Typeset);
+}
+
 void RTextsbox::verticalTypeset()
 {
     typesetting = &RTextsbox::verticalTextToTexture;
