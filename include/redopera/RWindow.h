@@ -17,7 +17,7 @@ class RImage;
 
 enum class Keys;
 enum class BtnAct;
-enum class Modifier;
+enum Modifier : int;
 
 class RWindow
 {
@@ -53,6 +53,7 @@ public:
     constexpr static const char* defaultName() { return "Window"; }
 
     static RWindow* getMainWindow();
+    static RWindow* getWindowUserCtrl(GLFWwindow *window);
 
     static void setDefaultWindowFormat(const Format &format);
     static bool updateGamepadMappings(std::string path);
@@ -133,8 +134,6 @@ private:
     static void windowFocusCallback(GLFWwindow *window, int focused);
     // 窗口关闭回调
     static void windowCloseCallback(GLFWwindow *window);
-
-    static RWindow* getWindowUserCtrl(GLFWwindow *window);
 
     static Format windowFormat;
     static std::once_flag init;

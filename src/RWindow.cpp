@@ -19,6 +19,11 @@ RWindow *RWindow::getMainWindow()
     return mainWindow;
 }
 
+RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
+{
+    return static_cast<RWindow*>(glfwGetWindowUserPointer(window));
+}
+
 void RWindow::setDefaultWindowFormat(const Format &format)
 {
     windowFormat = format;
@@ -607,7 +612,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
     wctrl->resize_ = RSize(width, height);
 }
 
-void RWindow::keyboardCollback(GLFWwindow *window, int key, int , int action, int mods)
+void RWindow::keyboardCollback(GLFWwindow *window, int key, int, int action, int mods)
 {
     getWindowUserCtrl(window)->entered.emit(static_cast<Keys>(key), static_cast<BtnAct>(action), static_cast<Modifier>(mods));
 }
@@ -627,9 +632,4 @@ void RWindow::windowCloseCallback(GLFWwindow *window)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
     wctrl->ctrl_->breakLoop();
-}
-
-RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
-{
-    return static_cast<RWindow*>(glfwGetWindowUserPointer(window));
 }
