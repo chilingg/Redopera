@@ -30,8 +30,6 @@ enum class LuaType
 
 class RLuaScript
 {
-    friend void swap(RLuaScript &rls1, RLuaScript &rls2);
-
 public:
     RLuaScript() = default;
     RLuaScript(const std::string &lua);
@@ -77,7 +75,10 @@ public:
     void setGlobalAsTop(const std::string &name);
     void cleanStack();
 
-    bool call(const std::string &func, std::initializer_list<double> numList = {}, std::initializer_list<const char *> strList = {}, int resultN = 1);
+    bool call(const std::string &func,
+              std::initializer_list<double> numList = {},
+              std::initializer_list<const char *> strList = {},
+              int resultN = 1);
 
     bool load(const std::string &lua);
     bool load(const RData *buff, size_t size, const std::string &name = "RLua");

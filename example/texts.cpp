@@ -1,7 +1,15 @@
 #include <RWindow.h>
+#include <RGame.h>
+#include <RRenderSystem.h>
 #include <RController.h>
 #include <RInputModule.h>
 #include <RTextbox.h>
+#include <RPlane.h>
+#include <REvent.h>
+#include <RDebug.h>
+#include <RRect.h>
+
+#include <dependents/stb_truetype.h>
 
 using namespace Redopera;
 
@@ -11,78 +19,154 @@ const wchar_t* texts =
         "How should I greet you?\n"
         "With silence and tears?";
 
-const int WIDTH = 450;
-const int HEIGHT = 490;
+const GLchar *vCode =
+R"--(
+#version 330 core
+layout(location = 0) in vec2 aPos;
+layout(location = 1) in vec2 aTexCoor;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
+out vec2 texCoor;
+void main(void)
+{
+    texCoor = aTexCoor;
+    gl_Position = projection * view * model* vec4(aPos, 0.0, 1.0);
+}
+)--";
 
-std::unique_ptr<RTextsbox[]> textbox;
+const GLchar *fCode =
+R"--(
+#version 330 core
+uniform sampler2D tex;
+in vec2 texCoor;
+out vec4 outColor;
+void main(void)
+{
+    outColor = texture(tex, texCoor);
+}
+)--";
+
+const int WIDTH = 480;
+const int HEIGHT = 480;
+const RColor fcolor(180, 180, 180);
+
+std::unique_ptr<RTextbox[]> textbox;
+std::unique_ptr<RRenderSystem> renderer;
 
 void control()
 {
-    textbox[0].edging(RColor(50, 50, 50));
-    textbox[1].edging(RColor(50, 50, 50));
-    textbox[0].render();
-    textbox[1].render();
-    textbox[2].render();
-    textbox[3].render();
+    renderer->render(textbox[0]);
+    renderer->renderLine(textbox[0]);
+    renderer->render(textbox[1]);
+    renderer->renderLine(textbox[1]);
+    renderer->render(textbox[2]);
+    renderer->renderLine(textbox[2]);
+    renderer->render(textbox[3]);
+    renderer->renderLine(textbox[3]);
 }
 
-void startEvent(StartEvent)
+void startEvent(StartEvent*)
 {
+    textbox = std::make_unique<RTextbox[]>(4);
+    renderer = std::make_unique<RRenderSystem>();
+
+    RTextbox::Format fmt;
+    fmt.fcolor = fcolor;
+    fmt.lSpacing = 1.6f;
+    fmt.wSpacing = 1.3f;
+    fmt.align = { RTextbox::Align::Top, RTextbox::Align::Left };
+
+    textbox[0].setTextFormat(fmt);
     textbox[0].setTexts(texts);
-    textbox[0].setFontSize(13);
-    textbox[0].setAlign(RArea::Align::Mind, RArea::Align::Left);
-    textbox[0].setFontColor(210, 210, 210);
-    textbox[0].setSize(190, 90);
-    textbox[0].setPadding(8, 8, 8, 8);
-    textbox[0].setlineSpacing(1.4);
-    textbox[0].setPos(20, HEIGHT - textbox[0].height() - 20);
+    textbox[0].rSize().set(220, 110);
+    textbox[0].rPos().set(20, HEIGHT - textbox[0].size().height() - 20, 0);
 
     textbox[1] = textbox[0];
-    textbox[1].setAlign(RArea::Align::Mind, RArea::Align::Right);
-    textbox[1].setX(WIDTH - textbox[1].width() - 20);
+    textbox[1].setAlign(RTextbox::Align::Mind, RTextbox::Align::Mind);
+    textbox[1].rPos().setY(textbox[0].pos().y() - (textbox[0].size().height() + 20) * 1);
 
     textbox[2] = textbox[0];
-    textbox[2].setHeight(320);
-    textbox[2].setlineSpacing(2.6f);
-    textbox[2].setSpacing(0.5f);
-    textbox[2].setWordSpacing(1.5f);
-    textbox[2].setAlign(RArea::Align::Top, RArea::Align::Mind);
-    textbox[2].verticalTypeset();
-    textbox[2].setBackColor(0xff251515);
-    textbox[2].setY(HEIGHT - textbox[2].height() - textbox[1].height() - 40);
+    textbox[2].setAlign(RTextbox::Align::Bottom, RTextbox::Align::Right);
+    textbox[2].rPos().setY(textbox[0].pos().y() - (textbox[0].size().height() + 20) * 2);
 
-    textbox[3] = textbox[2];
-    textbox[3].setAlign(RArea::Align::Mind, RArea::Align::Mind);
-    textbox[3].setX(WIDTH - textbox[3].width() - 20);
+    textbox[3] = textbox[0];
+    textbox[3].setAlign(RTextbox::Align::Top, RTextbox::Align::Right);
+    textbox[3].rSize().set(90, 240);
+    textbox[3].rPos().setX(textbox[0].rect().right() + 20);
+    textbox[3].rPos().move(0, -(textbox[3].size().height() - textbox[0].size().height()));
+    textbox[3].vertical();
 
-    // textbox的着色器设置（与plane并不共享，建议永远与窗口尺寸等同，避免字体渲染虚化）
-    // 此处获取的着色器是RTextsbox默认共享的着色器
-    const RShaderProg &shaders = textbox[0].textsShader();
-    RInterface inter = shaders.useInterface();
-    inter.setViewprot(shaders.getUniformLocation("projection"), 0, WIDTH, 0, HEIGHT);
+    renderer->setShaderProg(RShaderProg({ RShader(vCode, RShader::Type::Vertex),
+                                      RShader(fCode, RShader::Type::Fragment)}));
+    renderer->setCameraMove();
+    renderer->setViewprot(0, WIDTH, 0, HEIGHT);
 }
 
-void inputEvent(InputEvent e)
+RPoint2 offset;
+RTextbox *hold;
+
+void inputEvent(InputEvent *e)
 {
-    if(e.press(Keys::KEY_ESCAPE))
-        e.sender->breakLoop();
+    if (e->press(Keys::KEY_ESCAPE))
+        e->sender->closeWindow();
+
+    if (e->press(MouseBtn::MOUSE_BUTTON_LEFT))
+    {
+        RPoint2 pos = e->pos().mirrorV(HEIGHT / 2);
+
+        if (textbox[0].rect().contains(pos))
+            hold = &textbox[0];
+        else if (textbox[1].rect().contains(pos))
+            hold = &textbox[1];
+        else if (textbox[2].rect().contains(pos))
+            hold = &textbox[2];
+        else if (textbox[3].rect().contains(pos))
+            hold = &textbox[3];
+
+        if (hold)
+        {
+            offset = pos - hold->pos();
+            hold->setFontColor(0xff0000);
+        }
+    }
+    if (e->release(MouseBtn::MOUSE_BUTTON_LEFT))
+    {
+        hold->setFontColor(fcolor);
+        hold = nullptr;
+    }
+    if (hold && e->status(MouseBtn::MOUSE_BUTTON_LEFT) == BtnAct::PRESS)
+    {
+        hold->rPos() = e->pos().mirrorV(HEIGHT / 2) - offset;
+    }
+}
+
+void finishEvent(FinishEvent *)
+{
+    textbox.reset();
+    renderer.reset();
 }
 
 int main()
 {
-    RWindow::Format format;
-    format.background = 0x101018;
-    format.fix = true;
-    RWindow textWin(WIDTH, HEIGHT, "Texts Window", format);
-    textWin.ctrl()->setInputFunc(inputEvent);
-    textWin.ctrl()->setStartFunc(startEvent);
-    textWin.ctrl()->setControlFunc(control);
+    RGame game;
 
-    textbox = std::make_unique<RTextsbox[]>(4);
+    RWindow::Format format;
+    format.background = 0x101020;
+    RWindow textWin(WIDTH, HEIGHT, "Texts Window", format);
+
+    //RFont font("/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc");
+    RFont font = RFont::sourceCodePro();
+    font.setSize(12);
+    RFont::setDefaultFont(font);
+
+    RController ctrl;
+    ctrl.setInputFunc(inputEvent);
+    ctrl.setStartFunc(startEvent);
+    ctrl.setControlFunc(control);
+    ctrl.setFinishFunc(finishEvent);
+    textWin.ctrl()->addChild(&ctrl);
 
     textWin.show();
-    textWin.exec();
-
-    textbox.reset();
-    return 0;
+    return game.exec(&textWin);
 }

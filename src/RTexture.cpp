@@ -1,8 +1,12 @@
-#include "rsc/RTexture.h"
-#include "rsc/RImage.h"
-#include "RSize.h"
-#include "RPoint.h"
-#include "RRect.h"
+#include <rsc/RTexture.h>
+#include <rsc/RImage.h>
+#include <RSize.h>
+#include <RPoint.h>
+#include <RRect.h>
+#include <RColor.h>
+
+#include <stdexcept>
+#include <algorithm>
 
 using namespace Redopera;
 
@@ -25,6 +29,11 @@ RTexture RTexture::blackTex()
     return { reinterpret_cast<const RData*>("\x0\x0\x0"), 1, 1, 3, RTexture::Nearest3 };
 }
 
+RTexture RTexture::redTex()
+{
+    return { reinterpret_cast<const RData*>("\xff\x0\x0"), 1, 1, 3, RTexture::Nearest3 };
+}
+
 RTexture RTexture::transTex()
 {
     return { reinterpret_cast<const RData*>("\x0\x0\x0\x0"), 1, 1, 4, RTexture::Nearest4 };
@@ -38,6 +47,25 @@ void RTexture::setDefaultTextureFomat(const RTexture::Format &format)
 const RTexture::Format &RTexture::defaultFormat()
 {
     return textureFormat;
+}
+
+RTexture RTexture::colorTexture(const RColor &color)
+{
+    RGBA rgba = color.rgba();
+    return colorTexture(rgba);
+}
+
+RTexture RTexture::colorTexture(RGBA rgba)
+{
+    RData *colorData = reinterpret_cast<RData*>(&rgba);
+    std::reverse(colorData, colorData + 4);
+    return RTexture(colorData, 1, 1, 4, RTexture::Nearest4);
+}
+
+RTexture RTexture::colorTexture(unsigned r, unsigned g, unsigned b, unsigned a)
+{
+    RColor color(r, g, b, a);
+    return colorTexture(color.rgba());
 }
 
 void RTexture::unbindTexture()

@@ -2,11 +2,12 @@
 #define RWINDOW_H
 
 #include "RContext.h"
-#include "RColor.h"
 #include "RSize.h"
 #include "RPoint.h"
 #include "RSigslot.h"
+#include "RInputModule.h"
 #include "RController.h"
+#include "RTimer.h"
 
 #include <atomic>
 
@@ -14,10 +15,12 @@ namespace Redopera {
 
 class RCursor;
 class RImage;
+class RColor;
+
+using RGB = uint32_t;
 
 enum class Keys;
 enum class BtnAct;
-enum Modifier : int;
 
 class RWindow
 {
@@ -40,23 +43,19 @@ public:
     {
         bool fix            = false;    // 固定窗口尺寸
         bool decorate       = true;     // 窗口边框与标题栏
-        bool keysSigal      = false;    // 键盘响应信号(entered)
         bool fullScreen     = false;    // 全屏
+        bool fill           = true;     // 填充位
+        int fps             = 55;       // 60帧有撕裂
+        int ips             = 5;        // 每秒输入处理次数
+        int defaultWidth    = 800;      // 初始窗口大小
+        int defaultHeight   = 540;      // 初始窗口大小
         Viewport viewport   = Viewport::Full;  // 视口模式
-        R_RGB background   = 0x121212;  // 背景色
-        int defaultWidth       = 800;   // 初始窗口大小
-        int defaultHeight      = 540;   // 初始窗口大小
-        double vRatio_      = 16.0/9.0; // 视口比例 (Scale 模式)
+        RGB background      = 0x121212; // 背景色
         CursorMode cMode    = CursorMode::Normal;
+        double vRatio_      = 16.0/9.0; // 视口比例 (Scale 模式)
     };
 
-    constexpr static const char* defaultName() { return "Window"; }
-
-    static RWindow* getMainWindow();
     static RWindow* getWindowUserCtrl(GLFWwindow *window);
-
-    static void setDefaultWindowFormat(const Format &format);
-    static bool updateGamepadMappings(std::string path);
 
     explicit RWindow();
     explicit RWindow(int width, int height, const std::string title = "Redopera", const Format &format = windowFormat);
@@ -64,6 +63,8 @@ public:
 
     RWindow(RWindow &) = delete;
     RWindow& operator=(RWindow &) = delete;
+
+    void setAsMainWindow();
 
     void setWindowSize(int width, int height);
     void setWindowMinimumSize(int minW, int minH);
@@ -84,7 +85,7 @@ public:
 
     void setBackColor(unsigned r, unsigned g, unsigned b);
     void setBackColor(const RColor &color);
-    void setBackColor(R_RGB rgb);
+    void setBackColor(RGB rgb);
 
     void setViewportSize(int width, int height);
     void setViewportRatio(double ratio);
@@ -106,52 +107,51 @@ public:
     bool isFullScreen() const;
     RController* ctrl();
     const RController* ctrl() const;
+    const RPoint2& posOffset() const;
+    const RInputModule* inputModule() const;
 
     void closeWindow();
     // 调用showWindow()之后才会连接回调
     void show();
     void hide();
-    int exec();
 
-    RSignal<Keys, BtnAct, Modifier> entered;
-    RSignal<int> rolled;
+    RSignal<JoystickID, JoystickPresent> joyPresented;
 
 private:
-    static void initMainWindow(RWindow *window);
     // OpenGL Debug信息
     static void openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
                                            GLsizei length, const GLchar *message, const void *userParam);
-    // 手柄连接回调
-    static void joystickPresentCallback(int jid, int event);
     // 窗口大小变更回调
     static void resizeCallback(GLFWwindow *window, int width, int height);
-    // 键盘回调参数 = key：激发的键值，scancode：键值的系统扫描码，
-    // action：GLFW_PRESS, GLFW_RELEASE or GLFW_REPEAT，modes：ALT，CTRL，SHIFT，META等
-    static void keyboardCollback(GLFWwindow *window, int key, int scancode, int action, int mods);
     // 鼠标滚轮回调
     static void mouseScrollCallback(GLFWwindow *window, double x, double y);
     // 窗口焦点回调
     static void windowFocusCallback(GLFWwindow *window, int focused);
     // 窗口关闭回调
     static void windowCloseCallback(GLFWwindow *window);
+    // 键盘回调参数 = key：激发的键值，scancode：键值的系统扫描码，
+    // action：GLFW_PRESS, GLFW_RELEASE or GLFW_REPEAT，modes：ALT，CTRL，SHIFT，META等
+    static void keyboardCollback(GLFWwindow *window, int key, int scancode, int action, int mods);
+    // 鼠标按键回调
+    static void mouseButtonCollback(GLFWwindow *window, int btn, int action, int mods);
 
-    static Format windowFormat;
-    static std::once_flag init;
-    static RWindow* mainWindow;
+    void controlFunc();
+    void mainControlFunc();
 
-    RContext context_;
-    std::unique_ptr<RController> ctrl_;
+    static const Format windowFormat;
+    static GLFWwindow *mainWindow;
+
+    RController ctrl_;
+    RInputModule input_;
     Format format_;
-    std::function<void()> eventPool; //主线程中为glfwPoolEvent，其余线程中为空
     std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> window_;
     RPoint2 vOffset_;
     RSize size_;
-    std::atomic<RSize> resize_;
+    RTimer fTimer_;
+    RTimer iTimer_;
     std::atomic_bool focused_;
 
     GLbitfield clearMask = GL_COLOR_BUFFER_BIT;
-
-    _RSLOT_TAIL_
 };
 
 } // Redopera

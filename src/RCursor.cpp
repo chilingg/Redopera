@@ -1,4 +1,5 @@
-#include "rsc/RCursor.h"
+#include <rsc/RCursor.h>
+#include <rsc/RImage.h>
 
 using namespace Redopera;
 

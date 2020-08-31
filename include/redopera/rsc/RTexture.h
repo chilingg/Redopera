@@ -12,11 +12,12 @@ class RImage;
 class RSize;
 class RRect;
 class RPoint2;
+class RColor;
+
+using RGBA = uint32_t;
 
 class RTexture
 {
-    friend void swap(RTexture &texture1, RTexture &texture2);
-
 public:
     enum class inFormat
     {
@@ -72,10 +73,14 @@ public:
 
     static RTexture whiteTex();
     static RTexture blackTex();
+    static RTexture redTex();
     static RTexture transTex();
 
     static void setDefaultTextureFomat(const Format &format);
     static const Format& defaultFormat();
+    static RTexture colorTexture(const RColor &color);
+    static RTexture colorTexture(RGBA rgba);
+    static RTexture colorTexture(unsigned r, unsigned g, unsigned b, unsigned a = 0xffu);
     static void unbindTexture();
 
     RTexture() = default;

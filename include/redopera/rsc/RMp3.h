@@ -12,7 +12,6 @@ namespace Redopera {
 class RMp3
 {
     using Decoder = std::unique_ptr<mp3dec_t>;
-    friend void swap(RMp3 &img1, RMp3 &img2);
 
 public:
     using Sample = mp3d_sample_t;

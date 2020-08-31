@@ -1,8 +1,8 @@
-#include "rsc/RMp3.h"
-#include "RDebug.h"
+#include <rsc/RMp3.h>
+#include <RDebug.h>
 
-#include "dependents/minimp3.h"
-#include "dependents/minimp3_ex.h"
+#include <dependents/minimp3.h>
+#include <dependents/minimp3_ex.h>
 
 using namespace Redopera;
 
@@ -78,7 +78,7 @@ RMp3::Sample *RMp3::data() const
 
 bool RMp3::load(std::string path)
 {
-    RResource::rscpath(path);
+    RResource::rscPath(path);
 
     if(!decoder)
     {

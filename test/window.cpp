@@ -1,14 +1,16 @@
+#include <RGame.h>
 #include <RWindow.h>
 #include <RInputModule.h>
 #include <RController.h>
+#include <REvent.h>
 #include <cmath>
 
 using namespace Redopera;
 
-void inputEvent(InputEvent e)
+void inputEvent(InputEvent *e)
 {
-    if(e.press(Keys::KEY_ESCAPE))
-        e.sender->breakLoop();
+    if(e->anyKeyPress())
+        e->sender->closeWindow();
 }
 
 void control()
@@ -18,16 +20,22 @@ void control()
 
 int main()
 {
+    RGame game;
+
     RWindow::Format format;
-    format.debug = true;
-    format.versionMajor = 4;
+    format.debug = false;
+    format.versionMajor = 3;
     format.versionMinor = 3;
     format.fix = true;
 
     RWindow window(250, 250, "Window", format);
-    window.ctrl()->setControlFunc(control);
-    window.ctrl()->setInputFunc(inputEvent);
+
+    RController ctrl;
+    ctrl.setControlFunc(control);
+    ctrl.setInputFunc(inputEvent);
+
+    window.ctrl()->addChild(&ctrl);
     window.show();
 
-    return window.exec();
+    return game.exec(&window);
 }

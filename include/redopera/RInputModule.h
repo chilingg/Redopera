@@ -5,11 +5,13 @@
 #include "RPoint.h"
 
 #include <map>
-#include <vector>
+#include <set>
 
 namespace Redopera {
 
 // 按键的注册是在初次Input Event查询时进行的
+
+class RWindow;
 
 enum class Keys
 {
@@ -140,17 +142,6 @@ enum class Keys
     KEY_LAST = GLFW_KEY_LAST
 };
 
-enum Modifier : int
-{
-    MOD_NONE = 0,
-    MOD_SHIFT = GLFW_MOD_SHIFT,
-    MOD_CONTROL = GLFW_MOD_CONTROL,
-    MOD_ALT = GLFW_MOD_ALT,
-    MOD_SUPER = GLFW_MOD_SUPER,
-    MOD_CAPS_LOCK = GLFW_MOD_CAPS_LOCK,
-    MOD_NUM_LOCK = GLFW_MOD_NUM_LOCK
-};
-
 enum class GamepadBtn
 {
     GAMEPAD_BUTTON_A,//GLFW_GAMEPAD_BUTTON_A,
@@ -197,7 +188,7 @@ enum class BtnAct
     REPEAT = GLFW_REPEAT
 };
 
-enum JoystickID
+enum class JoystickID
 {
     JOYSTICK_1 = GLFW_JOYSTICK_1,
     JOYSTICK_2,
@@ -218,10 +209,10 @@ enum JoystickID
     JOYSTICK_LAST = JOYSTICK_16
 };
 
-enum class RJoystickPresent
+enum class JoystickPresent
 {
-    JOYSTICK_CONNECTED = GLFW_CONNECTED,
-    JOYSTICK_DISCONNECTED = GLFW_DISCONNECTED
+    CONNECTED = GLFW_CONNECTED,
+    DISCONNECTED = GLFW_DISCONNECTED
 };
 
 struct InputEvent;
@@ -230,55 +221,57 @@ class RInputModule
 {
     friend InputEvent;
 
-public:
-    struct MouseButtonValue
-    {
-        BtnAct action = BtnAct::RELEASE;
-        BtnAct preAction = BtnAct::RELEASE;
-    };
-
-    using KeyValue = MouseButtonValue;
-
     struct GamepadValue
     {
-        GamepadValue(JoystickID jid): jid(jid) { glfwGetGamepadState(static_cast<int>(jid), &status); }
-
         GLFWgamepadstate status;
         unsigned char preButtons[15];
-        JoystickID jid;
     };
 
-    static RInputModule& instance();
-
+public:
     static BtnAct toButtonAction(unsigned char action);
     static BtnAct toButtonAction(int action);
     static Keys toKey(int key);
-    static Modifier toKeyModifier(int mod);
     static MouseBtn toMouseButtons(int button);
     static JoystickID toJoystickID(int jid);
+
+    static bool addGamepad(JoystickID jid);
+    static bool deleteGamepad(JoystickID jid);
 
     static const char *gamepadMappingCode0;
     static const char *gamepadMappingCode1;
     static const char *gamepadMappingCode2;
 
-    void updateKeyboardInput(GLFWwindow *window);
-    void updateMouseInput(GLFWwindow *window);
-    void updateCursorPos(int x, int y);
+    RInputModule(RWindow *window);
 
-    void updateGamepad();
-    bool addGamepad(JoystickID jid);
-    bool deleteGamepad(JoystickID jid);
+    RInputModule(const RInputModule&) = delete;
+    RInputModule& operator=(const RInputModule&) = delete;
+
+    void updataInputCache();
+    void setFocusWindow(GLFWwindow *window);
+
+    void keyUp(Keys key);
+    void keyDown(Keys key);
+    void mouseUp(MouseBtn btn);
+    void mouseDown(MouseBtn btn);
+    void mouseWheel(int value);
 
     int gamepadCount();
+    JoystickID getJoystickID(int index = 0);
     bool isValidJid(JoystickID jid);
 
 private:
-    RInputModule() = default;
+    BtnAct keyStatus(Keys key) const;
+    BtnAct mouseStatus(MouseBtn btn) const;
+    RPoint2 cursorPos() const;
 
-    std::map<Keys, KeyValue> keyInputs_;
-    std::map<MouseBtn, MouseButtonValue> mouseInputs_;
-    std::vector<GamepadValue> gamepadInputs_;
-    std::array<RPoint2, 2> cursorPos_;
+    static std::map<JoystickID, GamepadValue> gamepad_;
+
+    int wheel_ = 0;
+    RWindow *window_;
+    std::set<Keys> keyUp_;
+    std::set<Keys> keyDown_;
+    std::set<MouseBtn> mouseUp_;
+    std::set<MouseBtn> mouseDown_;
 };
 
 } // Redopera

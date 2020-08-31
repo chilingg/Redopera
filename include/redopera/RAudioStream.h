@@ -11,6 +11,8 @@ class RAudioStream
 public:
     using Api = RtAudio::Api;
 
+    static void setBufferSize(unsigned size);
+
     RAudioStream(Api api = Api::UNSPECIFIED);
     RAudioStream(const RMp3 &mp3, Api api = Api::UNSPECIFIED);
     RAudioStream(const RAudioStream &audio);
@@ -43,6 +45,8 @@ private:
                         double streamTime,
                         RtAudioStreamStatus status,
                         void *userData);
+
+    static unsigned BUFFER_SIZE;
 
     RtAudio stream_;
     RtAudio::StreamParameters parameters_;

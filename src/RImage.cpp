@@ -1,8 +1,8 @@
-#include "RColor.h"
-#include "RSize.h"
-#include "RDebug.h"
-#include "rsc/RImage.h"
-#include "dependents/stb_image.h"
+#include <RColor.h>
+#include <RSize.h>
+#include <RDebug.h>
+#include <rsc/RImage.h>
+#include <dependents/stb_image.h>
 
 #include <cstring>
 
@@ -94,7 +94,7 @@ RData *RImage::data() const
 
 bool RImage::load(std::string path, bool flip)
 {
-    RResource::rscpath(path);
+    RResource::rscPath(path);
 
     stbi_set_flip_vertically_on_load(flip);
     std::shared_ptr<RData> temp(stbi_load(path.c_str(), &width_, &height_, &channel_, 0), stbi_image_free);
@@ -188,7 +188,7 @@ void RImage::rotate90()
     std::swap(width_, height_);
 }
 
-void RImage::full(RData r, RData g, RData b, RData a)
+void RImage::fill(RData r, RData g, RData b, RData a)
 {
     struct tow
     {

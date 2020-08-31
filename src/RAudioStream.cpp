@@ -1,7 +1,14 @@
-#include "RAudioStream.h"
-#include "RDebug.h"
+#include <RAudioStream.h>
+#include <RDebug.h>
 
 using namespace Redopera;
+
+unsigned RAudioStream::BUFFER_SIZE = 2046;
+
+void RAudioStream::setBufferSize(unsigned size)
+{
+    BUFFER_SIZE = size;
+}
 
 RAudioStream::RAudioStream(RAudioStream::Api api):
     stream_(api)
@@ -98,8 +105,6 @@ float RAudioStream::decreaseVolume(float decrease)
 
 bool RAudioStream::openStream(const RMp3 &mp3)
 {
-    static unsigned BUFFER_SIZE = 4096;
-
     if(stream_.isStreamOpen())
         stream_.closeStream();
 

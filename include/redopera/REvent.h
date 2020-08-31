@@ -4,9 +4,12 @@
 #include "RPoint.h"
 #include "RSize.h"
 
+class GLFWwindow;
+
 namespace Redopera {
 
 class RController;
+class RWindow;
 
 // 事件通知类集合 ********************
 
@@ -14,7 +17,7 @@ class RController;
 class StartEvent
 {
 public:
-    explicit StartEvent(RController *sender = nullptr):
+    explicit StartEvent(RController *sender):
         sender(sender) {}
     RController *sender;
 };
@@ -23,7 +26,7 @@ public:
 class FinishEvent
 {
 public:
-    explicit FinishEvent(RController *sender = nullptr):
+    explicit FinishEvent(RController *sender):
         sender(sender) {}
     RController *sender;
 };
@@ -32,20 +35,17 @@ public:
 class CloseEvent
 {
 public:
-    explicit CloseEvent(RController *sender = nullptr):
+    explicit CloseEvent(RController *sender):
         sender(sender) {}
     RController *sender;
     bool stop = false; // true驳回关闭申请
 };
 
-struct TransEvent
+struct TransInfo
 {
     RController *sender;
     const RSize size;
     const RPoint pos = RPoint(0);
-    struct {
-        float x, y, z;
-    } const rotate { 0.0f, 0.0f, 0.0f };
 };
 
 enum class Keys;
@@ -53,29 +53,32 @@ enum class MouseBtn;
 enum class GamepadBtn;
 enum class BtnAct;
 enum class GamepadAxes;
+enum class JoystickID;
 
 struct InputEvent
 {
-    InputEvent(RController *sender = nullptr):
+    InputEvent(RWindow *sender):
         sender(sender) {}
 
     BtnAct status(Keys key);
     BtnAct status(MouseBtn btn);
-    BtnAct status(GamepadBtn btn, unsigned p = 0);
-    float status(GamepadAxes axis, unsigned p = 0);
+    BtnAct status(GamepadBtn btn, JoystickID jid);
+    float status(GamepadAxes axis, JoystickID jid);
 
     bool press(Keys key);
     bool press(MouseBtn btn);
-    bool press(GamepadBtn btn, unsigned p = 0);
+    bool press(GamepadBtn btn, JoystickID jid);
 
     bool release(Keys key);
     bool release(MouseBtn btn);
-    bool release(GamepadBtn btn, unsigned p = 0);
+    bool release(GamepadBtn btn, JoystickID jid);
 
     RPoint2 pos();
-    RPoint2 prePos();
+    int wheel();
 
-    RController *sender;
+    bool anyKeyPress();
+
+    RWindow *sender;
 };
 
 } // Redopera

@@ -1,4 +1,6 @@
 #include <rsc/RShaderProg.h>
+#include <RGame.h>
+#include <RRenderSystem.h>
 #include <RWindow.h>
 #include <RThread.h>
 #include <RPlane.h>
@@ -40,89 +42,84 @@ const GLchar *fCode =
 std::atomic_bool done(false);
 
 std::future<RTexture> future;
-GLuint mLoc;
 
-// 未设置当前线程OpenGL Context之前无法创建OpenGL相关对象
 std::unique_ptr<RPlane> plane;
-std::unique_ptr<RShaderProg> shaders;
+std::unique_ptr<RRenderSystem> renderer;
 
 void control()
 {
-    plane->render(*shaders, mLoc);
+    renderer->render(*plane);
+    renderer->renderLine(*plane);
 }
 
-void startEvent(StartEvent)
+void translation(TransInfo *e)
 {
-    shaders->attachShader({ RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)});
-    shaders->linkProgram();
-    auto inter = shaders->useInterface();
-    mLoc = shaders->getUniformLocation("model");
+    plane->rPos() = RPoint((e->size.width() - plane->size().width()) / 2, (e->size.height() - plane->size().height()) / 2);
+}
+
+void startEvent(StartEvent* e)
+{
+    renderer->setShaderProg(RShaderProg({ RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}));
 
     RTexture tex = future.get();
-    plane->setSize(tex.size());
+    plane->rSize() = tex.size();
     plane->setTexture(tex);
+
+    renderer->setViewprot(0, 400, 0, 400);
+    TransInfo info{e->sender, {400, 400}};
+    translation(&info);
 }
 
-void translation(const TransEvent &e)
+void inputEvent(InputEvent *e)
 {
-    shaders->useInterface().setViewprot(
-                shaders->getUniformLocation("projection"), 0, e.size.width(), 0, e.size.height());
-    plane->setPos((e.size.width() - plane->width()) / 2, (e.size.height() - plane->height()) / 2);
+    if(e->press(Keys::KEY_ESCAPE))
+        e->sender->closeWindow();
 }
 
-void inputEvent(InputEvent e)
-{
-    if(e.press(Keys::KEY_ESCAPE))
-        e.sender->breakLoop();
-}
-
-void finishEvent(FinishEvent)
+void finishEvent(FinishEvent*)
 {
     done = true;
 }
 
 int main()
 {
-    RWindow::Format format;
-    RWindow window(400, 400, "Share", format);
-    window.ctrl()->setStartFunc(startEvent);
-    window.ctrl()->setInputFunc(inputEvent);
-    window.ctrl()->setFinishFunc(finishEvent);
-    window.ctrl()->setTranslateFunc(translation);
-    window.ctrl()->setControlFunc(control);
+    RGame game;
+
+    RWindow window(400, 400, "Share");
+    RController ctrl;
+    ctrl.setStartFunc(startEvent);
+    ctrl.setInputFunc(inputEvent);
+    ctrl.setFinishFunc(finishEvent);
+    ctrl.setTransFunc(translation);
+    ctrl.setControlFunc(control);
+    window.ctrl()->addChild(&ctrl);
 
     plane = std::make_unique<RPlane>();
-    shaders = std::make_unique<RShaderProg>();
+    renderer = std::make_unique<RRenderSystem>();
 
     std::promise<RTexture> promise;
     future = promise.get_future();
 
     RThread thread([&promise, &window]{
-
-        RContext context;
+        RContext::Format format;
+        format.shared = window.getWindowHandle();
+        RContext context(format);
         if(check(!context, "Failure initialization OpenGL context!"))
             exit(EXIT_FAILURE);
 
-        RContext::Format format;
-        format.shared = window.getWindowHandle();
-        GLFWwindow *winhandle = context.setContex(format);
-
-        if(check(!winhandle, "Failure get OpenGL context"))
-            exit(EXIT_FAILURE);
-
-        RTextsbox text;
-        text.update();
-        promise.set_value(text.textTexture());
+        RTextbox text;
+        text.updataTex();
+        promise.set_value(text.texture());
 
         while(!done)
             ;
     });
 
     window.show();
-    window.exec();
+    game.exec(&window);
 
     plane.reset();
-    shaders.reset();
+    renderer.reset();
 
     return 0;
 }

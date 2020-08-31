@@ -14,8 +14,6 @@ class RFont
 {
     using RChar = int;
 
-    friend void swap(RFont &font1, RFont &font2);
-
 public:
     struct Glyph
     {
@@ -23,6 +21,7 @@ public:
         int height = 0;
         int xoff = 0;
         int yoff = 0;
+        int advence = 0;
         std::unique_ptr<const RData[]> data = nullptr;
     };
 
@@ -30,7 +29,6 @@ public:
     static RFont sourceCodePro();
 
     static void setCasheSize(unsigned size);
-    static void setDefaultFontSize(unsigned size);
     static void setDefaultFont(const RFont &font);
     static const RFont& getDefaulteFont();
 
@@ -54,7 +52,7 @@ public:
     void clearCache() const;
 
 private:
-    static std::unique_ptr<RFont> defaultFont;
+    static RFont defaultFont;
     static unsigned cacheMaxSize_;
 
     struct {

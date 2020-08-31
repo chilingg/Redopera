@@ -1,5 +1,5 @@
-#include "rsc/RLuaScript.h"
-#include "RDebug.h"
+#include <rsc/RLuaScript.h>
+#include <RDebug.h>
 
 using namespace Redopera;
 
@@ -212,7 +212,7 @@ bool RLuaScript::load(const std::string &lua)
     luaL_openlibs(temp.get());
 
     std::string path = lua;
-    RResource::rscpath(path);
+    RResource::rscPath(path);
     if(luaL_dofile(temp.get(), path.c_str()))
     {
         if(luaL_dostring(temp.get(), lua.c_str()))
@@ -248,7 +248,7 @@ bool RLuaScript::load(const RData *buff, size_t size, const std::string &name)
 bool RLuaScript::import(const std::string &lua)
 {
     std::string path = lua;
-    RResource::rscpath(path);
+    RResource::rscPath(path);
     if(luaL_dofile(lua_.get(), path.c_str()))
     {
         if(luaL_dostring(lua_.get(), lua.c_str()))

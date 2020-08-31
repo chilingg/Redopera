@@ -1,7 +1,9 @@
+#include <RGame.h>
 #include <RWindow.h>
 #include <RInputModule.h>
 #include <RController.h>
 #include <RKeeper.h>
+#include <REvent.h>
 #include <RDebug.h>
 #include <rsc/RShaderProg.h>
 
@@ -49,13 +51,13 @@ public:
     void control()
     {
         model = glm::rotate(model, 0.05f, { 0.0f, 1.0f, 0.0f });
-        auto itf = shaders.useInterface();
-        itf.setUniformMatrix(modelLoc, model);
+        auto itfc = shaders.useInterface();
+        itfc.setUniformMatrix(modelLoc, model);
         glBindVertexArray(VAO.get());
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
-    void startEvent(StartEvent)
+    void startEvent(StartEvent*)
     {
         // start事件在调用exce()时发起
         GLuint vao, vbo;
@@ -74,7 +76,7 @@ public:
         // 复制数据到VBO
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
         // 设置顶点属性
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), bufOff(0));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), R_BUFF_OFF(0));
         glEnableVertexAttribArray(0);
 
         GLuint projection = shaders.getUniformLocation("projection");
@@ -83,21 +85,22 @@ public:
         // Interface生存周期内对应的shader program都处于glUseProgram()调用中，析构时自动glUseProgram(0);
         RInterface intf = shaders.useInterface();
         intf.setUniformMatrix(modelLoc, model);
-        // intf.setViewprot(projection, -2.0f, 2.0f, -2.0f, 2.0f); // 正交视图
-        intf.setPerspective(projection, -30.0f, 30.0f, 0.0f, 60.0f, 0.0f, 1500.0f);
+        intf.setUniformMatrix(projection, glm::perspective(-30.0f, 30.0f, 0.0f, 60.0f, 0.0f, 1500.0f));
     }
 
-    void finishEvent(FinishEvent)
+    void finishEvent(FinishEvent*)
     {
         // finish事件在exce()退出时发起
         shaders.release(); // 显式释放不是必须的，再次只是示范
+        VAO.reset();
+        VBO.reset();
     }
 
-    void inputEvent(InputEvent e)
+    void inputEvent(InputEvent *e)
     {
         // inputEvent只能监测感兴趣的按键
-        if(e.press(Keys::KEY_ESCAPE))
-            ctrl.getParent()->breakLoop();
+        if(e->anyKeyPress())
+            ctrl.breakLoop();
     }
 
     RController ctrl;
@@ -110,7 +113,7 @@ private:
 };
 
 RWindow *p; // entered信号才能实时监测按键事件
-bool observeKeyboard(Keys, BtnAct, Modifier)
+bool observeKeyboard(Keys, BtnAct)
 {
     p->closeWindow();
     return true;
@@ -118,9 +121,10 @@ bool observeKeyboard(Keys, BtnAct, Modifier)
 
 int main()
 {
+    RGame game;
+
     RWindow::Format format;
     format.decorate = false;
-    format.keysSigal = true;
     format.background = 0x101018;
     RWindow window(500, 500, "Triangle", format);
     p = &window;
@@ -128,8 +132,6 @@ int main()
     TestCtl t;
     t.ctrl.changeParent(window.ctrl());
 
-    window.entered.connect(observeKeyboard);
-
     window.show();
-    return window.exec();
+    return game.exec(&window);
 }

@@ -11,8 +11,6 @@ class RColor;
 
 class RImage
 {
-    friend void swap(RImage &img1, RImage &img2);
-
 public:
     static const RImage& redoperaIcon();
 
@@ -39,7 +37,7 @@ public:
     void flipV();
     void flipH();
     void rotate90();
-    void full(RData r, RData g = 0, RData b = 0, RData a = 0);
+    void fill(RData r, RData g = 0, RData b = 0, RData a = 0);
     void release();
 
 private:

@@ -1,15 +1,11 @@
-#include "RDebug.h"
-
-#include <cstdio>
-#include <cstring>
-#include <codecvt>
-#include <locale>
-#include <functional>
+#include <RDebug.h>
 #include <RColor.h>
 #include <RPoint.h>
 #include <RSize.h>
 #include <RRect.h>
-#include <RArea.h>
+
+#include <locale>
+#include <codecvt>
 
 using namespace Redopera;
 
@@ -107,7 +103,7 @@ RDebug &RDebug::operator<<(const std::string &str)
 
 RDebug &RDebug::operator<<(wchar_t c)
 {
-    buf_ += strcnv.to_bytes(c);
+    buf_ += strcnv.to_bytes(c) + ' ';
     return *this;
 }
 
@@ -131,7 +127,7 @@ RDebug &RDebug::operator<<(const std::wstring &str)
 
 RDebug &RDebug::operator<<(const RColor &color)
 {
-    buf_ += "(r:" + std::to_string(color.r()) + "g:" + std::to_string(color.g()) + "b:" + std::to_string(color.b()) + ") ";
+    buf_ += "(r:" + std::to_string(color.r()) + " g:" + std::to_string(color.g()) + " b:" + std::to_string(color.b()) + ") ";
     return *this;
 }
 
@@ -149,25 +145,14 @@ RDebug &RDebug::operator<<(const RPoint3 &pos)
 
 RDebug &RDebug::operator<<(const RSize &size)
 {
-    buf_ += "(w: " + std::to_string(size.width()) + " h: " + std::to_string(size.height()) + ") ";
+    buf_ += "(w:" + std::to_string(size.width()) + " h:" + std::to_string(size.height()) + ") ";
     return *this;
 }
 
 RDebug &RDebug::operator<<(const RRect &rect)
 {
     buf_ += "(" + std::to_string(rect.left()) + ", " + std::to_string(rect.bottom())
-            + " | w: " + std::to_string(rect.width()) + " h: " + std::to_string(rect.height()) + ") ";
-    return *this;
-}
-
-RDebug &RDebug::operator<<(const RArea &area)
-{
-    buf_ += "Area:( " + std::to_string(area.x()) + ", " + std::to_string(area.y()) + ", " + std::to_string(area.z())
-            + " | W: " + std::to_string(area.width()) + " H: " + std::to_string(area.height())
-            + " | M: " + std::to_string(area.areaFormat().margin.t) + ' ' + std::to_string(area.areaFormat().margin.b)
-            + ' ' + std::to_string(area.areaFormat().margin.l) + ' ' + std::to_string(area.areaFormat().margin.r)
-            + " | P: " + std::to_string(area.areaFormat().padding.t) + ' ' + std::to_string(area.areaFormat().padding.b)
-            + ' ' + std::to_string(area.areaFormat().padding.l) + ' ' + std::to_string(area.areaFormat().padding.r) + ") ";
+            + " | w:" + std::to_string(rect.width()) + " h:" + std::to_string(rect.height()) + ") ";
     return *this;
 }
 

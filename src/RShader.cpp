@@ -1,6 +1,6 @@
-#include "rsc/RShader.h"
-#include "RDebug.h"
-#include "ROpenGL.h"
+#include <rsc/RShader.h>
+#include <RDebug.h>
+#include <ROpenGL.h>
 
 #include <fstream>
 #include <sstream>
@@ -91,7 +91,7 @@ bool RShader::load(const std::string &shader, Type type)
     std::string code;
 
     std::string path = shader;
-    RResource::rscpath(path);
+    RResource::rscPath(path);
     std::ifstream file;
     file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
     try {

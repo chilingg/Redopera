@@ -1,8 +1,6 @@
 #ifndef RPOINT_H
 #define RPOINT_H
 
-#include <functional>
-
 namespace Redopera {
 
 class RPoint2
@@ -16,8 +14,8 @@ public:
     bool operator==(const RPoint2 &pos) const { return x_ == pos.x_ && y_ == pos.y_; }
     bool operator!=(const RPoint2 &pos) const { return x_ != pos.x_ || y_ != pos.y_; }
 
-    RPoint2 operator+(const RPoint2 &pos) { return RPoint2(x_ + pos.x_, y_ + pos.y_); }
-    RPoint2 operator-(const RPoint2 &pos) { return RPoint2(x_ - pos.x_, y_ - pos.y_); }
+    RPoint2 operator+(const RPoint2 &pos) const { return RPoint2(x_ + pos.x_, y_ + pos.y_); }
+    RPoint2 operator-(const RPoint2 &pos) const { return RPoint2(x_ - pos.x_, y_ - pos.y_); }
 
     RPoint2& operator+=(const RPoint2 &pos) { x_ += pos.x_; y_ += pos.y_; return *this; }
     RPoint2& operator-=(const RPoint2 &pos) { x_ -= pos.x_; y_ -= pos.y_; return *this; }
@@ -36,6 +34,9 @@ public:
     RPoint2 mirrorH(int axis = 0) { return RPoint2((axis-x_)*2 + x_, y_); }
     RPoint2 mirrorV(int axis = 0) { return RPoint2(x_, (axis-y_)*2 + y_); }
 
+    void move(int x, int y) { x_ += x; y_ += y; }
+    void move(const RPoint2 &pos) { x_ += pos.x_; y_ += pos.y_; }
+
 protected:
     int x_;
     int y_;
@@ -47,13 +48,13 @@ class RPoint3 : public RPoint2
 public:
     RPoint3() noexcept: RPoint2(), z_(0) {}
     explicit RPoint3(int x, int y = 0, int z = 0) noexcept: RPoint2(x, y), z_(z) {}
-    RPoint3(RPoint2 p2, int z = 0) noexcept: RPoint2(p2), z_(z) {}
+    RPoint3(const RPoint2 &p2, int z = 0) noexcept: RPoint2(p2), z_(z) {}
 
     bool operator==(const RPoint3 &pos) const { return x_ == pos.x_ && y_ == pos.y_ && z_ == pos.z_; }
     bool operator!=(const RPoint3 &pos) const { return x_ != pos.x_ || y_ != pos.y_ || z_ != pos.z_; }
 
-    RPoint3 operator+(const RPoint3 &pos) { return RPoint3(x_ + pos.x_, y_ + pos.y_, z_ + pos.z_); }
-    RPoint3 operator-(const RPoint3 &pos) { return RPoint3(x_ - pos.x_, y_ - pos.y_, z_ - pos.z_); }
+    RPoint3 operator+(const RPoint3 &pos) const { return RPoint3(x_ + pos.x_, y_ + pos.y_, z_ + pos.z_); }
+    RPoint3 operator-(const RPoint3 &pos) const { return RPoint3(x_ - pos.x_, y_ - pos.y_, z_ - pos.z_); }
 
     RPoint3& operator+=(const RPoint3 &pos) { x_ += pos.x_; y_ += pos.y_; z_ += pos.z_; return *this; }
     RPoint3& operator-=(const RPoint3 &pos) { x_ -= pos.x_; y_ -= pos.y_; z_ -= pos.z_; return *this; }
@@ -68,6 +69,9 @@ public:
     void set(int x, int y, int z) { x_ = x, y_ = y; z_ = z; }
     void set(const RPoint2 &pos, int z) { x_ = pos.x(), y_ = pos.y(); z_ = z; }
 
+    void move(int x, int y, int z = 0) { RPoint2::move(x, y); z_ += z; }
+    void move(const RPoint3 &pos) { RPoint2::move(pos); z_ += pos.z_; };
+
 protected:
     int z_;
 
@@ -76,33 +80,5 @@ protected:
 using RPoint = RPoint3;
 
 } // ns Redopera
-
-namespace std {
-
-template <>
-struct hash<Redopera::RPoint2>
-{
-    typedef int64_t result_type;
-    typedef Redopera::RPoint2 argument_type;
-
-    int64_t operator()(const Redopera::RPoint2 &pos) const
-    {
-        return pos.x() ^ (static_cast<int64_t>(pos.y()) << 32);
-    }
-};
-
-template <>
-struct hash<Redopera::RPoint3>
-{
-    typedef int64_t result_type;
-    typedef Redopera::RPoint3 argument_type;
-
-    int64_t operator()(const Redopera::RPoint3 &pos) const
-    {
-        return pos.x() ^ (static_cast<int64_t>(pos.y()) << 24) ^ (static_cast<int64_t>(pos.z()) << 48);
-    }
-};
-
-} // ns std
 
 #endif // RPOINT_H

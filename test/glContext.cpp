@@ -1,4 +1,5 @@
 #include <RDebug.h>
+#include <RGame.h>
 #include <RContext.h>
 
 using namespace Redopera;
@@ -9,17 +10,16 @@ int main()
 {
     rDebug << "======== OpenGL Context Create Test ========\n";
 
-    RContext contex;
-    if(check(!contex, "Failure initialization OpenGL context!"))
-        exit(EXIT_FAILURE);
+    RGame game;
 
     rDebug << "Try Create OpenGL3.3 Context...";
     RContext::Format format;
     format.versionMajor = 3;
     format.versionMinor = 3;
+    RContext context(format);
 
-    if(contex.setContex(format))
-        rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created";
+    if(context.setContex(format))
+        rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created.";
 
     format.versionMajor = 4;
     rDebug << "\nTry create high version...";
@@ -27,10 +27,13 @@ int main()
     {
         format.versionMinor = i;
 
-        if(contex.setContex(format))
-            rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created";
+        if(context.setContex(format))
+            rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created.";
         else
+        {
+            rDebug << "OpenGl Version " << format.versionMajor << '.' << format.versionMinor << " create failed!";
             break;
+        }
     }
 
     rDebug << "\nTest end";

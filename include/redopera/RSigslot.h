@@ -8,16 +8,24 @@
 
 namespace Redopera {
 
+/*  目前在多线程中，并没有办法自动阻止在槽函数所在对象析构但未析构到__RSLOT__成员时收到信号，
+    所以若不确定槽函数是否在析构时被调用，请手动释放槽 */
 class RSlot
 {
 public:
-    RSlot(size_t typeHash):
-        typeHash(typeHash),
+    template<typename Sloter>
+    static void disableSlot(Sloter *sloter)
+    {
+        while(!sloter->__RSLOT__.flag.unique())
+            ;
+        sloter->__RSLOT__.flag.reset();
+    }
+
+    RSlot():
         flag(std::make_shared<bool>(true))
     {}
 
     RSlot(RSlot &slot) = delete;
-
     RSlot& operator=(RSlot &) = delete;
 
     ~RSlot()
@@ -29,14 +37,13 @@ public:
 
     std::weak_ptr<bool> clone() const { return std::weak_ptr<bool>(flag); }
 
-    const size_t typeHash; // 拥有RSlot的类的指针的类型哈希值，用于在connect中确定该类有自己的RSlot而不是继承而来的
-
 private:
     std::shared_ptr<bool> flag; // 存活标志
 };
 
+
 // 在需要使用槽函数的类声明尾部展开宏 _RSLOT_TAIL_
-#define _RSLOT_TAIL_ public: const Redopera::RSlot __RSLOT__ { typeid(this).hash_code() };
+#define _RSLOT_DECLARE_ public: Redopera::RSlot __RSLOT__;
 
 template<typename ... Args>
 class RSignal
@@ -44,20 +51,21 @@ class RSignal
 public:
     RSignal() = default;
 
-    RSignal(RSignal &) = delete;
-    RSignal& operator=(RSignal &) = delete ;
+    RSignal(const RSignal &)  = delete;
+    RSignal& operator=(const RSignal &) = delete;
 
     void operator()(Args ... args)
     {
         std::lock_guard<std::mutex> lock(mutex_);
-        for(auto it = slots_.begin(); it != slots_.end(); ++it)
+        for (auto it = slots_.begin(); it != slots_.end();)
         {
             bool b = it->second(std::forward<Args>(args)...);
-            if(!b)
+            if (!b)
             {
                 it = slots_.erase(it);
-                if(it == slots_.end()) break; //初始单个槽函数返回false的情况下，不加不行
+                continue;
             }
+            ++it;
         }
     }
 
@@ -69,15 +77,10 @@ public:
     template<typename Sloter, typename Sloter2>
     void connect(Sloter *sloter, void (Sloter2::*slot)(Args ... args))
     {
-        // 使用槽函数的类需要在声明尾部展开宏_RSLOT_TAIL_
-        if(typeid(Sloter*).hash_code() != sloter->__RSLOT__.typeHash)
-            throw std::logic_error(std::string(typeid(Sloter).name())
-                                   + ": Using slot functions need to expand the macro _RSLOT_TAIL_ at the tail of the declaration");
-
         auto weakptr = sloter->__RSLOT__.clone();
         auto func = std::function<bool(Args ... args)>([weakptr, sloter, slot](Args ... args){
             auto sp = weakptr.lock();
-            if(!sp) return false; // 若槽函数已析构
+            if(!sp) return false; // 若槽函数所属对象已析构或已主动disableSlot
 
             (sloter->*slot)(std::forward<Args>(args)...);
             return true;
@@ -87,7 +90,7 @@ public:
         slots_.emplace(sloter, func);
     }
 
-    void connect(const std::function<bool(Args ...)> &func)
+    void connect(std::function<bool(Args ...)> func)
     {
         std::lock_guard<std::mutex> guard(mutex_);
         slots_.emplace(nullptr, func);
@@ -110,8 +113,6 @@ private:
     std::mutex mutex_;
     std::unordered_multimap<void*, std::function<bool(Args ... args)>> slots_;
 };
-
-extern template class RSignal<>;
 
 } // Redopera
 

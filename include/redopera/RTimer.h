@@ -20,11 +20,16 @@ public:
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count() - time_;
     }
 
-    int64_t elapsed(int64_t time)
+    void cycle(int64_t time)
     {
         int64_t elp = std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count() - time_;
-        if(elp <= time) std::this_thread::sleep_for(std::chrono::milliseconds(time - elp));
-        return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count() - time_;
+        if(elp < time)
+        {
+            std::this_thread::sleep_for(std::chrono::milliseconds(time - elp));
+            time_ += time;
+        }
+        else
+            time_ += elp;
     }
 
     void start()
@@ -48,10 +53,10 @@ public:
         return std::chrono::duration_cast<std::chrono::microseconds>(Clock::now().time_since_epoch()).count() - time_;
     }
 
-    int64_t elapsed(int64_t time)
+    int64_t cycle(int64_t time)
     {
         int64_t elp = std::chrono::duration_cast<std::chrono::microseconds>(Clock::now().time_since_epoch()).count() - time_;
-        if(elp <= time) std::this_thread::sleep_for(std::chrono::microseconds(time - elp));
+        if(elp < time) std::this_thread::sleep_for(std::chrono::microseconds(time - elp));
         return std::chrono::duration_cast<std::chrono::microseconds>(Clock::now().time_since_epoch()).count() - time_;
     }
 

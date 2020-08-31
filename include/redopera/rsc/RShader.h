@@ -3,14 +3,13 @@
 
 #include "RResource.h"
 #include "ROpenGL.h"
+
 #include <memory>
 
 namespace Redopera {
 
 class RShader
 {
-    friend void swap(RShader &shader1, RShader &shader2);
-
 public:
     enum class Type
     {

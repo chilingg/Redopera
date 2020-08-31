@@ -12,24 +12,24 @@ class RResource
 public:
     RResource() = delete;
 
-    static void rscpath(std::string &path)
+    static void rscPath(std::string &path)
     {
         if(path[0] == ':' && path[1] == '/')
-            path = rscPath + path.substr(2, path.size());
+            path = rscPath_ + path.substr(2, path.size());
     }
 
     static void setResourcePath(const std::string &path)
     {
-        rscPath = path;
+        rscPath_ = path;
     }
 
     static const std::string& getResourcePath()
     {
-        return rscPath;
+        return rscPath_;
     }
 
 private:
-    static std::string rscPath;
+    static std::string rscPath_;
 };
 
 } // Redopera

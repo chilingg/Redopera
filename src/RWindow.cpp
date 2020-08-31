@@ -1,61 +1,18 @@
-#include "RWindow.h"
-#include "RInputModule.h"
-#include "REvent.h"
-#include "RDebug.h"
-#include "rsc/RCursor.h"
-
-#include <fstream>
-#include <sstream>
+#include <RWindow.h>
+#include <REvent.h>
+#include <RDebug.h>
+#include <RColor.h>
+#include <rsc/RCursor.h>
+#include <rsc/RImage.h>
 
 using namespace Redopera;
 
-RWindow::Format RWindow::windowFormat;
-std::once_flag RWindow::init;
-
-RWindow* RWindow::mainWindow(nullptr);
-
-RWindow *RWindow::getMainWindow()
-{
-    return mainWindow;
-}
+const RWindow::Format RWindow::windowFormat;
+GLFWwindow *RWindow::mainWindow = nullptr;
 
 RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
 {
     return static_cast<RWindow*>(glfwGetWindowUserPointer(window));
-}
-
-void RWindow::setDefaultWindowFormat(const Format &format)
-{
-    windowFormat = format;
-}
-
-bool RWindow::updateGamepadMappings(std::string path)
-{
-    std::string code;
-    RResource::rscpath(path);
-    std::ifstream file;
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        file.open(path);
-        //读取文件缓冲到数据流
-        std::stringstream sstream;
-        sstream << file.rdbuf();
-
-        file.close();
-        code = sstream.str();
-    }
-    catch(...)
-    {
-        code.clear();
-    }
-
-    if(glfwUpdateGamepadMappings(code.c_str()) == GLFW_FALSE)
-    {
-        prError("Failed to update gamepad mapping! In path: " + path + '\n' +
-                   "To https://github.com/gabomdq/SDL_GameControllerDB download gamecontrollerdb.txt file.");
-        return false;
-    } else
-        return true;
 }
 
 RWindow::RWindow():
@@ -65,20 +22,14 @@ RWindow::RWindow():
 }
 
 RWindow::RWindow(int width, int height, const std::string title, const RWindow::Format &format):
-    ctrl_(std::make_unique<RController>(this)),
+    ctrl_(this),
+    input_(this),
     format_(format),
-    eventPool([]{}),
     window_(nullptr, glfwDestroyWindow),
     vOffset_(0),
-    size_(0, 0), // 真正的尺寸在循环时决定
-    resize_(RSize(width, height)),
+    size_(width, height), // 真正的尺寸在循环时决定
     focused_(false)
 {
-    if(!context_)
-        throw std::runtime_error("Failed to initialize GLFW");
-
-    std::call_once(init, std::bind(initMainWindow, this));
-
     // Debug Context 需要OpenGL4.3以上版本
     if(format_.versionMajor * 10 + format_.versionMinor < 43)
         format_.debug = false;
@@ -87,27 +38,19 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, format_.versionMinor);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, format_.forward);
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, format_.debug);
-    glfwWindowHint(GLFW_RESIZABLE, !format_.fix);
-    glfwWindowHint(GLFW_DECORATED, format_.decorate);
+    glfwWindowHint(GLFW_RESIZABLE, format_.fix ? GLFW_FALSE : GLFW_TRUE);
+    glfwWindowHint(GLFW_DECORATED, format_.decorate ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
     glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
+    glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
     // 默认初始窗口不可见，需主动调用show()
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
+    window_.reset(glfwCreateWindow(width, height, title.c_str(), nullptr, format_.shared));
+
+    // Windows下若初始全屏则无法获取初始焦点，所以统一在此全屏
     if(format_.fullScreen)
-    {
-        GLFWmonitor *monitor = nullptr;
-        monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
-
-        glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-        glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-        glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-        glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-
-        window_.reset(glfwCreateWindow(mode->width, mode->height, title.c_str(), nullptr, format_.shared));
-    }
-    else
-        window_.reset(glfwCreateWindow(width, height, title.c_str(), nullptr, format_.shared));
+        setFullScreenWindow();
 
     if(!window_)
         throw std::runtime_error("Fainled to create GLFW window");
@@ -141,12 +84,12 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
                               GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
     }
 
-    glfwSwapInterval(format_.vSync ? 1 : 0);
+    setVSync(format_.vSync);
     //设置混合
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     //默认背景色
-    RColor color(format_.background << 8);
+    RColor color(format_.background);
     glClearColor(color.r()/255.0f, color.g()/255.0f, color.b()/255.0f, 1.0f);
     //禁用字节对齐限制
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -158,8 +101,14 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
     GLFWimage icon{ img.width(), img.height(), img.data() };
     glfwSetWindowIcon(window_.get(), 1, &icon);
 
-    ctrl_->setCloseFunc([this](CloseEvent &e){ if(e.stop) glfwSetWindowShouldClose(window_.get(), GLFW_FALSE); });
-    ctrl_->setExecFunc(std::bind(&RWindow::exec, this));
+    ctrl_.setCloseFunc([this](CloseEvent *e){ if(e->stop) glfwSetWindowShouldClose(window_.get(), GLFW_FALSE); });
+    ctrl_.setControlFunc(std::bind(&RWindow::controlFunc, this));
+}
+
+void RWindow::setAsMainWindow()
+{
+    ctrl_.setControlFunc(std::bind(&RWindow::mainControlFunc, this));
+    ctrl_.setAsMainCtrl();
 }
 
 void RWindow::setWindowSize(int width, int height)
@@ -218,7 +167,7 @@ void RWindow::setFullScreenWindow(bool b)
     {
         glfwSetWindowMonitor(window_.get(), monitor, 0, 0, vidmode->width, vidmode->height, vidmode->refreshRate);
         // 全屏时GLFW似乎会取消垂直同步
-        glfwSwapInterval(format_.vSync ? 1 : 0);
+        setVSync(format_.vSync);
         // Windows下需手动调用resize回调
         resizeCallback(window_.get(), vidmode->width, vidmode->height);
     }
@@ -269,7 +218,7 @@ void RWindow::setBackColor(const RColor &color)
     glClearColor(color.r() / 255.0f, color.g() / 255.0f, color.b() / 255.0f, 1.0f);
 }
 
-void RWindow::setBackColor(R_RGB rgb)
+void RWindow::setBackColor(RGB rgb)
 {
     RColor color(rgb << 8);
     format_.background = rgb;
@@ -367,12 +316,22 @@ bool RWindow::isFullScreen() const
 
 RController *RWindow::ctrl()
 {
-    return ctrl_.get();
+    return &ctrl_;
 }
 
 const RController *RWindow::ctrl() const
 {
-    return ctrl_.get();
+    return &ctrl_;
+}
+
+const RPoint2 &RWindow::posOffset() const
+{
+    return vOffset_;
+}
+
+const RInputModule *RWindow::inputModule() const
+{
+    return &input_;
 }
 
 void RWindow::closeWindow()
@@ -387,9 +346,8 @@ void RWindow::show()
     glfwSetFramebufferSizeCallback(window_.get(), resizeCallback);
     glfwSetScrollCallback(window_.get(), mouseScrollCallback);
     glfwSetWindowCloseCallback(window_.get(), windowCloseCallback);
-    // 若无需实时响应，则无需开启
-    if(format_.keysSigal)
-        glfwSetKeyCallback(window_.get(), keyboardCollback);
+    glfwSetKeyCallback(window_.get(), keyboardCollback);
+    glfwSetMouseButtonCallback(window_.get(), mouseButtonCollback);
 
     glfwShowWindow(window_.get());
 }
@@ -397,138 +355,6 @@ void RWindow::show()
 void RWindow::hide()
 {
     glfwHideWindow(window_.get());
-}
-
-int RWindow::exec()
-{
-    // 主窗口关闭时所有窗口都会得到通知
-    if(mainWindow != this)
-       mainWindow->ctrl_->closed.connect(ctrl_.get(), &RController::breakLoop);
-
-    // Windows下若初始全屏则无法获取初始焦点，所以统一在此全屏
-    if(format_.fullScreen)
-        setFullScreenWindow();
-
-    StartEvent sEvent(ctrl_.get());
-    ctrl_->dispatchEvent(sEvent);
-
-    // 防止全屏焦点丢失
-    if(!focused_) glfwFocusWindow(window_.get());
-
-    while(ctrl_->loopingCheck() == RController::Status::Looping)
-    {
-        eventPool(); // GLFW更新事件
-
-        // 若窗口尺寸变化
-        RSize size = resize_.load();
-        if(size.isValid())
-        {
-            resize_ = RSize(0, 0);
-
-            if(size != size_)
-            {
-                switch(format_.viewport)
-                {
-                case Viewport::Scale:
-                {
-                    double ratio = static_cast<double>(size.width()) / size.height();
-                    int n;
-                    if(ratio > format_.vRatio_)
-                    {
-                        n = static_cast<int>(size.height() * format_.vRatio_);
-                        glViewport((size.width() - n) / 2, 0, n, size.height());
-                        vOffset_.set((size.width() - n) / 2, 0);
-                        size_.setWidth(n);
-                        size_.setHeight(size.height());
-                    }
-                    else
-                    {
-                        n = static_cast<int>(size.width() / format_.vRatio_);
-                        glViewport(0, (size.height() - n) / 2, size.width(), n);
-                        vOffset_.set(0, (size.height() - n) / 2);
-                        size_.setWidth(size.width());
-                        size_.setHeight(n);
-                    }
-                    break;
-                }
-                case Viewport::Full:
-                {
-                    glViewport(0, 0, size.width(), size.height());
-                    vOffset_.set(0, 0);
-                    size_.set(size.width(), size.height());
-                    break;
-                }
-                case Viewport::Fix:
-                {
-                    glViewport((size.width() - size_.width()) / 2.0, (size.height() - size_.height()) / 2.0,
-                               size_.width(), size_.height());
-                    vOffset_.set((size.width() - size_.width()) / 2.0, (size.height() - size_.height()) / 2.0);
-                    break;
-                }
-                }
-
-                // 传递Translation info
-                ctrl_->translation({ ctrl_.get(), { size_.width(), size_.height() } });
-            }
-        }
-
-        if(focused_) // 更新输入
-        {
-            // 更新手柄输入
-            RInputModule::instance().updateGamepad();
-            // 更新键鼠输入
-            RInputModule::instance().updateKeyboardInput(window_.get());
-            RInputModule::instance().updateMouseInput(window_.get());
-            // 光标位置
-            double xpos, ypos;
-            glfwGetCursorPos(window_.get(), &xpos, &ypos);
-            RInputModule::instance().updateCursorPos(static_cast<int>(xpos) - vOffset_.x(),
-                                                     static_cast<int>(ypos) - vOffset_.y());
-            // 传递输入
-            InputEvent input(ctrl_.get());
-            ctrl_->dispatchEvent(input);
-        }
-
-        // 清屏 清除颜色缓冲和深度缓冲
-        glClear(clearMask);
-
-        ctrl_->activeOnce();
-
-        if(glfwWindowShouldClose(window_.get()))
-            ctrl_->breakLoop();
-
-        glfwSwapBuffers(window_.get());
-    }
-
-    FinishEvent fEvent(ctrl_.get());
-    ctrl_->dispatchEvent(fEvent);
-    ctrl_->closed.emit();
-
-    if(check(ctrl_->status() == RController::Status::Error, "The Loop has unexpectedly finished"))
-        return EXIT_FAILURE;
-    return EXIT_SUCCESS;
-}
-
-void RWindow::initMainWindow(RWindow *window)
-{
-    // 加载手柄映射
-    std::string mappingCode = std::string() + RInputModule::gamepadMappingCode0
-            + RInputModule::gamepadMappingCode1 + RInputModule::gamepadMappingCode2;
-    check(glfwUpdateGamepadMappings(mappingCode.c_str()) == GLFW_FALSE, "Failed to load default gamepad mapping!\n"
-          "To https://github.com/gabomdq/SDL_GameControllerDB download gamecontrollerdb.txt file.");
-
-    // 手柄连接回调
-    glfwSetJoystickCallback(joystickPresentCallback);
-    // 需手动检测一次手柄连接，检测之前已连接的手柄
-    for(int i = GLFW_JOYSTICK_1; i <= GLFW_JOYSTICK_LAST; ++i)
-    {
-        if(glfwJoystickIsGamepad(i))
-            RInputModule::instance().addGamepad(RInputModule::toJoystickID(i));
-    }
-
-    // GLFW事件触发
-    window->eventPool = &glfwPollEvents;
-    mainWindow = window;
 }
 
 void RWindow::openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei , const GLchar *message, const void *)
@@ -577,7 +403,7 @@ void RWindow::openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, 
     {
     case GL_DEBUG_SEVERITY_HIGH:
         fprintf(stderr, "(%d)%s-%s-high: %s\n", id, sourceStr.c_str(), typeStr.c_str(), message);
-        RController::terminateTree(RController::Status::Error);
+        std::runtime_error("OpenGL high error");
         break;
     case GL_DEBUG_SEVERITY_MEDIUM:
         rDebug << EscCtl::yellow << EscCtl::bold << '(' << id << ')' << sourceStr << typeStr << "-medium: "
@@ -594,32 +420,62 @@ void RWindow::openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, 
     }
 }
 
-void RWindow::joystickPresentCallback(int jid, int event)
-{
-    if(event == GLFW_CONNECTED && glfwJoystickIsGamepad(jid))
-    {
-        RInputModule::instance().addGamepad(RInputModule::toJoystickID(jid));
-    }
-    else if(event == GLFW_DISCONNECTED)
-    {
-        RInputModule::instance().deleteGamepad(RInputModule::toJoystickID(jid));
-    }
-}
-
 void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
-    wctrl->resize_ = RSize(width, height);
-}
+    RSize resize(width, height);
 
-void RWindow::keyboardCollback(GLFWwindow *window, int key, int, int action, int mods)
-{
-    getWindowUserCtrl(window)->entered.emit(static_cast<Keys>(key), static_cast<BtnAct>(action), static_cast<Modifier>(mods));
+    switch(wctrl->format_.viewport)
+    {
+    case Viewport::Scale:
+    {
+        double ratio = static_cast<double>(resize.width()) / resize.height();
+        int n;
+        if(ratio > wctrl->format_.vRatio_)
+        {
+            n = static_cast<int>(resize.height() * wctrl->format_.vRatio_);
+            glViewport((resize.width() - n) / 2, 0, n, resize.height());
+            wctrl->vOffset_.set((resize.width() - n) / 2, 0);
+            wctrl->size_.setWidth(n);
+            wctrl->size_.setHeight(resize.height());
+        }
+        else
+        {
+            n = static_cast<int>(resize.width() / wctrl->format_.vRatio_);
+            glViewport(0, (resize.height() - n) / 2, resize.width(), n);
+            wctrl->vOffset_.set(0, (resize.height() - n) / 2);
+            wctrl->size_.setWidth(resize.width());
+            wctrl->size_.setHeight(n);
+        }
+        break;
+    }
+    case Viewport::Full:
+    {
+        glViewport(0, 0, resize.width(), resize.height());
+        wctrl->vOffset_.set(0, 0);
+        wctrl->size_.set(resize.width(), resize.height());
+        break;
+    }
+    case Viewport::Fix:
+    {
+        glViewport((resize.width() - wctrl->size_.width()) / 2.0,
+                   (resize.height() - wctrl->size_.height()) / 2.0,
+                   wctrl->size_.width(),
+                   wctrl->size_.height());
+        wctrl->vOffset_.set((resize.width() - wctrl->size_.width()) / 2.0,
+                            (resize.height() - wctrl->size_.height()) / 2.0);
+        break;
+    }
+    }
+
+    // 传递Translation info
+    TransInfo info{ &wctrl->ctrl_, { wctrl->size_.width(), wctrl->size_.height() } };
+    wctrl->ctrl_.translation(&info);
 }
 
 void RWindow::mouseScrollCallback(GLFWwindow *window, double , double y)
 {
-    getWindowUserCtrl(window)->rolled.emit(static_cast<int>(y));
+    getWindowUserCtrl(window)->input_.mouseWheel(static_cast<int>(y));
 }
 
 void RWindow::windowFocusCallback(GLFWwindow *window, int focused)
@@ -631,5 +487,65 @@ void RWindow::windowFocusCallback(GLFWwindow *window, int focused)
 void RWindow::windowCloseCallback(GLFWwindow *window)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
-    wctrl->ctrl_->breakLoop();
+    wctrl->ctrl_.breakLoop();
+}
+
+void RWindow::keyboardCollback(GLFWwindow *window, int key, int, int action, int)
+{
+    RWindow *wctrl = getWindowUserCtrl(window);
+    if (action == GLFW_RELEASE)
+        wctrl->input_.keyUp(RInputModule::toKey(key));
+    else
+        wctrl->input_.keyDown(RInputModule::toKey(key));
+}
+
+void RWindow::mouseButtonCollback(GLFWwindow *window, int btn, int action, int)
+{
+    RWindow *wctrl = getWindowUserCtrl(window);
+    if (action == GLFW_RELEASE)
+        wctrl->input_.mouseUp(RInputModule::toMouseButtons(btn));
+    else
+        wctrl->input_.mouseDown(RInputModule::toMouseButtons(btn));
+}
+
+void RWindow::controlFunc()
+{
+    fTimer_.cycle(1000 / format_.fps);
+    glfwSwapBuffers(window_.get());
+
+    // 传递输入
+    if (focused_ && iTimer_.elapsed() > 1000 / format_.ips)
+    {
+        iTimer_.start();
+        InputEvent input(this);
+        ctrl_.dispatchEvent(&input);
+        input_.updataInputCache();
+    }
+
+    if(glfwWindowShouldClose(window_.get()))
+        ctrl_.breakLoop();
+
+    // 清屏 清除颜色缓冲和深度缓冲
+    glClear(clearMask);
+}
+
+void RWindow::mainControlFunc()
+{
+    fTimer_.cycle(1000 / format_.fps);
+    glfwSwapBuffers(window_.get());
+
+    glfwPollEvents();
+    // 传递输入
+    if (focused_ && iTimer_.elapsed() > 1000 / format_.ips)
+    {
+        InputEvent input(this);
+        ctrl_.dispatchEvent(&input);
+        input_.updataInputCache();
+    }
+
+    if(glfwWindowShouldClose(window_.get()))
+        ctrl_.breakLoop();
+
+    // 清屏 清除颜色缓冲和深度缓冲
+    glClear(clearMask);
 }

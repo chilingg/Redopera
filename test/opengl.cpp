@@ -1,3 +1,4 @@
+#include <RGame.h>
 #include <RContext.h>
 #include <rsc/RShaderProg.h>
 #include <RDebug.h>
@@ -17,6 +18,7 @@ const char *vCode =
 
 int main()
 {
+    RGame game;
     RContext context;
     if(check(!context, "Failure initialization OpenGL context!"))
         exit(EXIT_FAILURE);

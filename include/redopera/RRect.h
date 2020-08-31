@@ -28,7 +28,7 @@ public:
     void setSize(int width, int height);
     void setWidth(int width);
     void setHeight(int height);
-    void setPos(RPoint2 pos);
+    void setPos(const RPoint2 &pos);
     void setPos(int x, int y);
     void setPosX(int x);
     void setPosY(int y);
@@ -48,7 +48,7 @@ public:
     void set(int width, int height, int x, int y);
     void set(const RSize &size, const RPoint2 &bottomLeft);
 
-    void move(RPoint2 pos);
+    void move(const RPoint2 &pos);
     void move(int x, int y);
 
     int top() const;
@@ -157,7 +157,7 @@ inline void RRect::setHeight(int height)
     size_.setHeight(height);
 }
 
-inline void RRect::setPos(RPoint2 pos)
+inline void RRect::setPos(const RPoint2 &pos)
 {
     pos_ = pos;
 }
@@ -254,7 +254,7 @@ inline void RRect::set(const RSize &size, const RPoint2 &bottomLeft)
     pos_ = bottomLeft;
 }
 
-inline void RRect::move(RPoint2 pos)
+inline void RRect::move(const RPoint2 &pos)
 {
     pos_ += pos;
 }

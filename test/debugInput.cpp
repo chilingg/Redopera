@@ -1,4 +1,8 @@
 #include <RDebug.h>
+#include <RColor.h>
+#include <RPoint.h>
+#include <RSize.h>
+#include <RRect.h>
 #include <RTime.h>
 
 using namespace Redopera;
@@ -48,8 +52,14 @@ int main()
     rDebug << "Test color input";
     rDebug << EscCtl::bold << EscCtl::yellow << "Yellow" << EscCtl::non;
 
-    rDebug << "Test RTime";
+    rDebug << "Test class debug input";
+    rDebug << "RColor(0xffeedd)\t>>\t" << RColor(0xffeedd);
+    rDebug << "RPoint(2, 3)\t>>\t" << RPoint(2, 3);
+    rDebug << "RSize(5, 6) \t>>\t" << RSize(5, 6);
+    rDebug << "RRect(8, 8, 2, 3)\t>>\t" << RRect(8, 8, 2, 3);
     rDebug << RTime();
+
+    rDebug << "End of test.";
 
     return 0;
 }

@@ -1,29 +1,30 @@
-#include "REvent.h"
-#include "RInputModule.h"
+#include <REvent.h>
+#include <RWindow.h>
+#include <RInputModule.h>
 
 using namespace Redopera;
 
 BtnAct InputEvent::status(Keys key)
 {
-    return RInputModule::instance().keyInputs_[key].action;
+    return sender->inputModule()->keyStatus(key);
 }
 
 BtnAct InputEvent::status(MouseBtn btn)
 {
-    return RInputModule::instance().mouseInputs_[btn].action;
+    return sender->inputModule()->mouseStatus(btn);
 }
 
-BtnAct InputEvent::status(GamepadBtn btn, unsigned p)
+BtnAct InputEvent::status(GamepadBtn btn, JoystickID jid)
 {
-    if(RInputModule::instance().gamepadInputs_.empty()) return BtnAct::RELEASE;
+    if (!sender->inputModule()->gamepad_.count(jid))
+        return BtnAct::RELEASE;
 
-    RInputModule::instance().gamepadInputs_[p].status.buttons[static_cast<unsigned>(btn)] = 2;
-    return RInputModule::toButtonAction(1);
+    return RInputModule::toButtonAction(sender->inputModule()->gamepad_[jid].status.buttons[static_cast<unsigned>(btn)]);
 }
 
-float InputEvent::status(GamepadAxes axis, unsigned p)
+float InputEvent::status(GamepadAxes axis, JoystickID jid)
 {
-    if(RInputModule::instance().gamepadInputs_.empty())
+    if (!sender->inputModule()->gamepad_.count(jid))
     {
         if(axis == GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER || axis == GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER)
             return -1.f;
@@ -31,65 +32,58 @@ float InputEvent::status(GamepadAxes axis, unsigned p)
             return 0.f;
     }
 
-    return RInputModule::instance().gamepadInputs_[p].status.axes[static_cast<unsigned>(axis)];
+    return sender->inputModule()->gamepad_[jid].status.axes[static_cast<unsigned>(axis)];
 }
 
 bool InputEvent::press(Keys key)
 {
-    return RInputModule::instance().keyInputs_[key].action == BtnAct::PRESS
-            && RInputModule::instance().keyInputs_[key].action
-            != RInputModule::instance().keyInputs_[key].preAction;
+    return sender->inputModule()->keyStatus(key) == BtnAct::PRESS && sender->inputModule()->keyDown_.count(key);
 }
 
 bool InputEvent::press(MouseBtn btn)
 {
-    return RInputModule::instance().mouseInputs_[btn].action == BtnAct::PRESS
-            && RInputModule::instance().mouseInputs_[btn].action
-            != RInputModule::instance().mouseInputs_[btn].preAction;
+    return sender->inputModule()->mouseStatus(btn) == BtnAct::PRESS && sender->inputModule()->mouseDown_.count(btn);
 }
 
-bool InputEvent::press(GamepadBtn btn, unsigned p)
+bool InputEvent::press(GamepadBtn btn, JoystickID jid)
 {
-    if(RInputModule::instance().gamepadInputs_.empty()) return false;
+    if (!sender->inputModule()->gamepad_.count(jid))
+        return false;
 
     unsigned index = static_cast<unsigned>(btn);
-    return RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-            == static_cast<unsigned char>(BtnAct::PRESS)
-            && RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-            != RInputModule::instance().gamepadInputs_[p].preButtons[index];
+    return sender->inputModule()->gamepad_[jid].status.buttons[index] && !sender->inputModule()->gamepad_[jid].preButtons[index];
 }
 
 bool InputEvent::release(Keys key)
 {
-    return RInputModule::instance().keyInputs_[key].action == BtnAct::RELEASE
-            && RInputModule::instance().keyInputs_[key].action
-            != RInputModule::instance().keyInputs_[key].preAction;
+    return sender->inputModule()->keyStatus(key) == BtnAct::RELEASE && sender->inputModule()->keyUp_.count(key);
 }
 
 bool InputEvent::release(MouseBtn btn)
 {
-    return RInputModule::instance().mouseInputs_[btn].action == BtnAct::RELEASE
-            && RInputModule::instance().mouseInputs_[btn].action
-            != RInputModule::instance().mouseInputs_[btn].preAction;
+    return sender->inputModule()->mouseStatus(btn) == BtnAct::RELEASE && sender->inputModule()->mouseUp_.count(btn);
 }
 
-bool InputEvent::release(GamepadBtn btn, unsigned p)
+bool InputEvent::release(GamepadBtn btn, JoystickID jid)
 {
-    if(RInputModule::instance().gamepadInputs_.empty()) return false;
+    if (!sender->inputModule()->gamepad_.count(jid))
+        return false;
 
     unsigned index = static_cast<unsigned>(btn);
-    return RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-            == static_cast<unsigned char>(BtnAct::RELEASE)
-            && RInputModule::instance().gamepadInputs_[p].status.buttons[index]
-            != RInputModule::instance().gamepadInputs_[p].preButtons[index];
+    return !sender->inputModule()->gamepad_[jid].status.buttons[index] && sender->inputModule()->gamepad_[jid].preButtons[index];
 }
 
 RPoint2 InputEvent::pos()
 {
-    return RInputModule::instance().cursorPos_[0];
+    return sender->inputModule()->cursorPos();
 }
 
-RPoint2 InputEvent::prePos()
+int InputEvent::wheel()
 {
-    return RInputModule::instance().cursorPos_[1];
+    return sender->inputModule()->wheel_;
+}
+
+bool InputEvent::anyKeyPress()
+{
+    return !sender->inputModule()->keyDown_.empty();
 }

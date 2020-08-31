@@ -18,7 +18,7 @@ public:
 
     RKeeper(RKeeper &&keeper):
         free_(std::move(keeper.free_)),
-        value_(std::forward<T>(keeper.value_))
+        value_(std::move(keeper.value_))
     { keeper.free_ = std::function<void(T)>(); }
 
     RKeeper& operator=(RKeeper &&keeper)
@@ -31,11 +31,11 @@ public:
 
     RKeeper() {};
 
-    operator bool () { return free_; }
+    operator T& () { return value_; }
 
     ~RKeeper() { if(free_) free_(value_); }
 
-    T get() { return value_; }
+    T& get() { return value_; }
 
     void reset(const T &value, const std::function<void(T)> &func)
     {
@@ -44,7 +44,11 @@ public:
         value_ = value;
     }
 
-    T release() { free_ = std::function<void(T)>(); return value_; }
+    void reset()
+    {
+        if(free_) free_(value_);
+        free_ = std::function<void(T)>();
+    }
 
 private:
     std::function<void(T)> free_;

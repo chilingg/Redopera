@@ -1,4 +1,5 @@
-#include "RSprite.h"
+#include <RSprite.h>
+#include <RRect.h>
 
 using namespace Redopera;
 
@@ -8,26 +9,26 @@ RSprite::RSprite():
 
 }
 
-RSprite::RSprite(int width, int height, int x, int y, int z, const RArea::Format &area):
-    RSprite(RSize(width, height), RPoint(x, y, z), area)
+RSprite::RSprite(int width, int height, int x, int y, int z):
+    RSprite(RSize(width, height), RPoint(x, y, z))
 {
 
 }
 
-RSprite::RSprite(int width, int height, const RPoint &pos, const RArea::Format &area):
-    RSprite(RSize(width, height), pos, area)
+RSprite::RSprite(int width, int height, const RPoint &pos):
+    RSprite(RSize(width, height), pos)
 {
 
 }
 
-RSprite::RSprite(const RSize &size, const RPoint &pos, const RArea::Format &area):
-    RPlane(size, pos, area)
+RSprite::RSprite(const RSize &size, const RPoint &pos):
+    RPlane(size, pos)
 {
-    renderControl = std::bind(&RSprite::spriteControl, this, std::placeholders::_1, std::placeholders::_2);
+
 }
 
-RSprite::RSprite(const RRect &rect, int z, const RArea::Format &area):
-    RSprite(rect.size(), RPoint(rect.bottomLeft(), z), area)
+RSprite::RSprite(const RRect &rect, int z):
+    RSprite(rect.size(), RPoint(rect.bottomLeft(), z))
 {
 
 }
@@ -88,7 +89,7 @@ void RSprite::add(const std::vector<RTexture> &texs)
     frames_.insert(frames_.end(), texs.begin(), texs.end());
 }
 
-void RSprite::spriteControl(const RShaderProg &shaders, GLuint mLoc)
+const RTexture &RSprite::texture() const
 {
     if(delta_ < interval_)
         ++delta_;
@@ -97,9 +98,5 @@ void RSprite::spriteControl(const RShaderProg &shaders, GLuint mLoc)
         index_ = ++index_ % frames_.size();
     }
 
-    frames_[index_].bind();
-
-    auto inter = shaders.useInterface();
-    inter.setUniformMatrix(mLoc, modelMat());
-    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    return frames_[index_];
 }

@@ -13,15 +13,13 @@
  * trunc(genType x)            //返回截断整数部分
  */
 
-#include <string>
+namespace glm {
 
-namespace Redopera {
-
-void* bufOff(size_t off);
-
-glm::mat4 perspective(float left, float right, float bottom, float top, float near, float far);
+mat4 perspective(float left, float right, float bottom, float top, float near, float far);
 
 }
+
+#include <string>
 
 std::string toStdString(glm::vec3 vec);
 std::string toStdString(glm::vec4 vec);

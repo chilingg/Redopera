@@ -9,8 +9,6 @@ namespace Redopera {
 
 class RPack
 {
-    friend void swap(RPack &pack1, RPack &pack2);
-
     //Rpack文件头数据
     struct Head
     {

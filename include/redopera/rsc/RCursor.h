@@ -1,7 +1,6 @@
 #ifndef RCORSOR_H
 #define RCORSOR_H
 
-#include "RImage.h"
 #include "ROpenGL.h"
 
 #include <memory>
@@ -10,10 +9,10 @@ class GLFWcursor;
 
 namespace Redopera {
 
+class RImage;
+
 class RCursor
 {
-    friend void swap(RCursor &cs1, RCursor &cs2);
-
 public:
     enum class Shape
     {

@@ -1,12 +1,10 @@
-#include "RInputModule.h"
+#include <RInputModule.h>
+#include <RWindow.h>
+#include <stdexcept>
 
 using namespace Redopera;
 
-RInputModule &RInputModule::instance()
-{
-    static RInputModule inputRegister;
-    return inputRegister;
-}
+std::map<JoystickID, RInputModule::GamepadValue> RInputModule::gamepad_;
 
 BtnAct RInputModule::toButtonAction(unsigned char action)
 {
@@ -281,27 +279,6 @@ Keys RInputModule::toKey(int key)
     }
 }
 
-Modifier RInputModule::toKeyModifier(int mod)
-{
-    switch(mod)
-    {
-    case GLFW_MOD_SHIFT:
-        return Modifier::MOD_SHIFT;
-    case GLFW_MOD_CONTROL:
-        return Modifier::MOD_CONTROL;
-    case GLFW_MOD_ALT:
-        return Modifier::MOD_ALT;
-    case GLFW_MOD_SUPER:
-        return Modifier::MOD_SUPER;
-    case GLFW_MOD_CAPS_LOCK:
-        return Modifier::MOD_CAPS_LOCK;
-    case GLFW_MOD_NUM_LOCK:
-        return Modifier::MOD_NUM_LOCK;
-    default:
-        return Modifier::MOD_NONE;
-    }
-}
-
 MouseBtn RInputModule::toMouseButtons(int button)
 {
     switch(button)
@@ -322,106 +299,144 @@ JoystickID RInputModule::toJoystickID(int jid)
     switch(jid)
     {
     case 0:
-        return JOYSTICK_1;
+        return JoystickID::JOYSTICK_1;
     case 1:
-        return JOYSTICK_2;
+        return JoystickID::JOYSTICK_2;
     case 2:
-        return JOYSTICK_3;
+        return JoystickID::JOYSTICK_3;
     case 3:
-        return JOYSTICK_4;
+        return JoystickID::JOYSTICK_4;
     case 4:
-        return JOYSTICK_5;
+        return JoystickID::JOYSTICK_5;
     case 5:
-        return JOYSTICK_6;
+        return JoystickID::JOYSTICK_6;
     case 6:
-        return JOYSTICK_7;
+        return JoystickID::JOYSTICK_7;
     case 7:
-        return JOYSTICK_8;
+        return JoystickID::JOYSTICK_8;
     case 8:
-        return JOYSTICK_9;
+        return JoystickID::JOYSTICK_9;
     case 9:
-        return JOYSTICK_10;
+        return JoystickID::JOYSTICK_10;
     case 10:
-        return JOYSTICK_11;
+        return JoystickID::JOYSTICK_11;
     case 11:
-        return JOYSTICK_12;
+        return JoystickID::JOYSTICK_12;
     case 12:
-        return JOYSTICK_13;
+        return JoystickID::JOYSTICK_13;
     case 13:
-        return JOYSTICK_14;
+        return JoystickID::JOYSTICK_14;
     case 14:
-        return JOYSTICK_15;
+        return JoystickID::JOYSTICK_15;
     case 15:
-        return JOYSTICK_16;
+        return JoystickID::JOYSTICK_16;
     default:
         throw std::invalid_argument("Invalid value: " + std::to_string(jid) + " to Enum JoystickID!");
     }
 }
 
-void RInputModule::updateKeyboardInput(GLFWwindow *window)
-{
-    for(auto &k : keyInputs_)
-    {
-        k.second.preAction = k.second.action;
-        k.second.action = toButtonAction(glfwGetKey(window, static_cast<int>(k.first)));
-    }
-}
-
-void RInputModule::updateMouseInput(GLFWwindow *window)
-{
-    for(auto &b : mouseInputs_)
-    {
-        b.second.preAction = b.second.action;
-        b.second.action = toButtonAction(glfwGetMouseButton(window, static_cast<int>(b.first)));
-    }
-}
-
-void RInputModule::updateCursorPos(int x, int y)
-{
-    cursorPos_[1] = cursorPos_[0];
-    cursorPos_[0].set(x, y);
-}
-
-void Redopera::RInputModule::updateGamepad()
-{
-    for(auto &gamepad : gamepadInputs_)
-    {
-        using std::swap;
-        swap(gamepad.status.buttons, gamepad.preButtons);
-
-        glfwGetGamepadState(gamepad.jid, &gamepad.status);
-    }
-}
-
 bool RInputModule::addGamepad(JoystickID jid)
 {
-    if(!glfwJoystickIsGamepad(jid))
+    if(!glfwJoystickIsGamepad(static_cast<int>(jid)))
         return false;
-    gamepadInputs_.emplace_back(GamepadValue(jid));
+
+    gamepad_.emplace(jid, GamepadValue{});
+    glfwGetGamepadState(static_cast<int>(jid), &gamepad_[jid].status);
     return true;
 }
 
 bool RInputModule::deleteGamepad(JoystickID jid)
 {
-    for(auto it = gamepadInputs_.begin(); it != gamepadInputs_.end(); ++it)
+    if (gamepad_.count(jid))
     {
-        if(it->jid == jid)
-        {
-            gamepadInputs_.erase(it);
-            return true;
-        }
+        gamepad_.erase(jid);
+        return true;
     }
+
     return false;
+}
+
+RInputModule::RInputModule(RWindow *window):
+    window_(window)
+{
+
+}
+
+void RInputModule::updataInputCache()
+{
+    wheel_ = 0;
+    keyUp_.clear();
+    mouseUp_.clear();
+    keyDown_.clear();
+    mouseDown_.clear();
+
+    for(auto &player : gamepad_)
+    {
+        std::swap(player.second.status.buttons, player.second.preButtons);
+
+        glfwGetGamepadState(static_cast<int>(player.first), &player.second.status);
+    }
+}
+
+void RInputModule::keyUp(Keys key)
+{
+    keyUp_.insert(key);
+}
+
+void RInputModule::keyDown(Keys key)
+{
+    keyDown_.insert(key);
+}
+
+void RInputModule::mouseUp(MouseBtn btn)
+{
+    mouseUp_.insert(btn);
+}
+
+void RInputModule::mouseDown(MouseBtn btn)
+{
+    mouseDown_.insert(btn);
+}
+
+void RInputModule::mouseWheel(int value)
+{
+    wheel_ = value;
 }
 
 int RInputModule::gamepadCount()
 {
-    return gamepadInputs_.size();
+    return gamepad_.size();
+}
+
+JoystickID RInputModule::getJoystickID(int index)
+{
+    auto it = gamepad_.begin();
+    for (int i = 0; i < index; ++i)
+        ++it;
+
+    return it->first;
 }
 
 bool RInputModule::isValidJid(JoystickID jid)
 {
-    return glfwJoystickIsGamepad(jid);
+    return glfwJoystickIsGamepad(static_cast<int>(jid));
+}
+
+BtnAct RInputModule::keyStatus(Keys key) const
+{
+    return toButtonAction(glfwGetKey(window_->getWindowHandle(), static_cast<int>(key)));
+}
+
+BtnAct RInputModule::mouseStatus(MouseBtn btn) const
+{
+    return toButtonAction(glfwGetMouseButton(window_->getWindowHandle(), static_cast<int>(btn)));
+}
+
+RPoint2 RInputModule::cursorPos() const
+{
+    double x, y;
+    glfwGetCursorPos(window_->getWindowHandle(), &x, &y);
+    return RPoint2(x, y) - window_->posOffset();
 }
 
 const char *RInputModule::gamepadMappingCode0 =

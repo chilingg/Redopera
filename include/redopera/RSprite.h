@@ -3,6 +3,7 @@
 
 #include "RPlane.h"
 #include <initializer_list>
+#include <vector>
 
 namespace Redopera {
 
@@ -10,10 +11,10 @@ class RSprite : public RPlane
 {
 public:
     RSprite();
-    RSprite(int width, int height, int x, int y, int z = 0, const RArea::Format &area = RArea::getDefaultArea());
-    RSprite(int width, int height, const RPoint &pos, const RArea::Format &area = RArea::getDefaultArea());
-    RSprite(const RSize &size, const RPoint &pos, const RArea::Format &area = RArea::getDefaultArea());
-    explicit RSprite(const RRect &rect, int z = 0, const RArea::Format &area = RArea::getDefaultArea());
+    RSprite(int width, int height, int x, int y, int z = 0);
+    RSprite(int width, int height, const RPoint &pos);
+    RSprite(const RSize &size, const RPoint &pos);
+    explicit RSprite(const RRect &rect, int z = 0);
     RSprite(const RSprite &sprite);
     RSprite(const RSprite &&sprite);
     ~RSprite() = default;
@@ -29,14 +30,13 @@ public:
     void add(const std::vector<RTexture> &texs);
     void add(std::initializer_list<RTexture> texs);
 
-protected:
-    void spriteControl(const RShaderProg &shaders, GLuint mLoc);
+    const RTexture& texture() const;
 
 private:
     std::vector<RTexture> frames_;
     int interval_ = 20;
-    int delta_ = 0;
-    size_t index_ = 0;
+    mutable int delta_ = 0;
+    mutable size_t index_ = 0;
 };
 
 } // Redopera

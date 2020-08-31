@@ -1,39 +1,34 @@
-#include "rsc/RFont.h"
-#include "RDebug.h"
-#include "dependents/stb_truetype.h"
-#include "cstring"
+#include <rsc/RFont.h>
+#include <RDebug.h>
+#include <dependents/stb_truetype.h>
+#include <dependents/SourceCodePro.h>
 
-#include <fstream>
+#include <cstring>
 #include <atomic>
 
 using namespace Redopera;
 
 unsigned RFont::cacheMaxSize_ = 1000;
-std::unique_ptr<RFont> RFont::defaultFont(nullptr);
+RFont RFont::defaultFont(SOURCE_FONT_DATA, SOURCE_FONT_SIZE);
+
+RFont RFont::sourceCodePro()
+{
+    return RFont(SOURCE_FONT_DATA, SOURCE_FONT_SIZE);
+}
 
 void RFont::setCasheSize(unsigned size)
 {
     cacheMaxSize_ = size;
 }
 
-void RFont::setDefaultFontSize(unsigned size)
+void RFont::setDefaultFont(const RFont &font)
 {
-    if(!defaultFont)
-        getDefaulteFont();
-    defaultFont->setSize(size);
+    defaultFont = font;
 }
 
 const RFont &RFont::getDefaulteFont()
 {
-    if(!defaultFont)
-        defaultFont = std::make_unique<RFont>(sourceCodePro());
-
-    return *defaultFont;
-}
-
-void RFont::setDefaultFont(const RFont &font)
-{
-    defaultFont = std::make_unique<RFont>(font);
+    return defaultFont;
 }
 
 RFont::RFont():
@@ -98,9 +93,12 @@ const RFont::Glyph* RFont::getFontGlyph(RFont::RChar c) const
     Glyph &glyph = (*cache_.caches)[c];
     if(!glyph.data)
     {
+        float scale = stbtt_ScaleForMappingEmToPixels(data_.info.get(), cache_.fsize);
         glyph.data.reset(stbtt_GetCodepointBitmap(
-                    data_.info.get(), 0, stbtt_ScaleForMappingEmToPixels(data_.info.get(), cache_.fsize),
+                    data_.info.get(), 0, scale,
                     c, &glyph.width, &glyph.height, &glyph.xoff, &glyph.yoff));
+        stbtt_GetCodepointHMetrics(data_.info.get(), c, &glyph.advence, nullptr);
+        glyph.advence *= scale;
 
         if(cache_.caches->size() > cacheMaxSize_)
             clearCache();
@@ -116,27 +114,21 @@ void RFont::setSize(unsigned size)
 
 bool RFont::load(std::string path)
 {
-    RResource::rscpath(path);
+    RResource::rscPath(path);
 
-    std::shared_ptr<RData[]> data;
-    std::ifstream file;
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        file.open(path, std::ios::binary | std::ios::ate);
-        size_t size = file.tellg();
-        data.reset(new RData[size]);
-        file.seekg(0, std::ios::beg);
-        file.read(reinterpret_cast<char*>(data.get()), size);
-        file.close();
-    }
-    catch(...)
-    {
-        prError("Failed to load font in " + path);
-        return false;
-    }
+    FILE *fp = fopen(path.c_str(), "rb");
+    check(!fp, "Failed to load font in " + path);
+
+    fseek(fp, 0L, SEEK_END);
+    auto size = ftell(fp);
+    fseek(fp, 0L, SEEK_SET);
+
+    std::unique_ptr<RData[]> data(std::make_unique<RData[]>(size));
+    fread(data.get(), 1, size, fp);
+    fclose(fp);
 
     std::shared_ptr<stbtt_fontinfo> info = std::make_shared<stbtt_fontinfo>();
-    stbtt_InitFont(info.get(), data.get(), 0);
+    stbtt_InitFont(info.get(), data.get(), stbtt_GetFontOffsetForIndex(data.get(),0));
 
     if(check(info->numGlyphs == 0, "Unknow font file in " + path))
         return false;

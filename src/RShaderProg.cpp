@@ -1,5 +1,7 @@
-#include "rsc/RShaderProg.h"
-#include "RDebug.h"
+#include <rsc/RShaderProg.h>
+#include <RDebug.h>
+
+#include <stdexcept>
 
 using namespace Redopera;
 
@@ -14,24 +16,6 @@ RInterface::~RInterface()
         glUseProgram(0);
         current = 0;
     }
-}
-
-void RInterface::setViewprot(GLint loc, float left, float right, float bottom, float top, float near, float far) const
-{
-    glm::mat4 projection = glm::ortho(left, right, bottom, top, near, far);
-    setUniformMatrix(loc, 4, glm::value_ptr(projection));
-}
-
-void RInterface::setPerspective(GLint loc, float left, float right, float bottom, float top, float near, float far) const
-{
-    glm::mat4 projection = perspective(left, right, bottom, top, near, far);
-    setUniformMatrix(loc, 4, glm::value_ptr(projection));
-}
-
-void RInterface::setCameraMove(GLint loc, float x, float y, float z) const
-{
-    glm::mat4 view = glm::translate(glm::mat4(1), {-x, -y, -z});
-    setUniformMatrix(loc, 4, glm::value_ptr(view));
 }
 
 void RInterface::setUniform(GLint loc, GLfloat v1) const
@@ -365,7 +349,7 @@ bool RShaderProg::isValid() const
     return progID_ != nullptr;
 }
 
-bool RShaderProg::isAttachShader(RShader::Type type) const
+bool RShaderProg::isAttachedShader(RShader::Type type) const
 {
     return shaders_.count(type);
 }
@@ -385,6 +369,11 @@ GLint RShaderProg::getUniformLocation(const std::string &name) const
     GLint loc = glGetUniformLocation(*progID_, name.c_str());
     check(loc < 0, "Invalid locale <" + name + '>');
     return loc;
+}
+
+void RShaderProg::attachShader(const RShader &shader)
+{
+    shaders_.emplace(shader.type(), shader);
 }
 
 void RShaderProg::attachShader(std::initializer_list<RShader> list)
@@ -448,16 +437,11 @@ void swap(RShaderProg &prog1, RShaderProg &prog2)
     prog1.swap(prog2);
 }
 
-void* Redopera::bufOff(size_t off)
-{
-    return reinterpret_cast<void*>(off);
-}
-
-glm::mat4 Redopera::perspective(float left, float right, float bottom, float top, float near, float far)
+glm::mat4 glm::perspective(float left, float right, float bottom, float top, float near, float far)
 {
     static float accuracy = 0.95; // 投影之后far平面拥有的最大z轴标量
 
-    glm::mat4 mat(1);
+    mat4 mat(1);
     float len = far - near;
 
     // 缩放

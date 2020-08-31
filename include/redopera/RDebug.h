@@ -50,7 +50,13 @@ public:
     RDebug& operator<<(const RPoint3 &pos);
     RDebug& operator<<(const RSize &size);
     RDebug& operator<<(const RRect &rect);
-    RDebug& operator<<(const RArea &area);
+
+    template<typename T>
+    RDebug& operator<<(T input)
+    {
+        buf_ += toStdString(std::forward<T>(input));
+        return *this;
+    }
 
     template<typename T>
     RDebug& operator<<(T *ptr)
@@ -59,13 +65,6 @@ public:
         int i = std::snprintf(str, sizeof(str), "(add: %p) ", ptr);
         str[i] = '\0';
         buf_ += str;
-        return *this;
-    }
-
-    template<typename T>
-    RDebug& operator<<(T input)
-    {
-        buf_ += toStdString(std::forward<T>(input));
         return *this;
     }
 

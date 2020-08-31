@@ -1,6 +1,6 @@
-#include "rsc/RPack.h"
-#include "RDebug.h"
-#include "RThread.h"
+#include <rsc/RPack.h>
+#include <RDebug.h>
+#include <RThread.h>
 
 #include <fstream>
 #include <vector>
@@ -8,8 +8,6 @@
 #include <cstring>
 
 using namespace Redopera;
-
-std::string RResource::rscPath;
 
 RPack::RPack(const std::string &path)
 {
@@ -53,7 +51,7 @@ const RPack::FInfo *RPack::getFileInfo(const std::string &file)
 
 bool RPack::load(std::string path)
 {
-    RResource::rscpath(path);
+    RResource::rscPath(path);
     std::ifstream file(path, std::ios::binary);
     if(check(!file, "Failed to load pack in " + path))
         return false;
@@ -133,7 +131,7 @@ bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::str
 
 bool RPack::packing(std::string path, const std::string &name)
 {
-    RResource::rscpath(path);
+    RResource::rscPath(path);
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if(check(!file, "Failed to packing <" + name + "> in " + path))
         return false;
@@ -158,7 +156,7 @@ bool RPack::packing(std::string path, const std::string &name)
 
 bool RPack::save(std::string path)
 {
-    RResource::rscpath(path);
+    RResource::rscPath(path);
 
     std::ofstream file(path, std::ios::binary);
     if(check(!file, "Failure save pack file as <" + path + '>'))

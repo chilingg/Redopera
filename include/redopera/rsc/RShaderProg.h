@@ -18,10 +18,6 @@ class RInterface
 public:
     ~RInterface();
 
-    void setViewprot(GLint loc, float left, float right, float bottom, float top, float near = -127.0f, float far = 128.0f) const;
-    void setPerspective(GLint loc, float left, float right, float bottom, float top, float near, float far) const;
-    void setCameraMove(GLint loc, float x, float y, float z = 0) const;
-
     void setUniform(GLint loc, GLfloat v1) const;
     void setUniform(GLint loc, GLfloat v1, GLfloat v2) const;
     void setUniform(GLint loc, GLfloat v1, GLfloat v2, GLfloat v3) const;
@@ -85,8 +81,6 @@ private:
 
 class RShaderProg
 {
-    friend void swap(RShaderProg &prog1, RShaderProg&prog2);
-
 public:
     RShaderProg() = default;
     RShaderProg(std::initializer_list<RShader> list);
@@ -97,13 +91,14 @@ public:
     void swap(RShaderProg &program);
 
     bool isValid() const;
-    bool isAttachShader(RShader::Type typr) const;
+    bool isAttachedShader(RShader::Type typr) const;
     GLuint shaderProgramID() const;
     RInterface useInterface() const;
 
     GLint getUniformLocation(const std::string &name) const;
 
     // attachShader() 与 detachShader() 都是只在重新linkProgram时生效
+    void attachShader(const RShader &shader);
     void attachShader(std::initializer_list<RShader> list);
     void detachShader(RShader::Type type);
     bool linkProgram();

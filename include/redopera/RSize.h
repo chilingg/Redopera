@@ -12,23 +12,23 @@ public:
     bool operator==(const RSize &size) { return width_ == size.width_ && height_ == size.height_; }
     bool operator!=(const RSize &size) { return width_ != size.width_ || height_ != size.height_; }
 
-    RSize& operator*=(const double value) { width_ *= value; height_ *= value; return *this; }
-    RSize& operator/=(const double value) { width_ /= value; height_ /= value; return *this; }
+    RSize& operator*=(double value) { width_ *= value; height_ *= value; return *this; }
+    RSize& operator/=(double value) { width_ /= value; height_ /= value; return *this; }
 
-    RSize& operator*=(const float value) { width_ *= value; height_ *= value; return *this; }
-    RSize& operator/=(const float value) { width_ /= value; height_ /= value; return *this; }
+    RSize& operator*=(float value) { width_ *= value; height_ *= value; return *this; }
+    RSize& operator/=(float value) { width_ /= value; height_ /= value; return *this; }
 
-    RSize& operator*=(const int value) { width_ *= value; height_ *= value; return *this; }
-    RSize& operator/=(const int value) { width_ /= value; height_ /= value; return *this; }
+    RSize& operator*=(int value) { width_ *= value; height_ *= value; return *this; }
+    RSize& operator/=(int value) { width_ /= value; height_ /= value; return *this; }
 
-    RSize operator*(const double value) { return RSize(width_ * value, height_ * value); }
-    RSize operator/(const double value) { return RSize(width_ / value, height_ / value); }
+    RSize operator*(double value) { return RSize(width_ * value, height_ * value); }
+    RSize operator/(double value) { return RSize(width_ / value, height_ / value); }
 
-    RSize operator*(const float value) { return RSize(width_ * value, height_ * value); }
-    RSize operator/(const float value) { return RSize(width_ / value, height_ / value); }
+    RSize operator*(float value) { return RSize(width_ * value, height_ * value); }
+    RSize operator/(float value) { return RSize(width_ / value, height_ / value); }
 
-    RSize operator*(const int value) { return RSize(width_ * value, height_ * value); }
-    RSize operator/(const int value) { return RSize(width_ / value, height_ / value); }
+    RSize operator*(int value) { return RSize(width_ * value, height_ * value); }
+    RSize operator/(int value) { return RSize(width_ / value, height_ / value); }
 
     int width() const { return width_; }
     int height() const { return height_; }
