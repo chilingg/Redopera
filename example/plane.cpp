@@ -111,7 +111,7 @@ public:
         rSystem.setViewprot(0, info->size.width(), 0, info->size.height());
     }
 
-    void inputEvent(InputEvent *e)
+    void inputEvent(InputInfo *e)
     {
         RWindow* window = RGame::getMainWindow();
         if(window->cursorMode() == RWindow::CursorMode::Hidden)

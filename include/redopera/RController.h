@@ -10,7 +10,7 @@
 namespace Redopera {
 
 class TransInfo;
-class InputEvent;
+class InputInfo;
 class CloseEvent;
 class StartEvent;
 class FinishEvent;
@@ -45,7 +45,7 @@ public:
     void setControlFunc(std::function<void()> func);
     void setExecFunc(std::function<int()> func);
     void setTransFunc(std::function<void(TransInfo*)> func);
-    void setInputFunc(std::function<void(InputEvent*)> func);
+    void setInputFunc(std::function<void(InputInfo*)> func);
     void setCloseFunc(std::function<void(CloseEvent*)> func);
     void setStartFunc(std::function<void(StartEvent*)> func);
     void setFinishFunc(std::function<void(FinishEvent*)> func);
@@ -54,8 +54,6 @@ public:
     void freeChild(RController *child);
     void freeAllChild();
     void changeParent(RController *parent);
-
-    void dispatchEvent(InputEvent *info);
 
     // 事件发布接口 PS:深度优先、由下至上
     // 已由RController负责调用
@@ -66,6 +64,7 @@ public:
     void activeOnce();
     void control();
     void translation(TransInfo *info);
+    void inputProcess(InputInfo *info);
 
     int exec();
 
@@ -79,14 +78,15 @@ public:
     RSignal<> closed;
 
 private:
-    int defaultExecFunc();
+    int mainExecFunc();
     int threadExecFunc();
     void defaultTransFunc(TransInfo *info);
+    void defaultInputFunc(InputInfo *event);
 
     std::function<void()> controlFunc;
     std::function<int()> execFunc;
-    std::function<void(TransInfo *event)> translateFunc;
-    std::function<void(InputEvent *event)> inputFunc;
+    std::function<void(TransInfo *event)> transFunc;
+    std::function<void(InputInfo *event)> inputFunc;
     std::function<void(CloseEvent *event)> closeFunc;   //尝试终止exec循环
     std::function<void(StartEvent *event)> startFunc;   //exec循环开始
     std::function<void(FinishEvent *event)> finishFunc; //exec循环终止

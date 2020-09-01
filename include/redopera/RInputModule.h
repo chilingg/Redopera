@@ -215,11 +215,11 @@ enum class JoystickPresent
     DISCONNECTED = GLFW_DISCONNECTED
 };
 
-struct InputEvent;
+struct InputInfo;
 
 class RInputModule
 {
-    friend InputEvent;
+    friend InputInfo;
 
     struct GamepadValue
     {

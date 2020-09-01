@@ -55,9 +55,9 @@ enum class BtnAct;
 enum class GamepadAxes;
 enum class JoystickID;
 
-struct InputEvent
+struct InputInfo
 {
-    InputEvent(RWindow *sender):
+    InputInfo(RWindow *sender):
         sender(sender) {}
 
     BtnAct status(Keys key);

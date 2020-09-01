@@ -96,7 +96,7 @@ public:
         VBO.reset();
     }
 
-    void inputEvent(InputEvent *e)
+    void inputEvent(InputInfo *e)
     {
         // inputEvent只能监测感兴趣的按键
         if(e->anyKeyPress())

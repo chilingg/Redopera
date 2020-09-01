@@ -517,8 +517,8 @@ void RWindow::controlFunc()
     if (focused_ && iTimer_.elapsed() > 1000 / format_.ips)
     {
         iTimer_.start();
-        InputEvent input(this);
-        ctrl_.dispatchEvent(&input);
+        InputInfo input(this);
+        ctrl_.inputProcess(&input);
         input_.updataInputCache();
     }
 
@@ -538,8 +538,8 @@ void RWindow::mainControlFunc()
     // 传递输入
     if (focused_ && iTimer_.elapsed() > 1000 / format_.ips)
     {
-        InputEvent input(this);
-        ctrl_.dispatchEvent(&input);
+        InputInfo input(this);
+        ctrl_.inputProcess(&input);
         input_.updataInputCache();
     }
 

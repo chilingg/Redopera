@@ -7,7 +7,7 @@
 
 using namespace Redopera;
 
-void inputEvent(InputEvent *e)
+void inputEvent(InputInfo *e)
 {
     if(e->anyKeyPress())
         e->sender->closeWindow();

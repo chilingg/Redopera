@@ -106,7 +106,7 @@ void startEvent(StartEvent*)
 RPoint2 offset;
 RTextbox *hold;
 
-void inputEvent(InputEvent *e)
+void inputEvent(InputInfo *e)
 {
     if (e->press(Keys::KEY_ESCAPE))
         e->sender->closeWindow();

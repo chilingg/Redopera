@@ -10,8 +10,8 @@ template class Redopera::RSignal<>;
 RController::RController(void *holder):
     controlFunc([]{}),
     execFunc(std::bind(&RController::threadExecFunc, this)),
-    translateFunc(std::bind(&RController::defaultTransFunc, this, std::placeholders::_1)),
-    inputFunc([](InputEvent*){}),
+    transFunc(std::bind(&RController::defaultTransFunc, this, std::placeholders::_1)),
+    inputFunc(std::bind(&RController::defaultInputFunc, this, std::placeholders::_1)),
     closeFunc([](CloseEvent*){}),
     startFunc([](StartEvent*){}),
     finishFunc([](FinishEvent*){}),
@@ -96,10 +96,10 @@ void RController::setExecFunc(std::function<int ()> func)
 
 void RController::setTransFunc(std::function<void (TransInfo*)> func)
 {
-    translateFunc = func;
+    transFunc = func;
 }
 
-void RController::setInputFunc(std::function<void (InputEvent*)> func)
+void RController::setInputFunc(std::function<void (InputInfo*)> func)
 {
     inputFunc = func;
 }
@@ -175,13 +175,6 @@ void RController::changeParent(RController *parent)
     }
 }
 
-void RController::dispatchEvent(InputEvent *info)
-{
-    for(auto node : children_)
-        node->dispatchEvent(info);
-    inputFunc(info);
-}
-
 void RController::dispatchEvent(CloseEvent *event)
 {
     for(auto node : children_)
@@ -194,9 +187,9 @@ void RController::dispatchEvent(StartEvent *event)
     if(state_ == Status::Error) return;//错误状态无法进入循环
 
     state_ = Status::Looping;
+    startFunc(event);
     for(auto node : children_)
         node->dispatchEvent(event);
-    startFunc(event);
 }
 
 void RController::dispatchEvent(FinishEvent *event)
@@ -211,8 +204,8 @@ void RController::dispatchEvent(FinishEvent *event)
 
 void RController::activeOnce()
 {
-    std::for_each(children_.begin(), children_.end(), std::mem_fn(&RController::activeOnce));
-    control();
+    controlFunc();
+    std::for_each(children_.begin(), children_.end(), [](RController *ctrl){ ctrl->controlFunc(); });
 }
 
 void RController::control()
@@ -222,7 +215,12 @@ void RController::control()
 
 void RController::translation(TransInfo *info)
 {
-    translateFunc(info);
+    transFunc(info);
+}
+
+void RController::inputProcess(InputInfo *info)
+{
+    inputFunc(info);
 }
 
 int RController::exec()
@@ -265,7 +263,7 @@ void RController::errorLoop()
 
 void RController::setAsMainCtrl()
 {
-    execFunc = std::bind(&RController::defaultExecFunc, this);
+    execFunc = std::bind(&RController::mainExecFunc, this);
 }
 
 void RController::pushFuncToThreadExec(std::function<void()> func)
@@ -273,13 +271,15 @@ void RController::pushFuncToThreadExec(std::function<void()> func)
     funcs_.push(func);
 }
 
-int RController::defaultExecFunc()
+int RController::mainExecFunc()
 {
     StartEvent sEvent(this);
     dispatchEvent(&sEvent);
 
     while(loopingCheck() == Status::Looping)
+    {
         activeOnce();
+    }
 
     FinishEvent fEvent(this);
     dispatchEvent(&fEvent);
@@ -319,6 +319,10 @@ int RController::threadExecFunc()
 
 void RController::defaultTransFunc(TransInfo *info)
 {
-    for(auto node : children_)
-        node->translation(info);
+    std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->transFunc(info); });
+}
+
+void RController::defaultInputFunc(InputInfo *event)
+{
+    std::for_each(children_.begin(), children_.end(), [event](RController *ctrl) { ctrl->inputFunc(event); });
 }

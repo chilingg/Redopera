@@ -40,4 +40,5 @@ if(R_TEST)
     target_link_libraries(rtest redopera)
 endif()
 
-file(COPY TestFile/ DESTINATION ${CMAKE_BINARY_DIR}/test/TestFile)
+message($(SOURCE_DIR))
+file(COPY TestFile/ DESTINATION ${EXECUTABLE_OUTPUT_PATH}TestFile)

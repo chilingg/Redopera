@@ -32,7 +32,7 @@ void transInfo(TransInfo *info)
     rDebug << "Translate info:" << info->pos << info->size;
 }
 
-void inputEvent(InputEvent *e)
+void inputEvent(InputInfo *e)
 {
     if (e->press(Keys::KEY_ESCAPE))
         e->sender->closeWindow();
