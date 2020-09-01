@@ -40,17 +40,26 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
     glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, format_.debug);
     glfwWindowHint(GLFW_RESIZABLE, format_.fix ? GLFW_FALSE : GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, format_.decorate ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_MAXIMIZED, format_.maximization ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_FOCUSED, GLFW_TRUE);
     glfwWindowHint(GLFW_AUTO_ICONIFY, GLFW_TRUE);
     glfwWindowHint(GLFW_FOCUS_ON_SHOW, GLFW_TRUE);
     // 默认初始窗口不可见，需主动调用show()
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
-    window_.reset(glfwCreateWindow(width, height, title.c_str(), nullptr, format_.shared));
+    GLFWmonitor *monitor = nullptr;
+    monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
 
-    // Windows下若初始全屏则无法获取初始焦点，所以统一在此全屏
+    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
     if(format_.fullScreen)
-        setFullScreenWindow();
+        window_.reset(glfwCreateWindow(mode->width, mode->height, title.c_str(), monitor, format_.shared));
+    else
+        window_.reset(glfwCreateWindow(width, height, title.c_str(), nullptr, format_.shared));
 
     if(!window_)
         throw std::runtime_error("Fainled to create GLFW window");
@@ -280,6 +289,13 @@ RSize RWindow::size() const
     return size_;
 }
 
+RSize RWindow::windowSize() const
+{
+    int w, h;
+    glfwGetWindowSize(window_.get(), &w, &h);
+    return RSize(w, h);
+}
+
 int RWindow::windowWidth() const
 {
     int w, h;
@@ -350,6 +366,8 @@ void RWindow::show()
     glfwSetMouseButtonCallback(window_.get(), mouseButtonCollback);
 
     glfwShowWindow(window_.get());
+    RSize size = windowSize();
+    resizeCallback(window_.get(), size.width(), size.height());
 }
 
 void RWindow::hide()

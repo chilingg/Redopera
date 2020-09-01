@@ -44,7 +44,7 @@ public:
         bool fix            = false;    // 固定窗口尺寸
         bool decorate       = true;     // 窗口边框与标题栏
         bool fullScreen     = false;    // 全屏
-        bool fill           = true;     // 填充位
+        bool maximization   = false;
         int fps             = 55;       // 60帧有撕裂
         int ips             = 5;        // 每秒输入处理次数
         int defaultWidth    = 800;      // 初始窗口大小
@@ -99,6 +99,7 @@ public:
     int width() const;
     int height() const;
     RSize size() const;
+    RSize windowSize() const;
     int windowWidth() const;
     int windowHeight() const;
     CursorMode cursorMode() const;

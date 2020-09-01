@@ -68,7 +68,6 @@ public:
         arrow[3].setRotate(0, 0, glm::radians(270.0f));
 
         ctrl.setControlFunc(std::bind(&TestCtl::control, this));
-        ctrl.setStartFunc(std::bind(&TestCtl::startEvent, this, std::placeholders::_1));
         ctrl.setInputFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
         ctrl.setTransFunc(std::bind(&TestCtl::translation, this, std::placeholders::_1));
 
@@ -85,14 +84,6 @@ public:
         rSystem.render(arrow[3]);
 
         rSystem.render(plane);
-    }
-
-    void startEvent(StartEvent*)
-    {
-        RWindow * window = RGame::getMainWindow();
-
-        TransInfo info = { &ctrl, window->size(), RPoint(0) };
-        translation(&info);
     }
 
     void translation(TransInfo* info)
