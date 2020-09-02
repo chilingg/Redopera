@@ -51,13 +51,12 @@ public:
     {
         plane.flipV();
 
-        RTextbox arrowLoad(L"↑", 50, 50, 0, 0);
+        RTextbox arrowLoad(L"↑", 50, 50);
 
         arrowLoad.setAlign(RTextbox::Align::Mind, RTextbox::Align::Mind);
         arrowLoad.setFontSize(36);
         arrowLoad.setFontColor(50, 50, 60);
         arrow[0].setTexture(arrowLoad.texture());
-        arrow[0].rPos() = arrowLoad.pos();
         arrow[0].rSize() = arrowLoad.size();
         arrow[1] = arrow[0];
         arrow[2] = arrow[0];

@@ -19,66 +19,47 @@ const RTextbox::Format &RTextbox::getDefaultFontFmt()
 }
 
 RTextbox::RTextbox():
-    RTextbox(L"Text Label", 90, 25, 0, 0)
+    RTextbox(L"Text Label", 90, 25)
 {
 
 }
 
-RTextbox::RTextbox(const std::wstring &text, int width, int height, int x, int y, int z, const Format &fmt):
-    RTextbox(text, RSize(width, height), RPoint(x, y, z), fmt)
+RTextbox::RTextbox(const std::wstring &text, int width, int height, const Format &fmt):
+    RTextbox(text, RSize(width, height), fmt)
 {
 
 }
 
-RTextbox::RTextbox(const std::wstring &text, int width, int height, const RPoint &pos, const Format &fmt):
-    RTextbox(text, RSize(width, height), pos, fmt)
-{
-
-}
-
-RTextbox::RTextbox(const std::wstring &text, const RSize &size, const RPoint &pos, const Format &fmt):
+RTextbox::RTextbox(const std::wstring &text, const RSize &size, const Format &fmt):
     typesetting(fmt.typeset == Typeset::Vertical ?
                     &RTextbox::verticalTextToTexture : &RTextbox::horizontalTextToTexture),
     format_(fmt),
     texts_(text),
-    size_(size),
-    pos_(pos),
-    model_(1)
+    size_(size)
 {
 
 }
 
-RTextbox::RTextbox(const std::wstring &text, const RRect &rect, int z, const Format &fmt):
-    RTextbox(text, rect.size(), RPoint(rect.bottomLeft(), z), fmt)
-{
-
-}
 
 RTextbox::RTextbox(const RTextbox &box):
-    move_(box.move_),
     typeset_(box.typeset_),
     typesetting(box.typesetting),
     format_(box.format_),
     texts_(box.texts_),
     font_(box.font_),
     size_(box.size_),
-    pos_(box.pos_),
-    model_(box.model_),
     textTex_(box.textTex_)
 {
 
 }
 
 RTextbox::RTextbox(RTextbox &&box):
-    move_(box.move_),
     typeset_(box.typeset_),
     typesetting(box.typesetting),
     format_(std::move(box.format_)),
     texts_(std::move(box.texts_)),
     font_(std::move(box.font_)),
     size_(box.size_),
-    pos_(box.pos_),
-    model_(std::move(box.model_)),
     textTex_(std::move(box.textTex_))
 {
 
@@ -86,59 +67,36 @@ RTextbox::RTextbox(RTextbox &&box):
 
 RTextbox &RTextbox::operator=(const RTextbox &box)
 {
-    move_ = box.move_;
     typeset_ = box.typeset_;
     typesetting = box.typesetting;
     format_ = box.format_;
     texts_ = box.texts_;
     font_ = box.font_;
     size_ = box.size_;
-    pos_ = box.pos_;
-    model_ = box.model_;
     textTex_ = box.textTex_;
     return *this;
 }
 
 RTextbox &RTextbox::operator=(const RTextbox &&box)
 {
-    move_ = box.move_;
     typeset_ = box.typeset_;
     typesetting = box.typesetting;
     format_ = std::move(box.format_);
     texts_ = std::move(box.texts_);
     font_ = std::move(box.font_);
     size_ = box.size_;
-    pos_ = box.pos_;
-    model_ = std::move(box.model_);
     textTex_ = std::move(box.textTex_);
     return *this;
 }
 
-const glm::mat4 &RTextbox::model()
-{
-    if(move_ | typeset_)
-        updataMat();
-    return model_;
-}
-
 bool RTextbox::isDirty() const
 {
-    return move_ | typeset_;
-}
-
-const RPoint &RTextbox::pos() const
-{
-    return pos_;
+    return typeset_;
 }
 
 const RSize &RTextbox::size() const
 {
     return size_;
-}
-
-RRect RTextbox::rect() const
-{
-    return RRect(size_, pos_);
 }
 
 const RTexture &RTextbox::texture()
@@ -147,6 +105,14 @@ const RTexture &RTextbox::texture()
         updataTex();
 
     return textTex_;
+}
+
+const RImage &RTextbox::image()
+{
+    if(typeset_)
+        updataTex();
+
+    return loader_;
 }
 
 const RFont &RTextbox::font() const
@@ -162,12 +128,6 @@ const RTextbox::Format &RTextbox::textFormat() const
 const std::wstring &RTextbox::texts() const
 {
     return texts_;
-}
-
-RPoint &RTextbox::rPos()
-{
-    move_ = true;
-    return pos_;
 }
 
 RSize &RTextbox::rSize()
@@ -248,16 +208,6 @@ void RTextbox::horizontal()
     typesetting = &RTextbox::horizontalTextToTexture;
     format_.typeset = Typeset::Horizontal;
     typeset_ = true;
-}
-
-void RTextbox::updataMat()
-{
-    model_ = glm::translate(glm::mat4(1), { pos_.x() + size_.width()/2, pos_.y() + size_.height()/2, 0 });
-    model_ = glm::scale(model_, { size_.width(), size_.height(), 0.0f });
-    move_ = false;
-
-    if(typeset_)
-        updataTex();
 }
 
 void RTextbox::updataTex()

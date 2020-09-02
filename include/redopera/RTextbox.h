@@ -52,10 +52,8 @@ public:
 
     RTextbox();
 
-    RTextbox(const std::wstring &text, int width, int height, int x, int y, int z = 0, const Format &fmt = getDefaultFontFmt());
-    RTextbox(const std::wstring &text, int width, int height, const RPoint &pos, const Format &fmt = getDefaultFontFmt());
-    RTextbox(const std::wstring &text, const RSize &size, const RPoint &pos, const Format &fmt = getDefaultFontFmt());
-    RTextbox(const std::wstring &text, const RRect &rect, int z = 0, const Format &fmt = getDefaultFontFmt());
+    RTextbox(const std::wstring &text, int width, int height, const Format &fmt = getDefaultFontFmt());
+    RTextbox(const std::wstring &text, const RSize &size, const Format &fmt = getDefaultFontFmt());
     RTextbox(const RTextbox &box);
     RTextbox(RTextbox &&box);
 
@@ -64,12 +62,11 @@ public:
 
     ~RTextbox() = default;
 
-    const glm::mat4& model();
     bool isDirty() const;
-    const RPoint& pos() const;
     const RSize& size() const;
     RRect rect() const;
     const RTexture& texture();
+    const RImage& image();
     const RFont& font() const;
     const Format& textFormat() const;
     const std::wstring& texts() const;
@@ -92,7 +89,6 @@ public:
     void vertical();
     void horizontal();
 
-    void updataMat();
     void updataTex();
 
 private:
@@ -101,15 +97,12 @@ private:
     void verticalTextToTexture();
     void horizontalTextToTexture();
 
-    bool move_ = true;
     bool typeset_ = true;
     void (RTextbox::*typesetting)();
     Format format_;
     std::wstring texts_;
     RFont font_;
     RSize size_;
-    RPoint pos_;
-    glm::mat4 model_;
     RTexture textTex_;
 
     RImage loader_;

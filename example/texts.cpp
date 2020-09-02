@@ -51,7 +51,7 @@ const int WIDTH = 480;
 const int HEIGHT = 480;
 const RColor fcolor(180, 180, 180);
 
-std::unique_ptr<RTextbox[]> textbox;
+std::unique_ptr<RPlane[]> textbox;
 std::unique_ptr<RRenderSystem> renderer;
 
 void control()
@@ -68,7 +68,7 @@ void control()
 
 void startEvent(StartEvent*)
 {
-    textbox = std::make_unique<RTextbox[]>(4);
+    textbox = std::make_unique<RPlane[]>(4);
     renderer = std::make_unique<RRenderSystem>();
 
     RTextbox::Format fmt;
@@ -77,25 +77,30 @@ void startEvent(StartEvent*)
     fmt.wSpacing = 1.3f;
     fmt.align = { RTextbox::Align::Top, RTextbox::Align::Left };
 
-    textbox[0].setTextFormat(fmt);
-    textbox[0].setTexts(texts);
+    RTextbox textsLoader(texts, 220, 110);
+    textsLoader.setTextFormat(fmt);
+    textbox[0].setTexture(textsLoader.texture());
     textbox[0].rSize().set(220, 110);
     textbox[0].rPos().set(20, HEIGHT - textbox[0].size().height() - 20, 0);
 
+    textsLoader.setAlign(RTextbox::Align::Mind, RTextbox::Align::Mind);
     textbox[1] = textbox[0];
-    textbox[1].setAlign(RTextbox::Align::Mind, RTextbox::Align::Mind);
+    textbox[1].setTexture(textsLoader.texture());
     textbox[1].rPos().setY(textbox[0].pos().y() - (textbox[0].size().height() + 20) * 1);
 
+    textsLoader.setAlign(RTextbox::Align::Bottom, RTextbox::Align::Right);
     textbox[2] = textbox[0];
-    textbox[2].setAlign(RTextbox::Align::Bottom, RTextbox::Align::Right);
+    textbox[2].setTexture(textsLoader.texture());
     textbox[2].rPos().setY(textbox[0].pos().y() - (textbox[0].size().height() + 20) * 2);
 
+    textsLoader.setAlign(RTextbox::Align::Top, RTextbox::Align::Right);
+    textsLoader.rSize().set(90, 240);
+    textsLoader.vertical();
     textbox[3] = textbox[0];
-    textbox[3].setAlign(RTextbox::Align::Top, RTextbox::Align::Right);
+    textbox[3].setTexture(textsLoader.texture());
     textbox[3].rSize().set(90, 240);
     textbox[3].rPos().setX(textbox[0].rect().right() + 20);
     textbox[3].rPos().move(0, -(textbox[3].size().height() - textbox[0].size().height()));
-    textbox[3].vertical();
 
     renderer->setShaderProg(RShaderProg({ RShader(vCode, RShader::Type::Vertex),
                                       RShader(fCode, RShader::Type::Fragment)}));
@@ -104,7 +109,7 @@ void startEvent(StartEvent*)
 }
 
 RPoint2 offset;
-RTextbox *hold;
+RPlane *hold;
 
 void inputEvent(InputInfo *e)
 {
@@ -127,12 +132,10 @@ void inputEvent(InputInfo *e)
         if (hold)
         {
             offset = pos - hold->pos();
-            hold->setFontColor(0xff0000);
         }
     }
     if (e->release(MouseBtn::MOUSE_BUTTON_LEFT))
     {
-        hold->setFontColor(fcolor);
         hold = nullptr;
     }
     if (hold && e->status(MouseBtn::MOUSE_BUTTON_LEFT) == BtnAct::PRESS)
