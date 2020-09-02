@@ -9,7 +9,7 @@ template class Redopera::RSignal<>;
 
 RController::RController(void *holder):
     controlFunc([]{}),
-    execFunc(std::bind(&RController::threadExecFunc, this)),
+    execFunc(std::bind(&RController::defaultExecFunc, this)),
     transFunc(std::bind(&RController::defaultTransFunc, this, std::placeholders::_1)),
     inputFunc(std::bind(&RController::defaultInputFunc, this, std::placeholders::_1)),
     closeFunc([](CloseEvent*){}),
@@ -261,50 +261,13 @@ void RController::errorLoop()
     }
 }
 
-void RController::setAsMainCtrl()
-{
-    execFunc = std::bind(&RController::mainExecFunc, this);
-}
-
-void RController::pushFuncToThreadExec(std::function<void()> func)
-{
-    funcs_.push(func);
-}
-
-int RController::mainExecFunc()
+int RController::defaultExecFunc()
 {
     StartEvent sEvent(this);
     dispatchEvent(&sEvent);
 
     while(loopingCheck() == Status::Looping)
     {
-        activeOnce();
-    }
-
-    FinishEvent fEvent(this);
-    dispatchEvent(&fEvent);
-    closed.emit();
-
-    if(check(state_ == Status::Error, "The Loop has unexpectedly finished"))
-        return EXIT_FAILURE;
-    return EXIT_SUCCESS;
-}
-
-int RController::threadExecFunc()
-{
-    StartEvent sEvent(this);
-    dispatchEvent(&sEvent);
-
-    while(loopingCheck() == Status::Looping)
-    {
-        std::function<void()> func;
-        for(int i = 0; i < 10; ++i)
-        {
-            if (funcs_.tryPop(func))
-                func();
-            else
-                break;
-        }
         activeOnce();
     }
 

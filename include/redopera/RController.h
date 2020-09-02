@@ -2,7 +2,6 @@
 #define RCONTROLLER_H
 
 #include "RSigslot.h"
-#include "RThreadQueue.h"
 
 #include <set>
 #include <atomic>
@@ -72,14 +71,11 @@ public:
     Status loopingCheck();
     void breakLoop();
     void errorLoop();
-    void setAsMainCtrl();
-    void pushFuncToThreadExec(std::function<void()> func);
 
     RSignal<> closed;
 
 private:
-    int mainExecFunc();
-    int threadExecFunc();
+    int defaultExecFunc();
     void defaultTransFunc(TransInfo *info);
     void defaultInputFunc(InputInfo *event);
 
@@ -93,7 +89,6 @@ private:
 
     std::atomic<Status> state_;
     std::set<RController*> children_;
-    RThreadQueue<std::function<void()>> funcs_;
     RController *parent_ = nullptr;
     void *holder_;
 };
