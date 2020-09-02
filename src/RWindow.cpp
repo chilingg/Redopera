@@ -111,13 +111,12 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
     glfwSetWindowIcon(window_.get(), 1, &icon);
 
     ctrl_.setCloseFunc([this](CloseEvent *e){ if(e->stop) glfwSetWindowShouldClose(window_.get(), GLFW_FALSE); });
-    ctrl_.setControlFunc(std::bind(&RWindow::controlFunc, this));
+    ctrl_.setExecFunc(std::bind(&RWindow::defaultExec, this));
 }
 
 void RWindow::setAsMainWindow()
 {
-    ctrl_.setControlFunc(std::bind(&RWindow::mainControlFunc, this));
-    ctrl_.setAsMainCtrl();
+    ctrl_.setExecFunc(std::bind(&RWindow::mainExecFunc, this));
 }
 
 void RWindow::setWindowSize(int width, int height)
@@ -526,44 +525,77 @@ void RWindow::mouseButtonCollback(GLFWwindow *window, int btn, int action, int)
         wctrl->input_.mouseDown(RInputModule::toMouseButtons(btn));
 }
 
-void RWindow::controlFunc()
+int RWindow::defaultExec()
 {
-    fTimer_.cycle(1000 / format_.fps);
-    glfwSwapBuffers(window_.get());
+    StartEvent sEvent(&ctrl_);
+    ctrl_.dispatchEvent(&sEvent);
 
-    // 传递输入
-    if (focused_ && iTimer_.elapsed() > 1000 / format_.ips)
+    while(ctrl_.loopingCheck() == RController::Status::Looping)
     {
-        iTimer_.start();
-        InputInfo input(this);
-        ctrl_.inputProcess(&input);
-        input_.updataInputCache();
+        // 清屏 清除颜色缓冲和深度缓冲
+        glClear(clearMask);
+
+        // 传递输入
+        if (focused_)
+        {
+            InputInfo input(this);
+            ctrl_.inputProcess(&input);
+            input_.updataInputCache();
+        }
+
+        if(glfwWindowShouldClose(window_.get()))
+            ctrl_.breakLoop();
+
+        ctrl_.activeOnce();
+
+        fTimer_.cycle(1000 / format_.fps);
+        glfwSwapBuffers(window_.get());
     }
 
-    if(glfwWindowShouldClose(window_.get()))
-        ctrl_.breakLoop();
+    FinishEvent fEvent(&ctrl_);
+    ctrl_.dispatchEvent(&fEvent);
+    ctrl_.closed.emit();
 
-    // 清屏 清除颜色缓冲和深度缓冲
-    glClear(clearMask);
+    if(check(ctrl_.status() == RController::Status::Error, "The Loop has unexpectedly finished"))
+        return EXIT_FAILURE;
+    return EXIT_SUCCESS;
+
 }
 
-void RWindow::mainControlFunc()
+int RWindow::mainExecFunc()
 {
-    fTimer_.cycle(1000 / format_.fps);
-    glfwSwapBuffers(window_.get());
+    StartEvent sEvent(&ctrl_);
+    ctrl_.dispatchEvent(&sEvent);
 
-    glfwPollEvents();
-    // 传递输入
-    if (focused_ && iTimer_.elapsed() > 1000 / format_.ips)
+    while(ctrl_.loopingCheck() == RController::Status::Looping)
     {
-        InputInfo input(this);
-        ctrl_.inputProcess(&input);
-        input_.updataInputCache();
+        // 清屏 清除颜色缓冲和深度缓冲
+        glClear(clearMask);
+
+        glfwPollEvents();
+
+        // 传递输入
+        if (focused_)
+        {
+            InputInfo input(this);
+            ctrl_.inputProcess(&input);
+            input_.updataInputCache();
+        }
+
+        if(glfwWindowShouldClose(window_.get()))
+            ctrl_.breakLoop();
+
+        ctrl_.activeOnce();
+
+        fTimer_.cycle(1000 / format_.fps);
+        glfwSwapBuffers(window_.get());
     }
 
-    if(glfwWindowShouldClose(window_.get()))
-        ctrl_.breakLoop();
+    FinishEvent fEvent(&ctrl_);
+    ctrl_.dispatchEvent(&fEvent);
+    ctrl_.closed.emit();
 
-    // 清屏 清除颜色缓冲和深度缓冲
-    glClear(clearMask);
+    if(check(ctrl_.status() == RController::Status::Error, "The Loop has unexpectedly finished"))
+        return EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }

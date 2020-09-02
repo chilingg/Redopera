@@ -46,7 +46,6 @@ public:
         bool fullScreen     = false;    // 全屏
         bool maximization   = false;
         int fps             = 55;       // 60帧有撕裂
-        int ips             = 5;        // 每秒输入处理次数
         int defaultWidth    = 800;      // 初始窗口大小
         int defaultHeight   = 540;      // 初始窗口大小
         Viewport viewport   = Viewport::Full;  // 视口模式
@@ -136,8 +135,8 @@ private:
     // 鼠标按键回调
     static void mouseButtonCollback(GLFWwindow *window, int btn, int action, int mods);
 
-    void controlFunc();
-    void mainControlFunc();
+    int defaultExec();
+    int mainExecFunc();
 
     static const Format windowFormat;
     static GLFWwindow *mainWindow;
@@ -149,7 +148,6 @@ private:
     RPoint2 vOffset_;
     RSize size_;
     RTimer fTimer_;
-    RTimer iTimer_;
     std::atomic_bool focused_;
 
     GLbitfield clearMask = GL_COLOR_BUFFER_BIT;
