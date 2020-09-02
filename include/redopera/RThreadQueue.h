@@ -31,6 +31,13 @@ public:
         return true;
     }
 
+    size_t giveAll(std::queue<T> &queue)
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        data_.swap(queue);
+        return queue.size();
+    }
+
     void waitAndPop(T& value) {
         std::unique_lock<std::mutex> lock(mutex_);
         cond_.wait(lock, [this]{ return !data_.empty(); });
