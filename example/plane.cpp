@@ -104,7 +104,7 @@ public:
 
     void inputEvent(InputInfo *e)
     {
-        RWindow* window = RGame::getMainWindow();
+        RWindow* window = RWindow::getMainWindow();
         if(window->cursorMode() == RWindow::CursorMode::Hidden)
         {
             if(e->pos() != prePos)

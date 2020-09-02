@@ -54,6 +54,7 @@ public:
         double vRatio_      = 16.0/9.0; // 视口比例 (Scale 模式)
     };
 
+    static RWindow* getMainWindow();
     static RWindow* getWindowUserCtrl(GLFWwindow *window);
 
     explicit RWindow();
@@ -136,10 +137,9 @@ private:
     static void mouseButtonCollback(GLFWwindow *window, int btn, int action, int mods);
 
     int defaultExec();
-    int mainExecFunc();
 
     static const Format windowFormat;
-    static GLFWwindow *mainWindow;
+    static RWindow *mainWindow;
 
     RController ctrl_;
     RInputModule input_;
@@ -149,6 +149,7 @@ private:
     RSize size_;
     RTimer fTimer_;
     std::atomic_bool focused_;
+    std::function<void()> poolFunc_;
 
     GLbitfield clearMask = GL_COLOR_BUFFER_BIT;
 };

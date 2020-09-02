@@ -15,7 +15,6 @@
 using namespace Redopera;
 
 bool RGame::once = false;
-RWindow *RGame::mainWindow;
 
 std::string RResource::rscPath_;
 
@@ -47,7 +46,6 @@ RGame::~RGame()
 
 int RGame::exec(RWindow *window)
 {
-    mainWindow = window;
     window->setAsMainWindow();
 
     // 需手动检测一次手柄连接，检测之前已连接的手柄
@@ -56,13 +54,13 @@ int RGame::exec(RWindow *window)
         if(glfwJoystickIsGamepad(i))
         {
             RInputModule::addGamepad(RInputModule::toJoystickID(i));
-            mainWindow->joyPresented.emit(RInputModule::toJoystickID(i), JoystickPresent::CONNECTED);
+            window->joyPresented.emit(RInputModule::toJoystickID(i), JoystickPresent::CONNECTED);
         }
     }
     // 手柄连接回调
     glfwSetJoystickCallback(joystickPresentCallback);
 
-    return mainWindow->ctrl()->exec();
+    return window->ctrl()->exec();
 }
 
 void RGame::joystickPresentCallback(int jid, int event)
@@ -70,12 +68,12 @@ void RGame::joystickPresentCallback(int jid, int event)
     if(event == GLFW_CONNECTED && glfwJoystickIsGamepad(jid))
     {
         RInputModule::addGamepad(RInputModule::toJoystickID(jid));
-        mainWindow->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::CONNECTED);
+        RWindow::getMainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::CONNECTED);
     }
     else if(event == GLFW_DISCONNECTED)
     {
         RInputModule::deleteGamepad(RInputModule::toJoystickID(jid));
-        mainWindow->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::DISCONNECTED);
+        RWindow::getMainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::DISCONNECTED);
     }
 }
 

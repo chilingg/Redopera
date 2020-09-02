@@ -8,8 +8,6 @@ class RWindow;
 class RGame
 {
 public:
-    static RWindow* getMainWindow(){ return mainWindow; }
-
     RGame();
     ~RGame();
 
@@ -25,7 +23,6 @@ private:
     static void joystickPresentCallback(int jid, int event);
 
     static bool once;
-    static RWindow *mainWindow;
 };
 
 } // ns Redopera

@@ -8,7 +8,12 @@
 using namespace Redopera;
 
 const RWindow::Format RWindow::windowFormat;
-GLFWwindow *RWindow::mainWindow = nullptr;
+RWindow *RWindow::mainWindow = nullptr;
+
+RWindow *RWindow::getMainWindow()
+{
+    return mainWindow;
+}
 
 RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
 {
@@ -22,6 +27,7 @@ RWindow::RWindow():
 }
 
 RWindow::RWindow(int width, int height, const std::string title, const RWindow::Format &format):
+    poolFunc([]{}),
     ctrl_(this),
     input_(this),
     format_(format),
@@ -116,7 +122,8 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
 
 void RWindow::setAsMainWindow()
 {
-    ctrl_.setExecFunc(std::bind(&RWindow::mainExecFunc, this));
+    mainWindow = this;
+    poolFunc = glfwPollEvents;
 }
 
 void RWindow::setWindowSize(int width, int height)
@@ -356,17 +363,7 @@ void RWindow::closeWindow()
 
 void RWindow::show()
 {
-    // 不在构造函数时设置回调，防止多线程中在未构造完成时被调用
-    glfwSetWindowFocusCallback(window_.get(), windowFocusCallback);
-    glfwSetFramebufferSizeCallback(window_.get(), resizeCallback);
-    glfwSetScrollCallback(window_.get(), mouseScrollCallback);
-    glfwSetWindowCloseCallback(window_.get(), windowCloseCallback);
-    glfwSetKeyCallback(window_.get(), keyboardCollback);
-    glfwSetMouseButtonCallback(window_.get(), mouseButtonCollback);
-
     glfwShowWindow(window_.get());
-    RSize size = windowSize();
-    resizeCallback(window_.get(), size.width(), size.height());
 }
 
 void RWindow::hide()
@@ -527,13 +524,26 @@ void RWindow::mouseButtonCollback(GLFWwindow *window, int btn, int action, int)
 
 int RWindow::defaultExec()
 {
+    // 不在构造函数时设置回调，防止多线程中在未构造完成时被调用
+    glfwSetWindowFocusCallback(window_.get(), windowFocusCallback);
+    glfwSetFramebufferSizeCallback(window_.get(), resizeCallback);
+    glfwSetScrollCallback(window_.get(), mouseScrollCallback);
+    glfwSetWindowCloseCallback(window_.get(), windowCloseCallback);
+    glfwSetKeyCallback(window_.get(), keyboardCollback);
+    glfwSetMouseButtonCallback(window_.get(), mouseButtonCollback);
+
     StartEvent sEvent(&ctrl_);
     ctrl_.dispatchEvent(&sEvent);
+
+    RSize size = windowSize();
+    resizeCallback(window_.get(), size.width(), size.height());
 
     while(ctrl_.loopingCheck() == RController::Status::Looping)
     {
         // 清屏 清除颜色缓冲和深度缓冲
         glClear(clearMask);
+
+        poolFunc();
 
         // 传递输入
         if (focused_)
@@ -560,42 +570,4 @@ int RWindow::defaultExec()
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
 
-}
-
-int RWindow::mainExecFunc()
-{
-    StartEvent sEvent(&ctrl_);
-    ctrl_.dispatchEvent(&sEvent);
-
-    while(ctrl_.loopingCheck() == RController::Status::Looping)
-    {
-        // 清屏 清除颜色缓冲和深度缓冲
-        glClear(clearMask);
-
-        glfwPollEvents();
-
-        // 传递输入
-        if (focused_)
-        {
-            InputInfo input(this);
-            ctrl_.inputProcess(&input);
-            input_.updataInputCache();
-        }
-
-        if(glfwWindowShouldClose(window_.get()))
-            ctrl_.breakLoop();
-
-        ctrl_.activeOnce();
-
-        fTimer_.cycle(1000 / format_.fps);
-        glfwSwapBuffers(window_.get());
-    }
-
-    FinishEvent fEvent(&ctrl_);
-    ctrl_.dispatchEvent(&fEvent);
-    ctrl_.closed.emit();
-
-    if(check(ctrl_.status() == RController::Status::Error, "The Loop has unexpectedly finished"))
-        return EXIT_FAILURE;
-    return EXIT_SUCCESS;
 }
