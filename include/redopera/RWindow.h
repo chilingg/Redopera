@@ -137,6 +137,7 @@ private:
     static void mouseButtonCollback(GLFWwindow *window, int btn, int action, int mods);
 
     int defaultExec();
+    std::function<void()> poolFunc;
 
     static const Format windowFormat;
     static RWindow *mainWindow;
@@ -149,7 +150,6 @@ private:
     RSize size_;
     RTimer fTimer_;
     std::atomic_bool focused_;
-    std::function<void()> poolFunc_;
 
     GLbitfield clearMask = GL_COLOR_BUFFER_BIT;
 };
