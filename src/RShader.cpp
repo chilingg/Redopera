@@ -2,9 +2,6 @@
 #include <RDebug.h>
 #include <ROpenGL.h>
 
-#include <fstream>
-#include <sstream>
-
 using namespace Redopera;
 
 const std::string &RShader::shaderTypeName(Type type)
@@ -88,31 +85,17 @@ GLuint RShader::shaderID() const
 
 bool RShader::load(const std::string &shader, Type type)
 {
-    std::string code;
+    RFile file = RResource::loadFile(shader);
 
-    std::string path = shader;
-    RResource::rscPath(path);
-    std::ifstream file;
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        file.open(path);
-        //读取文件缓冲到数据流
-        std::stringstream sstream;
-        sstream << file.rdbuf();
+    const char *code;
 
-        file.close();
-        code = sstream.str();
-    }
-    catch(...)
-    {
-        code.clear();
-    }
-
-    if(code.empty())
-        code = shader;
+    if (file.size)
+        code = reinterpret_cast<char*>(file.data.get());
+    else
+        code = shader.c_str();
 
     std::shared_ptr<GLuint> id(new GLuint(glCreateShader(static_cast<GLenum>(type))), deleteShader);
-    const GLchar *cp = code.c_str();
+    const GLchar *cp = code;
     glShaderSource(*id, 1, &cp, nullptr);
     glCompileShader(*id);
 

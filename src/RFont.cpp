@@ -114,26 +114,17 @@ void RFont::setSize(unsigned size)
 
 bool RFont::load(std::string path)
 {
-    RResource::rscPath(path);
+    RFile file = RResource::loadFile(path);
 
-    FILE *fp = fopen(path.c_str(), "rb");
-    check(!fp, "Failed to load font in " + path);
-
-    fseek(fp, 0L, SEEK_END);
-    auto size = ftell(fp);
-    fseek(fp, 0L, SEEK_SET);
-
-    std::unique_ptr<RData[]> data(std::make_unique<RData[]>(size));
-    fread(data.get(), 1, size, fp);
-    fclose(fp);
+    check(!file.size, "Failed to load font in " + path);
 
     std::shared_ptr<stbtt_fontinfo> info = std::make_shared<stbtt_fontinfo>();
-    stbtt_InitFont(info.get(), data.get(), stbtt_GetFontOffsetForIndex(data.get(),0));
+    stbtt_InitFont(info.get(), file.data.get(), stbtt_GetFontOffsetForIndex(file.data.get(),0));
 
     if(check(info->numGlyphs == 0, "Unknow font file in " + path))
         return false;
 
-    data_ = { std::move(data), std::move(info) };
+    data_ = { std::move(file.data), std::move(info) };
     return true;
 }
 

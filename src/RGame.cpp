@@ -7,8 +7,6 @@
 #include <rsc/RResource.h>
 #include <RDebug.h>
 
-#include <sstream>
-#include <fstream>
 #include <stdexcept>
 #include <string>
 
@@ -79,29 +77,13 @@ void RGame::joystickPresentCallback(int jid, int event)
 
 bool RGame::updateGamepadMappings(const char *path)
 {
-    std::string p = path;
-    RResource::rscPath(p);
+    RFile file = RResource::loadFile(path);
+    if (!file.size)
+        rDebug << "Failed to load gamepad mappings file: " << path;
 
-    std::string code;
-    std::ifstream file;
-    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    try {
-        file.open(p);
-        //读取文件缓冲到数据流
-        std::stringstream sstream;
-        sstream << file.rdbuf();
-
-        file.close();
-        code = sstream.str();
-    }
-    catch(...)
+    if(glfwUpdateGamepadMappings(reinterpret_cast<char*>(file.data.get())) == GLFW_FALSE)
     {
-        code.clear();
-    }
-
-    if(glfwUpdateGamepadMappings(code.c_str()) == GLFW_FALSE)
-    {
-        prError("Failed to update gamepad mapping! In path: " + p + '\n' +
+        prError("Failed to update gamepad mapping! In path: " + std::string(path) + '\n' +
                    "To https://github.com/gabomdq/SDL_GameControllerDB download gamecontrollerdb.txt file.");
         rDebug << "Updata to default gameoad maooings is " << (updateGamepadMappings() ? "success." : "failed!");
         return false;
