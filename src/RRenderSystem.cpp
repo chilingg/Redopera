@@ -4,6 +4,9 @@
 
 using namespace Redopera;
 
+template void RRenderSystem::render<RPlane>(RPlane &n);
+template void RRenderSystem::renderLine<RPlane>(RPlane &n);
+
 RRenderSystem::RRenderSystem():
     lineColor_(RTexture::redTex())
 {

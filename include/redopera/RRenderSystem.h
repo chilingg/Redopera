@@ -2,12 +2,11 @@
 #define RENDERSYSTEM_H
 
 #include "rsc/RShaderProg.h"
-#include "RPlane.h"
+#include "rsc/RTexture.h"
 
 namespace Redopera {
 
 class RPlane;
-class RTextbox;
 
 class RRenderSystem
 {
@@ -88,6 +87,9 @@ private:
     RShaderProg shaders_;
     glm::mat4 pMat_, vMat_;
 };
+
+extern template void RRenderSystem::render<RPlane>(RPlane &n);
+extern template void RRenderSystem::renderLine<RPlane>(RPlane &n);
 
 } // ns Redopera
 
