@@ -8,36 +8,10 @@ namespace Redopera {
 
 using RData = uint8_t;
 
-struct RFile
-{
-    size_t size = 0;
-    std::unique_ptr<RData[]> data;
-};
-
 class RResource
 {
 public:
     RResource() = delete;
-
-    static RFile loadFile(std::string path)
-    {
-        RResource::rscPath(path);
-        RFile file;
-
-        FILE *fp = fopen(path.c_str(), "rb");
-        if (fp)
-        {
-            fseek(fp, 0L, SEEK_END);
-            auto size = ftell(fp);
-            fseek(fp, 0L, SEEK_SET);
-
-            file.data = std::make_unique<RData[]>(size);
-            fread(file.data.get(), 1, size, fp);
-            fclose(fp);
-        }
-
-        return file;
-    }
 
     static void rscPath(std::string &path)
     {

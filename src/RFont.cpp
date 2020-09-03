@@ -1,4 +1,5 @@
 #include <rsc/RFont.h>
+#include <rsc/RFile.h>
 #include <RDebug.h>
 #include <dependents/stb_truetype.h>
 #include <dependents/SourceCodePro.h>
@@ -114,7 +115,7 @@ void RFont::setSize(unsigned size)
 
 bool RFont::load(std::string path)
 {
-    RFile file = RResource::loadFile(path);
+    RFile file = RFile::load(path);
 
     check(!file.size, "Failed to load font in " + path);
 

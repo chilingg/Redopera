@@ -1,4 +1,5 @@
 #include <rsc/RShader.h>
+#include <rsc/RFile.h>
 #include <RDebug.h>
 #include <ROpenGL.h>
 
@@ -85,7 +86,7 @@ GLuint RShader::shaderID() const
 
 bool RShader::load(const std::string &shader, Type type)
 {
-    RFile file = RResource::loadFile(shader);
+    RFile file = RFile::load(shader);
 
     const char *code;
 

@@ -5,6 +5,7 @@
 #include <ROpenGL.h>
 #include <RInputModule.h>
 #include <rsc/RResource.h>
+#include <rsc/RFile.h>
 #include <RDebug.h>
 
 #include <stdexcept>
@@ -77,7 +78,7 @@ void RGame::joystickPresentCallback(int jid, int event)
 
 bool RGame::updateGamepadMappings(const char *path)
 {
-    RFile file = RResource::loadFile(path);
+    RFile file = RFile::load(path);
     if (!file.size)
         rDebug << "Failed to load gamepad mappings file: " << path;
 
