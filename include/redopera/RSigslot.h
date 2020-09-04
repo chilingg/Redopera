@@ -96,11 +96,16 @@ public:
         slots_.emplace(nullptr, func);
     }
 
-    template<typename Sloter> // 断开所有关于该类的槽连接 PS:因为不知道如何统一储存成员函数变量
-    void disconnect(Sloter *sloter)
+    void disconnect(void *sloter)
     {
         std::lock_guard<std::mutex> guard(mutex_);
-        slots_.erase(sloter);
+        auto b = slots_.erase(sloter);
+    }
+
+    void disconnectAll()
+    {
+        std::lock_guard<std::mutex> guard(mutex_);
+        slots_.clear();
     }
 
     size_t count()
