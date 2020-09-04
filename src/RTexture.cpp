@@ -210,7 +210,7 @@ bool RTexture::load(const RImage &img, const RTexture::Format &format)
 
 bool RTexture::load(const std::string &path, const RTexture::Format &format)
 {
-    return load(RImage(path), format);
+    return load(RImage(path, true), format);
 }
 
 void RTexture::reload(const RData *data)
