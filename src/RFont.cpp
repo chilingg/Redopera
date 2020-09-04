@@ -110,7 +110,8 @@ const RFont::Glyph* RFont::getFontGlyph(RFont::RChar c) const
 
 void RFont::setSize(unsigned size)
 {
-    cache_ = { std::make_shared<std::map<RChar, Glyph>>(), size };
+    if (size != cache_.fsize)
+        cache_ = { std::make_shared<std::map<RChar, Glyph>>(), size };
 }
 
 bool RFont::load(std::string path)
