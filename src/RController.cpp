@@ -205,7 +205,7 @@ void RController::dispatchEvent(FinishEvent *event)
 void RController::activeOnce()
 {
     controlFunc();
-    std::for_each(children_.begin(), children_.end(), [](RController *ctrl){ ctrl->controlFunc(); });
+    std::for_each(children_.begin(), children_.end(), [](RController *ctrl){ ctrl->activeOnce(); });
 }
 
 void RController::control()
@@ -221,6 +221,16 @@ void RController::translation(TransInfo *info)
 void RController::inputProcess(InputInfo *info)
 {
     inputFunc(info);
+}
+
+void RController::defaultTransFunc(TransInfo *info)
+{
+    std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->transFunc(info); });
+}
+
+void RController::defaultInputFunc(InputInfo *info)
+{
+    std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->inputFunc(info); });
 }
 
 int RController::exec()
@@ -278,14 +288,4 @@ int RController::defaultExecFunc()
     if(check(state_ == Status::Error, "The Loop has unexpectedly finished"))
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
-}
-
-void RController::defaultTransFunc(TransInfo *info)
-{
-    std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->transFunc(info); });
-}
-
-void RController::defaultInputFunc(InputInfo *event)
-{
-    std::for_each(children_.begin(), children_.end(), [event](RController *ctrl) { ctrl->inputFunc(event); });
 }

@@ -65,6 +65,9 @@ public:
     void translation(TransInfo *info);
     void inputProcess(InputInfo *info);
 
+    void defaultTransFunc(TransInfo *info);
+    void defaultInputFunc(InputInfo *info);
+
     int exec();
 
     // 若状态是Finishi则发起closeEvent
@@ -76,8 +79,6 @@ public:
 
 private:
     int defaultExecFunc();
-    void defaultTransFunc(TransInfo *info);
-    void defaultInputFunc(InputInfo *event);
 
     std::function<void()> controlFunc;
     std::function<int()> execFunc;
