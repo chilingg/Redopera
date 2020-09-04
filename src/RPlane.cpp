@@ -135,6 +135,13 @@ RSize &RPlane::rSize()
     return size_;
 }
 
+void RPlane::setRect(const RRect &rect)
+{
+    dirty_ = true;
+    size_ = rect.size();
+    pos_ = rect.pos();
+}
+
 void RPlane::setRotate(float x, float y, float z)
 {
     rotate_ = { x, y, z };
@@ -148,6 +155,12 @@ void RPlane::setRotate(float *xyz)
 void RPlane::setTexture(const RTexture &tex)
 {
     texture_ = tex;
+}
+
+void RPlane::setModel(const glm::mat4 &model)
+{
+    model_ = model;
+    dirty_ = false;
 }
 
 void RPlane::flipH()

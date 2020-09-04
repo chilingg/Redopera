@@ -33,9 +33,11 @@ public:
     RPoint& rPos();
     RSize& rSize();
 
+    void setRect(const RRect &rect);
     void setRotate(float x, float y, float z);
     void setRotate(float *xyz);
     void setTexture(const RTexture &tex);
+    void setModel(const glm::mat4& model);
 
     void flipH();
     void flipV();
