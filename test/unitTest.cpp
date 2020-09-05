@@ -75,7 +75,7 @@ int main()
     assert(rect1.overlap(rect3));
 
     // RController ====================
-    RController ctl(nullptr);
+    RController ctl;
     std::string order;
     ctl.setStartFunc([&order](StartEvent*){ order += '1'; });
     ctl.setControlFunc([&order, &ctl]{ order += '2'; ctl.breakLoop(); });

@@ -3,11 +3,19 @@
 #include <RInputModule.h>
 #include <RDebug.h>
 
+#include <regex>
+
 using namespace Redopera;
 
 template class Redopera::RSignal<>;
 
-RController::RController(void *holder):
+RController::RController():
+    RController("", nullptr)
+{
+
+}
+
+RController::RController(const std::string &name, void *holder):
     controlFunc([]{}),
     execFunc(std::bind(&RController::defaultExecFunc, this)),
     transFunc(std::bind(&RController::defaultTransFunc, this, std::placeholders::_1)),
@@ -15,6 +23,7 @@ RController::RController(void *holder):
     closeFunc([](CloseEvent*){}),
     startFunc([](StartEvent*){}),
     finishFunc([](FinishEvent*){}),
+    name_(name),
     state_(Status::Normal),
     parent_(nullptr),
     holder_(holder)
@@ -82,6 +91,59 @@ RController *RController::getParent() const
 void *RController::getHolder() const
 {
     return holder_;
+}
+
+const std::string RController::name() const
+{
+    return name_;
+}
+
+RController *RController::node(const std::string &path)
+{
+    static std::regex rNode("[^/]+", std::regex::icase|std::regex::optimize);
+    std::sregex_iterator it(path.begin(), path.end(), rNode), end;
+    RController *result = nullptr;
+
+    if (it != end)
+    {
+        if(path[0] == '/')
+            result = root();
+        else
+            result = this;
+
+        while (it != end)
+        {
+            auto str = it->str();
+            if (it->str() == "..")
+            {
+                if (result->parent_)
+                    result = result->parent_;
+                else
+                    return nullptr;
+            }
+            else
+            {
+                auto find = std::find_if(result->children_.begin(), result->children_.end(), [&it](RController* ctrl){
+                        return ctrl->name_ == it->str();
+                });
+                if (find == result->children_.end())
+                    return nullptr;
+                else
+                    result = *find;
+            }
+            ++it;
+        }
+    }
+
+    return result;
+}
+
+RController *RController::root()
+{
+    if (parent_)
+        return parent_->root();
+    else
+        return this;
 }
 
 void RController::setControlFunc(std::function<void ()> func)

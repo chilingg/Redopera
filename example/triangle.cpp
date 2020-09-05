@@ -38,7 +38,7 @@ class TestCtl
 {
 public:
     TestCtl():
-        ctrl(this),
+        ctrl("TestCtl", this),
         shaders({RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}),
         model(glm::mat4(1))
     {

@@ -46,7 +46,7 @@ class TestCtl
 {
 public:
     TestCtl():
-        ctrl(this),
+        ctrl("TestCtrl", this),
         plane(36, 36, RPoint(0, 0), RImage::redoperaIcon())
     {
         plane.flipV();

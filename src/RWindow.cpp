@@ -28,7 +28,7 @@ RWindow::RWindow():
 
 RWindow::RWindow(int width, int height, const std::string title, const RWindow::Format &format):
     poolFunc([]{}),
-    ctrl_(this),
+    ctrl_("Window", this),
     input_(this),
     format_(format),
     window_(nullptr, glfwDestroyWindow),

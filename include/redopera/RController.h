@@ -24,7 +24,8 @@ public:
         Error,
     };
 
-    explicit RController(void *holder = nullptr);
+    RController();
+    RController(const std::string &name, void* holder);
     ~RController();
 
     RController(RController &ctl) = delete;
@@ -40,6 +41,9 @@ public:
     int getChildrenSize() const;
     RController* getParent() const;
     void* getHolder() const;
+    const std::string name() const;
+    RController* node(const std::string &path);
+    RController* root();
 
     void setControlFunc(std::function<void()> func);
     void setExecFunc(std::function<int()> func);
@@ -88,6 +92,7 @@ private:
     std::function<void(StartEvent *event)> startFunc;   //exec循环开始
     std::function<void(FinishEvent *event)> finishFunc; //exec循环终止
 
+    std::string name_;
     std::atomic<Status> state_;
     std::set<RController*> children_;
     RController *parent_ = nullptr;
