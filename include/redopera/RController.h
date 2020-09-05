@@ -101,4 +101,6 @@ private:
 
 } // Redopera
 
+#define _R_CTRL_DECLARE_ public:Redopera::RController* ctrl(){ return &ctrl_; } private:Redopera::RController ctrl_;
+
 #endif // RCONTROLLER_H
