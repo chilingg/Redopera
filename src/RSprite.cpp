@@ -63,6 +63,11 @@ size_t RSprite::currentIndex() const
     return index_;
 }
 
+const RTexture RSprite::frame(size_t index) const
+{
+    return frames_[index];
+}
+
 void RSprite::setInterval(int interval)
 {
     interval_ = interval;
@@ -87,6 +92,11 @@ void RSprite::add(const RTexture &frame)
 void RSprite::add(const std::vector<RTexture> &texs)
 {
     frames_.insert(frames_.end(), texs.begin(), texs.end());
+}
+
+void RSprite::add(std::initializer_list<RTexture> texs)
+{
+    frames_.insert(frames_.end(), texs);
 }
 
 const RTexture &RSprite::texture() const
