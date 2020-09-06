@@ -509,7 +509,7 @@ void RWindow::keyboardCollback(GLFWwindow *window, int key, int, int action, int
     RWindow *wctrl = getWindowUserCtrl(window);
     if (action == GLFW_RELEASE)
         wctrl->input_.keyUp(RInputModule::toKey(key));
-    else
+    else if (action == GLFW_PRESS)
         wctrl->input_.keyDown(RInputModule::toKey(key));
 }
 
@@ -518,7 +518,7 @@ void RWindow::mouseButtonCollback(GLFWwindow *window, int btn, int action, int)
     RWindow *wctrl = getWindowUserCtrl(window);
     if (action == GLFW_RELEASE)
         wctrl->input_.mouseUp(RInputModule::toMouseButtons(btn));
-    else
+    else if (action == GLFW_PRESS)
         wctrl->input_.mouseDown(RInputModule::toMouseButtons(btn));
 }
 

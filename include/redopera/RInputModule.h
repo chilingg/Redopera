@@ -184,8 +184,7 @@ enum class MouseBtn
 enum class BtnAct
 {
     RELEASE = GLFW_RELEASE,
-    PRESS = GLFW_PRESS,
-    REPEAT = GLFW_REPEAT
+    PRESS = GLFW_PRESS
 };
 
 enum class JoystickID
@@ -228,7 +227,6 @@ class RInputModule
     };
 
 public:
-    static BtnAct toButtonAction(unsigned char action);
     static BtnAct toButtonAction(int action);
     static Keys toKey(int key);
     static MouseBtn toMouseButtons(int button);
@@ -255,15 +253,15 @@ public:
     void mouseDown(MouseBtn btn);
     void mouseWheel(int value);
 
+    BtnAct keyStatus(Keys key) const;
+    BtnAct mouseStatus(MouseBtn btn) const;
+    RPoint2 cursorPos() const;
+
     int gamepadCount();
     JoystickID getJoystickID(int index = 0);
     bool isValidJid(JoystickID jid);
 
 private:
-    BtnAct keyStatus(Keys key) const;
-    BtnAct mouseStatus(MouseBtn btn) const;
-    RPoint2 cursorPos() const;
-
     static std::map<JoystickID, GamepadValue> gamepad_;
 
     int wheel_ = 0;

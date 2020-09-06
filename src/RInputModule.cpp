@@ -6,11 +6,6 @@ using namespace Redopera;
 
 std::map<JoystickID, RInputModule::GamepadValue> RInputModule::gamepad_;
 
-BtnAct RInputModule::toButtonAction(unsigned char action)
-{
-    return toButtonAction(static_cast<int>(action));
-}
-
 BtnAct RInputModule::toButtonAction(int action)
 {
     switch(action)
@@ -19,8 +14,6 @@ BtnAct RInputModule::toButtonAction(int action)
         return BtnAct::RELEASE;
     case GLFW_PRESS:
         return BtnAct::PRESS;
-    case GLFW_REPEAT:
-        return BtnAct::REPEAT;
     default:
         throw std::invalid_argument("Invalid value: " + std::to_string(action) + " to Enum ButtonAction!");
     }
@@ -403,6 +396,23 @@ void RInputModule::mouseWheel(int value)
     wheel_ = value;
 }
 
+BtnAct RInputModule::keyStatus(Keys key) const
+{
+    return toButtonAction(glfwGetKey(window_->getWindowHandle(), static_cast<int>(key)));
+}
+
+BtnAct RInputModule::mouseStatus(MouseBtn btn) const
+{
+    return toButtonAction(glfwGetMouseButton(window_->getWindowHandle(), static_cast<int>(btn)));
+}
+
+RPoint2 RInputModule::cursorPos() const
+{
+    double x, y;
+    glfwGetCursorPos(window_->getWindowHandle(), &x, &y);
+    return RPoint2(x, y) - window_->posOffset();
+}
+
 int RInputModule::gamepadCount()
 {
     return gamepad_.size();
@@ -420,23 +430,6 @@ JoystickID RInputModule::getJoystickID(int index)
 bool RInputModule::isValidJid(JoystickID jid)
 {
     return glfwJoystickIsGamepad(static_cast<int>(jid));
-}
-
-BtnAct RInputModule::keyStatus(Keys key) const
-{
-    return toButtonAction(glfwGetKey(window_->getWindowHandle(), static_cast<int>(key)));
-}
-
-BtnAct RInputModule::mouseStatus(MouseBtn btn) const
-{
-    return toButtonAction(glfwGetMouseButton(window_->getWindowHandle(), static_cast<int>(btn)));
-}
-
-RPoint2 RInputModule::cursorPos() const
-{
-    double x, y;
-    glfwGetCursorPos(window_->getWindowHandle(), &x, &y);
-    return RPoint2(x, y) - window_->posOffset();
 }
 
 const char *RInputModule::gamepadMappingCode0 =

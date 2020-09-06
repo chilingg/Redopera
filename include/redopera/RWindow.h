@@ -45,7 +45,7 @@ public:
         bool decorate       = true;     // 窗口边框与标题栏
         bool fullScreen     = false;    // 全屏
         bool maximization   = false;
-        int fps             = 55;       // 60帧有撕裂
+        int fps             = 60;       // 60帧有撕裂
         int defaultWidth    = 800;      // 初始窗口大小
         int defaultHeight   = 540;      // 初始窗口大小
         Viewport viewport   = Viewport::Full;  // 视口模式
