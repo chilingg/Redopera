@@ -248,10 +248,10 @@ void RController::dispatchEvent(StartEvent *event)
 {
     if(state_ == Status::Error) return;//错误状态无法进入循环
 
-    state_ = Status::Looping;
     startFunc(event);
     for(auto node : children_)
         node->dispatchEvent(event);
+    state_ = Status::Looping;
 }
 
 void RController::dispatchEvent(FinishEvent *event)
