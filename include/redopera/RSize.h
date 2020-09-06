@@ -21,6 +21,9 @@ public:
     RSize& operator*=(int value) { width_ *= value; height_ *= value; return *this; }
     RSize& operator/=(int value) { width_ /= value; height_ /= value; return *this; }
 
+    RSize& operator*=(unsigned value) { width_ *= value; height_ *= value; return *this; }
+    RSize& operator/=(unsigned value) { width_ /= value; height_ /= value; return *this; }
+
     RSize operator*(double value) const { return RSize(width_ * value, height_ * value); }
     RSize operator/(double value) const { return RSize(width_ / value, height_ / value); }
 
@@ -29,6 +32,9 @@ public:
 
     RSize operator*(int value) const { return RSize(width_ * value, height_ * value); }
     RSize operator/(int value) const { return RSize(width_ / value, height_ / value); }
+
+    RSize operator*(unsigned value) const { return RSize(width_ * value, height_ * value); }
+    RSize operator/(unsigned value) const { return RSize(width_ / value, height_ / value); }
 
     int width() const { return width_; }
     int height() const { return height_; }
