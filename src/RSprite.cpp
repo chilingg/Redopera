@@ -36,6 +36,7 @@ RSprite::RSprite(const RRect &rect, int z):
 RSprite::RSprite(const RSprite &sprite):
     RPlane(sprite),
     frames_(sprite.frames_),
+    sequence_(sprite.sequence_),
     interval_(sprite.interval_),
     delta_(sprite.delta_),
     index_(sprite.index_)
@@ -46,11 +47,36 @@ RSprite::RSprite(const RSprite &sprite):
 RSprite::RSprite(const RSprite &&sprite):
     RPlane(std::move(sprite)),
     frames_(std::move(sprite.frames_)),
+    sequence_(std::move(sprite.sequence_)),
     interval_(sprite.interval_),
     delta_(sprite.delta_),
     index_(sprite.index_)
 {
 
+}
+
+RPlane &RSprite::operator=(const RSprite &sprite)
+{
+    RPlane::operator=(sprite);
+    frames_ = sprite.frames_;
+    sequence_ = sprite.sequence_;
+    interval_ = sprite.interval_;
+    delta_ = sprite.delta_;
+    index_ = sprite.index_;
+
+    return *this;
+}
+
+RPlane &RSprite::operator=(const RSprite &&sprite)
+{
+    RPlane::operator=(std::move(sprite));
+    frames_ = std::move(sprite.frames_);
+    sequence_ = std::move(sprite.sequence_);
+    interval_ = sprite.interval_;
+    delta_ = sprite.delta_;
+    index_ = sprite.index_;
+
+    return *this;
 }
 
 size_t RSprite::frameCount() const
@@ -75,8 +101,14 @@ void RSprite::setInterval(int interval)
 
 void RSprite::setFrame(size_t n)
 {
-    n = std::min(n, frames_.size());
+    n = std::min(n, sequence_.size());
     index_ = n;
+}
+
+void RSprite::setFrameSequence(const std::vector<size_t> &seque)
+{
+    sequence_ = seque;
+    index_ = 0;
 }
 
 void RSprite::clear()
@@ -91,12 +123,12 @@ void RSprite::add(const RTexture &frame)
 
 void RSprite::add(const std::vector<RTexture> &texs)
 {
-    frames_.insert(frames_.end(), texs.begin(), texs.end());
-}
+    index_ = 0;
+    sequence_.clear();
+    for (size_t i = 0; i < texs.size(); ++i)
+        sequence_.push_back(i + frames_.size());
 
-void RSprite::add(std::initializer_list<RTexture> texs)
-{
-    frames_.insert(frames_.end(), texs);
+    frames_.insert(frames_.end(), texs.begin(), texs.end());
 }
 
 const RTexture &RSprite::texture() const
@@ -105,8 +137,8 @@ const RTexture &RSprite::texture() const
         ++delta_;
     else {
         delta_ = 0;
-        index_ = ++index_ % frames_.size();
+        index_ = (index_ + 1) % sequence_.size();
     }
 
-    return frames_[index_];
+    return frames_[sequence_[index_]];
 }

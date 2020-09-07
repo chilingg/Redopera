@@ -17,6 +17,8 @@ public:
     explicit RSprite(const RRect &rect, int z = 0);
     RSprite(const RSprite &sprite);
     RSprite(const RSprite &&sprite);
+    RPlane& operator=(const RSprite &plane);
+    RPlane& operator=(const RSprite &&plane);
     ~RSprite() = default;
 
     size_t frameCount() const;
@@ -25,16 +27,17 @@ public:
 
     void setInterval(int interval = 20);
     void setFrame(size_t n);
+    void setFrameSequence(const std::vector<size_t> &seque);
     void clear();
 
     void add(const RTexture &frame);
     void add(const std::vector<RTexture> &texs);
-    void add(std::initializer_list<RTexture> texs);
 
     const RTexture& texture() const;
 
 private:
     std::vector<RTexture> frames_;
+    std::vector<size_t> sequence_;
     int interval_ = 20;
     mutable int delta_ = 0;
     mutable size_t index_ = 0;
