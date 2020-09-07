@@ -29,6 +29,8 @@ public:
     RRect rect() const;
     const RTexture& texture() const;
     const float* rotate() const;
+    bool isFlipH() const;
+    bool isFlipV() const;
 
     RPoint& rPos();
     RSize& rSize();
@@ -40,7 +42,9 @@ public:
     void setModel(const glm::mat4& model);
 
     void flipH();
+    void flipH(bool b);
     void flipV();
+    void flipV(bool b);
 
     void updataMat();
 

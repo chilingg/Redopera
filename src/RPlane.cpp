@@ -123,6 +123,16 @@ const float *RPlane::rotate() const
     return &rotate_.x;
 }
 
+bool RPlane::isFlipH() const
+{
+    return flip_.h;
+}
+
+bool RPlane::isFlipV() const
+{
+    return flip_.v;
+}
+
 RPoint &RPlane::rPos()
 {
     dirty_ = true;
@@ -169,10 +179,22 @@ void RPlane::flipH()
     flip_.h = !flip_.h;
 }
 
+void RPlane::flipH(bool b)
+{
+    dirty_ = true;
+    flip_.h = b;
+}
+
 void RPlane::flipV()
 {
     dirty_ = true;
     flip_.v = !flip_.v;
+}
+
+void RPlane::flipV(bool b)
+{
+    dirty_ = true;
+    flip_.v = b;
 }
 
 void RPlane::updataMat()
