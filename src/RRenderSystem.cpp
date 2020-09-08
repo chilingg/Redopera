@@ -1,11 +1,10 @@
 #include <RRenderSystem.h>
 #include <RPlane.h>
 #include <RTextbox.h>
+#include <RSprite.h>
+#include <RRect.h>
 
 using namespace Redopera;
-
-template void RRenderSystem::render<RPlane>(RPlane &n);
-template void RRenderSystem::renderLine<RPlane>(RPlane &n);
 
 RRenderSystem::RRenderSystem():
     lineColor_(RTexture::redTex())
@@ -90,4 +89,106 @@ void RRenderSystem::setCameraMove(float x, float y, float z)
 void RRenderSystem::setCameraMove()
 {
     setCameraMove(0, 0, 0);
+}
+
+void RRenderSystem::setLineColor(const RColor &color)
+{
+    lineColor_ = RTexture::colorTexture(color);
+}
+
+void RRenderSystem::setProjectionMat(const glm::mat4 &mat)
+{
+    pMat_ = mat;
+}
+
+void RRenderSystem::setViewMat(const glm::mat4 &mat)
+{
+    vMat_ = mat;
+}
+
+const glm::mat4 &RRenderSystem::getProjectionMat() const
+{
+    return pMat_;
+}
+
+const glm::mat4 &RRenderSystem::getViewMat() const
+{
+    return vMat_;
+}
+
+const RShaderProg &RRenderSystem::shaderProg()
+{
+    return shaders_;
+}
+
+const RTexture &RRenderSystem::texture()
+{
+    return lineColor_;
+}
+
+GLuint RRenderSystem::projectionLocal()
+{
+    return pLoc_;
+}
+
+GLuint RRenderSystem::viewLocal()
+{
+    return vLoc_;
+}
+
+GLuint RRenderSystem::modelLocal()
+{
+    return mLoc_;
+}
+
+void RRenderSystem::bindVAO()
+{
+    glBindVertexArray(vao_[0]);
+}
+
+void RRenderSystem::bindLineVAO()
+{
+    glBindVertexArray(vao_[1]);
+}
+
+void RRenderSystem::unbindVAO()
+{
+    glBindVertexArray(0);
+}
+
+void RRenderSystem::drawRect()
+{
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+
+void RRenderSystem::drawLine()
+{
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+}
+
+void RRenderSystem::renderLine(const glm::mat4 &mat)
+{
+    glBindVertexArray(vao_[1]);
+
+    RInterface inter = shaders_.useInterface();
+    inter.setUniformMatrix(mLoc_, mat);
+    lineColor_.bind();
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+    glBindVertexArray(0);
+}
+
+void RRenderSystem::renderLine(const RRect &rect)
+{
+    glBindVertexArray(vao_[1]);
+
+    glm::mat4 model_ = glm::translate(glm::mat4(1), { rect.left() + rect.width()/2, rect.bottom() + rect.height()/2, 0 });
+    model_ = glm::scale(model_, { rect.width(), rect.height(), 0.0f });
+
+    RInterface inter = shaders_.useInterface();
+    inter.setUniformMatrix(mLoc_, model_);
+    lineColor_.bind();
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+    glBindVertexArray(0);
 }

@@ -56,14 +56,11 @@ std::unique_ptr<RRenderSystem> renderer;
 
 void control()
 {
-    renderer->render(textbox[0]);
-    renderer->renderLine(textbox[0]);
-    renderer->render(textbox[1]);
-    renderer->renderLine(textbox[1]);
-    renderer->render(textbox[2]);
-    renderer->renderLine(textbox[2]);
-    renderer->render(textbox[3]);
-    renderer->renderLine(textbox[3]);
+    *renderer << textbox[0] << textbox[1] << textbox[2] << textbox[3];
+    renderer->renderLine(textbox[0].model());
+    renderer->renderLine(textbox[1].model());
+    renderer->renderLine(textbox[2].model());
+    renderer->renderLine(textbox[3].model());
 }
 
 void startEvent(StartEvent*)

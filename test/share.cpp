@@ -48,8 +48,8 @@ std::unique_ptr<RRenderSystem> renderer;
 
 void control()
 {
-    renderer->render(*plane);
-    renderer->renderLine(*plane);
+    *renderer << *plane;
+    renderer->renderLine(plane->model());
 }
 
 void translation(TransInfo *e)

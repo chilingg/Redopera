@@ -23,62 +23,27 @@ public:
     void setPerspective(float left, float right, float bottom, float top, float near, float far);
     void setCameraMove(float x, float y, float z);
     void setCameraMove();
+    void setLineColor(const RColor& color);
+    void setProjectionMat(const glm::mat4& mat);
+    void setViewMat(const glm::mat4& mat);
 
-    void setProjectionMat(const glm::mat4& mat)
-    {
-        pMat_ = mat;
-    }
+    const glm::mat4& getProjectionMat() const;
+    const glm::mat4& getViewMat() const;
+    const RShaderProg& shaderProg();
+    const RTexture& texture();
+    GLuint projectionLocal();
+    GLuint viewLocal();
+    GLuint modelLocal();
 
-    void setViewMat(const glm::mat4& mat)
-    {
-        vMat_ = mat;
-    }
+    void bindVAO();
+    void bindLineVAO();
+    void unbindVAO();
 
-    const glm::mat4& getProjectionMat() const
-    {
-        return pMat_;
-    }
+    void drawRect();
+    void drawLine();
 
-    const glm::mat4& getViewMat() const
-    {
-        return vMat_;
-    }
-
-    const RShaderProg& getShaderProg() const
-    {
-        return shaders_;
-    }
-
-    RShaderProg& shaderProg()
-    {
-        return shaders_;
-    }
-
-    template<typename T>
-    void render(T &plane)
-    {
-        glBindVertexArray(vao_[0]);
-
-        RInterface inter = shaders_.useInterface();
-        inter.setUniformMatrix(mLoc_, plane.model());
-        plane.texture().bind();
-        glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-        glBindVertexArray(0);
-    }
-
-    template<typename T>
-    void renderLine(T &plane)
-    {
-        glBindVertexArray(vao_[1]);
-
-        RInterface inter = shaders_.useInterface();
-        inter.setUniformMatrix(mLoc_, plane.model());
-        lineColor_.bind();
-        glDrawArrays(GL_LINE_LOOP, 0, 4);
-
-        glBindVertexArray(0);
-    }
+    void renderLine(const glm::mat4 &mat);
+    void renderLine(const RRect &rect);
 
 private:
     RTexture lineColor_;
@@ -88,9 +53,36 @@ private:
     glm::mat4 pMat_, vMat_;
 };
 
-extern template void RRenderSystem::render<RPlane>(RPlane &n);
-extern template void RRenderSystem::renderLine<RPlane>(RPlane &n);
-
 } // ns Redopera
+
+template<typename T>
+Redopera::RRenderSystem& operator<<(Redopera::RRenderSystem &renderer, T obj)
+{
+    renderer.bindVAO();
+
+    auto inter = renderer.shaderProg().useInterface();
+    inter.setUniformMatrix(renderer.modelLocal(), obj.model());
+    obj.texture().bind();
+    renderer.drawRect();
+
+    renderer.unbindVAO();
+
+    return renderer;
+}
+
+template<typename T>
+Redopera::RRenderSystem& operator<<(Redopera::RRenderSystem &renderer, T* obj)
+{
+    renderer.bindVAO();
+
+    auto inter = renderer.shaderProg().useInterface();
+    inter.setUniformMatrix(renderer.modelLocal(), obj->model());
+    obj->texture().bind();
+    renderer.drawRect();
+
+    renderer.unbindVAO();
+
+    return renderer;
+}
 
 #endif // RENDERSYSTEM_H
