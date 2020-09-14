@@ -48,7 +48,7 @@ std::unique_ptr<RRenderSystem> renderer;
 
 void control()
 {
-    *renderer << *plane;
+    renderer->renderer() << *plane;
     renderer->renderLine(plane->model());
 }
 

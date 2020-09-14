@@ -6,7 +6,7 @@
 
 namespace Redopera {
 
-class RPlane;
+class RRenderer;
 
 class RRenderSystem
 {
@@ -42,6 +42,8 @@ public:
     void drawRect();
     void drawLine();
 
+    RRenderer renderer();
+
     void renderLine(const glm::mat4 &mat);
     void renderLine(const RRect &rect);
 
@@ -53,34 +55,44 @@ private:
     glm::mat4 pMat_, vMat_;
 };
 
+class RRenderer
+{
+public:
+    RRenderer(RRenderSystem* rsystem):
+        rsystem_(rsystem) { rsystem_->bindVAO(); };
+
+    ~RRenderer() { rsystem_->unbindVAO(); };
+
+    RRenderSystem* renderSystem() const { return rsystem_; };
+
+private:
+    RRenderSystem * const rsystem_;
+};
+
 } // ns Redopera
 
 template<typename T>
-Redopera::RRenderSystem& operator<<(Redopera::RRenderSystem &renderer, T obj)
+const Redopera::RRenderer& operator<<(const Redopera::RRenderer &renderer, T obj)
 {
-    renderer.bindVAO();
+    Redopera::RRenderSystem *rsystem = renderer.renderSystem();
 
-    auto inter = renderer.shaderProg().useInterface();
-    inter.setUniformMatrix(renderer.modelLocal(), obj.model());
+    auto inter = rsystem->shaderProg().useInterface();
+    inter.setUniformMatrix(rsystem->modelLocal(), obj.model());
     obj.texture().bind();
-    renderer.drawRect();
-
-    renderer.unbindVAO();
+    rsystem->drawRect();
 
     return renderer;
 }
 
 template<typename T>
-Redopera::RRenderSystem& operator<<(Redopera::RRenderSystem &renderer, T* obj)
+const Redopera::RRenderer& operator<<(const Redopera::RRenderer &renderer, T* obj)
 {
-    renderer.bindVAO();
+    Redopera::RRenderSystem *rsystem = renderer.renderSystem();
 
-    auto inter = renderer.shaderProg().useInterface();
-    inter.setUniformMatrix(renderer.modelLocal(), obj->model());
+    auto inter = rsystem->shaderProg().useInterface();
+    inter.setUniformMatrix(rsystem->modelLocal(), obj->model());
     obj->texture().bind();
-    renderer.drawRect();
-
-    renderer.unbindVAO();
+    rsystem->drawRect();
 
     return renderer;
 }

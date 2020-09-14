@@ -166,6 +166,11 @@ void RRenderSystem::drawLine()
     glDrawArrays(GL_LINE_LOOP, 0, 4);
 }
 
+RRenderer RRenderSystem::renderer()
+{
+    return RRenderer(this);
+}
+
 void RRenderSystem::renderLine(const glm::mat4 &mat)
 {
     glBindVertexArray(vao_[1]);

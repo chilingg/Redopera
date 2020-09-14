@@ -77,7 +77,11 @@ public:
 
     void control()
     {
-        rSystem << arrow[0] << arrow[1] << arrow[2] << arrow[3] << plane;
+        rSystem.renderer() << arrow[0]
+                << arrow[1]
+                << arrow[2]
+                << arrow[3]
+                << plane;
     }
 
     void translation(TransInfo* info)
