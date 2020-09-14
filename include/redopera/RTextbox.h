@@ -74,7 +74,7 @@ public:
     RPoint& rPos();
     RSize& rSize();
 
-    void setFontColor(RGB rgb);
+    void setFontColor(RGBA rgba);
     void setFontColor(const RColor &color);
     void setFontColor(unsigned r, unsigned g, unsigned b);
 

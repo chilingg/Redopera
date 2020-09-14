@@ -152,7 +152,7 @@ int main()
     RGame game;
 
     RWindow::Format format;
-    format.background = 0x101020;
+    format.background = 0x101020ff;
     RWindow textWin(WIDTH, HEIGHT, "Texts Window", format);
 
     //RFont font("/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc");

@@ -125,7 +125,7 @@ int main()
 
     RWindow::Format format;
     format.decorate = false;
-    format.background = 0x101018;
+    format.background = 0x101018ff;
     RWindow window(500, 500, "Triangle", format);
     p = &window;
 

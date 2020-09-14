@@ -136,9 +136,9 @@ RSize &RTextbox::rSize()
     return size_;
 }
 
-void RTextbox::setFontColor(RGB rgb)
+void RTextbox::setFontColor(RGBA rgba)
 {
-    setFontColor(RColor(rgb));
+    setFontColor(RColor(rgba));
 }
 
 void RTextbox::setFontColor(const RColor &color)

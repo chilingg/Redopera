@@ -146,7 +146,7 @@ int main()
 {
     RGame game;
     RWindow::Format format;
-    format.background = 0x101018;
+    format.background = 0x101018ff;
     RWindow window(480, 480, "Plane", format);
 
     TestCtl t;
