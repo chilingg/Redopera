@@ -223,8 +223,7 @@ void RWindow::restoreWindow()
 
 void RWindow::setBackColor(unsigned r, unsigned g, unsigned b)
 {
-    format_.background = RColor(r, g, b, 255).rgba();
-    glClearColor(r / 255.0f, g / 255.0f, b / 255.0f, 1.0f);
+    setBackColor(RColor(r, g, b, 255));
 }
 
 void RWindow::setBackColor(const RColor &color)
@@ -233,11 +232,9 @@ void RWindow::setBackColor(const RColor &color)
     glClearColor(color.r() / 255.0f, color.g() / 255.0f, color.b() / 255.0f, 1.0f);
 }
 
-void RWindow::setBackColor(RGB rgb)
+void RWindow::setBackColor(RGBA rgba)
 {
-    RColor color(rgb << 8);
-    format_.background = rgb;
-    glClearColor(color.r() / 255.0f, color.g() / 255.0f, color.b() / 255.0f, 1.0f);
+    setBackColor(RColor(rgba));
 }
 
 void RWindow::setViewportSize(int width, int height)

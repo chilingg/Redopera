@@ -17,7 +17,7 @@ class RCursor;
 class RImage;
 class RColor;
 
-using RGB = uint32_t;
+using RGBA = uint32_t;
 
 enum class Keys;
 enum class BtnAct;
@@ -49,7 +49,7 @@ public:
         int defaultWidth    = 800;      // 初始窗口大小
         int defaultHeight   = 540;      // 初始窗口大小
         Viewport viewport   = Viewport::Full;  // 视口模式
-        RGB background      = 0x121212; // 背景色
+        RGBA background      = 0x121212ff; // 背景色
         CursorMode cMode    = CursorMode::Normal;
         double vRatio_      = 16.0/9.0; // 视口比例 (Scale 模式)
     };
@@ -85,7 +85,7 @@ public:
 
     void setBackColor(unsigned r, unsigned g, unsigned b);
     void setBackColor(const RColor &color);
-    void setBackColor(RGB rgb);
+    void setBackColor(RGBA rgb);
 
     void setViewportSize(int width, int height);
     void setViewportRatio(double ratio);
