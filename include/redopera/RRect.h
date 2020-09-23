@@ -51,6 +51,9 @@ public:
     void move(const RPoint2 &pos);
     void move(int x, int y);
 
+    RSize& rsize();
+    RPoint2& rpos();
+
     int top() const;
     int bottom() const;
     int left() const;
@@ -209,17 +212,17 @@ inline void RRect::setBottom(int bottom)
 inline void RRect::setLeft(int left)
 {
     size_.expand(pos_.x() - left, 0);
+    pos_.setX(left);
 }
 
 inline void RRect::setTop(int top)
 {
-    size_.expand(0, top - size_.height() - pos_.y());
+    size_.setHeight(top - pos_.y());
 }
 
 inline void RRect::setRight(int right)
 {
-    size_.expand(pos_.x() - right, 0);
-    pos_.setX(right);
+    size_.setWidth(right - pos_.x());
 }
 
 inline void RRect::setCenter(const RPoint2 &pos)
@@ -263,6 +266,16 @@ inline void RRect::move(int x, int y)
 {
     pos_.rx() += x;
     pos_.ry() += y;
+}
+
+inline RSize &RRect::rsize()
+{
+    return size_;
+}
+
+inline RPoint2 &RRect::rpos()
+{
+    return pos_;
 }
 
 inline int RRect::top() const
