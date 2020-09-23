@@ -72,7 +72,7 @@ private:
 } // ns Redopera
 
 template<typename T>
-const Redopera::RRenderer& operator<<(const Redopera::RRenderer &renderer, T obj)
+const Redopera::RRenderer& operator<<(const Redopera::RRenderer &renderer, T &obj)
 {
     Redopera::RRenderSystem *rsystem = renderer.renderSystem();
 
