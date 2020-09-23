@@ -89,6 +89,11 @@ size_t RSprite::currentIndex() const
     return index_;
 }
 
+int RSprite::delta() const
+{
+    return delta_;
+}
+
 const RTexture RSprite::frame(size_t index) const
 {
     return frames_[index];
@@ -99,16 +104,11 @@ void RSprite::setInterval(int interval)
     interval_ = interval;
 }
 
-void RSprite::setFrame(size_t n)
-{
-    n = std::min(n, sequence_.size());
-    index_ = n;
-}
-
 void RSprite::setFrameSequence(const std::vector<size_t> &seque)
 {
     sequence_ = seque;
     index_ = 0;
+    delta_ = 0;
 }
 
 void RSprite::clear()

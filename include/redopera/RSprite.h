@@ -23,10 +23,10 @@ public:
 
     size_t frameCount() const;
     size_t currentIndex() const;
+    int delta() const;
     const RTexture frame(size_t index) const;
 
     void setInterval(int interval = 20);
-    void setFrame(size_t n);
     void setFrameSequence(const std::vector<size_t> &seque);
     void clear();
 
