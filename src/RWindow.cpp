@@ -543,12 +543,9 @@ int RWindow::defaultExec()
         poolFunc();
 
         // 传递输入
-        if (focused_)
-        {
-            InputInfo input(this);
-            ctrl_.inputProcess(&input);
-            input_.updataInputCache();
-        }
+        InputInfo input(this);
+        ctrl_.inputProcess(&input);
+        input_.updataInputCache();
 
         if(glfwWindowShouldClose(window_.get()))
             ctrl_.breakLoop();
