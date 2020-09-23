@@ -40,10 +40,16 @@ public:
     Status status() const;
     int getChildrenSize() const;
     RController* getParent() const;
-    void* getHolder() const;
     const std::string name() const;
+    const std::string path() const;
     RController* node(const std::string &path);
     RController* root();
+
+    template<typename T>
+    T* holder() const
+    {
+        return reinterpret_cast<T*>(holder_);
+    }
 
     void setControlFunc(std::function<void()> func);
     void setExecFunc(std::function<int()> func);

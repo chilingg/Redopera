@@ -88,14 +88,17 @@ RController *RController::getParent() const
     return parent_;
 }
 
-void *RController::getHolder() const
-{
-    return holder_;
-}
-
 const std::string RController::name() const
 {
     return name_;
+}
+
+const std::string RController::path() const
+{
+    if (parent_)
+        return parent_->path() + '/' + name_;
+    else
+        return '/' + name_;
 }
 
 RController *RController::node(const std::string &path)
@@ -107,7 +110,15 @@ RController *RController::node(const std::string &path)
     if (it != end)
     {
         if(path[0] == '/')
-            result = root();
+        {
+            if (root()->name_ == it->str())
+            {
+                result = root();
+                ++it;
+            }
+            else
+                return nullptr;
+        }
         else
             result = this;
 
