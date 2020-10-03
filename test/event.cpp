@@ -27,36 +27,38 @@ void finishEvent(FinishEvent *)
     rDebug << "Loop finish.";
 }
 
-void transInfo(TransInfo *info)
+void transInfo(TransEvent *info)
 {
     rDebug << "Translate info:" << info->pos << info->size;
 }
 
-void inputEvent(InputInfo *e)
+void inputEvent(processEvent *e)
 {
-    if (e->press(Keys::KEY_ESCAPE))
-        e->sender->closeWindow();
+    const RInputModule *input = RWindow::mainWindow()->input();
 
-    if (e->anyKeyPress())
+    if (input->press(Keys::KEY_ESCAPE))
+        e->sender->breakLoop();
+
+    if (input->anyKeyPress())
         rDebug << "Any key Press.";
-    if (e->press(Keys::KEY_S))
+    if (input->press(Keys::KEY_S))
         rDebug << "Key S is press.";
-    if (e->release(Keys::KEY_S))
+    if (input->release(Keys::KEY_S))
         rDebug << "Key S is release.";
 
-    RPoint2 p = e->pos();
+    RPoint2 p = input->pos();
     if (pos != p)
     {
         pos = p;
         rDebug << "Cursor position move to " << p;
     }
 
-    if (e->wheel())
-        rDebug << "Mouse whell is" << e->wheel();
+    if (input->wheel())
+        rDebug << "Mouse whell is" << input->wheel();
 
-    if (e->press(MouseBtn::MOUSE_BUTTON_LEFT))
+    if (input->press(MouseBtn::MOUSE_BUTTON_LEFT))
         rDebug << "Mouse left button is press.";
-    if (e->release(MouseBtn::MOUSE_BUTTON_LEFT))
+    if (input->release(MouseBtn::MOUSE_BUTTON_LEFT))
         rDebug << "Mouse left button is release.";
 }
 

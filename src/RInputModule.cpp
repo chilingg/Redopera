@@ -349,10 +349,115 @@ bool RInputModule::deleteGamepad(JoystickID jid)
     return false;
 }
 
+int RInputModule::gamepadCount()
+{
+    return gamepad_.size();
+}
+
+JoystickID RInputModule::getJoystickID(int index)
+{
+    auto it = gamepad_.begin();
+    for (int i = 0; i < index; ++i)
+        ++it;
+
+    return it->first;
+}
+
+bool RInputModule::isValidJid(JoystickID jid)
+{
+    return glfwJoystickIsGamepad(static_cast<int>(jid));
+}
+
 RInputModule::RInputModule(RWindow *window):
     window_(window)
 {
 
+}
+
+BtnAct RInputModule::status(Keys key) const
+{
+    return toButtonAction(glfwGetKey(window_->getWindowHandle(), static_cast<int>(key)));
+}
+
+BtnAct RInputModule::status(MouseBtn btn) const
+{
+    return toButtonAction(glfwGetMouseButton(window_->getWindowHandle(), static_cast<int>(btn)));
+}
+
+BtnAct RInputModule::status(GamepadBtn btn, JoystickID jid) const
+{
+    if (!gamepad_.count(jid))
+        return BtnAct::RELEASE;
+
+    return RInputModule::toButtonAction(gamepad_[jid].status.buttons[static_cast<unsigned>(btn)]);
+}
+
+float RInputModule::status(GamepadAxes axis, JoystickID jid) const
+{
+    if (!gamepad_.count(jid))
+    {
+        if(axis == GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER || axis == GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER)
+            return -1.f;
+        else
+            return 0.f;
+    }
+
+    return gamepad_[jid].status.axes[static_cast<unsigned>(axis)];
+}
+
+bool RInputModule::press(Keys key) const
+{
+    return status(key) == BtnAct::PRESS && keyDown_.count(key);
+}
+
+bool RInputModule::press(MouseBtn btn) const
+{
+    return status(btn) == BtnAct::PRESS && mouseDown_.count(btn);
+}
+
+bool RInputModule::press(GamepadBtn btn, JoystickID jid) const
+{
+    if (!gamepad_.count(jid))
+        return false;
+
+    unsigned index = static_cast<unsigned>(btn);
+    return gamepad_[jid].status.buttons[index] && !gamepad_[jid].preButtons[index];
+}
+
+bool RInputModule::release(Keys key) const
+{
+    return status(key) == BtnAct::RELEASE && keyUp_.count(key);
+}
+
+bool RInputModule::release(MouseBtn btn) const
+{
+    return status(btn) == BtnAct::RELEASE && mouseUp_.count(btn);
+}
+
+bool RInputModule::release(GamepadBtn btn, JoystickID jid) const
+{
+    if (!gamepad_.count(jid))
+        return false;
+
+    unsigned index = static_cast<unsigned>(btn);
+    return !gamepad_[jid].status.buttons[index] && gamepad_[jid].preButtons[index];
+}
+
+RPoint2 RInputModule::pos() const
+{
+    double x, y;
+    glfwGetCursorPos(window_->getWindowHandle(), &x, &y);
+    return RPoint2(x, y) - window_->posOffset();
+}
+
+int RInputModule::wheel() const
+{
+    return wheel_;
+}
+
+bool RInputModule::anyKeyPress() const
+{
+    return !keyDown_.empty();
 }
 
 void RInputModule::updataInputCache()
@@ -394,42 +499,6 @@ void RInputModule::mouseDown(MouseBtn btn)
 void RInputModule::mouseWheel(int value)
 {
     wheel_ = value;
-}
-
-BtnAct RInputModule::keyStatus(Keys key) const
-{
-    return toButtonAction(glfwGetKey(window_->getWindowHandle(), static_cast<int>(key)));
-}
-
-BtnAct RInputModule::mouseStatus(MouseBtn btn) const
-{
-    return toButtonAction(glfwGetMouseButton(window_->getWindowHandle(), static_cast<int>(btn)));
-}
-
-RPoint2 RInputModule::cursorPos() const
-{
-    double x, y;
-    glfwGetCursorPos(window_->getWindowHandle(), &x, &y);
-    return RPoint2(x, y) - window_->posOffset();
-}
-
-int RInputModule::gamepadCount()
-{
-    return gamepad_.size();
-}
-
-JoystickID RInputModule::getJoystickID(int index)
-{
-    auto it = gamepad_.begin();
-    for (int i = 0; i < index; ++i)
-        ++it;
-
-    return it->first;
-}
-
-bool RInputModule::isValidJid(JoystickID jid)
-{
-    return glfwJoystickIsGamepad(static_cast<int>(jid));
 }
 
 const char *RInputModule::gamepadMappingCode0 =

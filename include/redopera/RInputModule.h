@@ -214,12 +214,8 @@ enum class JoystickPresent
     DISCONNECTED = GLFW_DISCONNECTED
 };
 
-struct InputInfo;
-
 class RInputModule
 {
-    friend InputInfo;
-
     struct GamepadValue
     {
         GLFWgamepadstate status;
@@ -235,6 +231,10 @@ public:
     static bool addGamepad(JoystickID jid);
     static bool deleteGamepad(JoystickID jid);
 
+    static int gamepadCount();
+    static JoystickID getJoystickID(int index = 0);
+    static bool isValidJid(JoystickID jid);
+
     static const char *gamepadMappingCode0;
     static const char *gamepadMappingCode1;
     static const char *gamepadMappingCode2;
@@ -244,22 +244,31 @@ public:
     RInputModule(const RInputModule&) = delete;
     RInputModule& operator=(const RInputModule&) = delete;
 
+    BtnAct status(Keys key) const;
+    BtnAct status(MouseBtn btn) const;
+    BtnAct status(GamepadBtn btn, JoystickID jid) const;
+    float status(GamepadAxes axis, JoystickID jid) const;
+
+    bool press(Keys key) const;
+    bool press(MouseBtn btn) const;
+    bool press(GamepadBtn btn, JoystickID jid) const;
+
+    bool release(Keys key) const;
+    bool release(MouseBtn btn) const;
+    bool release(GamepadBtn btn, JoystickID jid) const;
+
+    RPoint2 pos() const;
+    int wheel() const;
+
+    bool anyKeyPress() const;
+
     void updataInputCache();
-    void setFocusWindow(GLFWwindow *window);
 
     void keyUp(Keys key);
     void keyDown(Keys key);
     void mouseUp(MouseBtn btn);
     void mouseDown(MouseBtn btn);
     void mouseWheel(int value);
-
-    BtnAct keyStatus(Keys key) const;
-    BtnAct mouseStatus(MouseBtn btn) const;
-    RPoint2 cursorPos() const;
-
-    int gamepadCount();
-    JoystickID getJoystickID(int index = 0);
-    bool isValidJid(JoystickID jid);
 
 private:
     static std::map<JoystickID, GamepadValue> gamepad_;

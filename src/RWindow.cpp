@@ -8,11 +8,11 @@
 using namespace Redopera;
 
 const RWindow::Format RWindow::windowFormat;
-RWindow *RWindow::mainWindow = nullptr;
+RWindow *RWindow::mainWindowP = nullptr;
 
-RWindow *RWindow::getMainWindow()
+RWindow *RWindow::mainWindow()
 {
-    return mainWindow;
+    return mainWindowP;
 }
 
 RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
@@ -122,7 +122,7 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
 
 void RWindow::setAsMainWindow()
 {
-    mainWindow = this;
+    mainWindowP = this;
     poolFunc = glfwPollEvents;
 }
 
@@ -348,7 +348,7 @@ const RPoint2 &RWindow::posOffset() const
     return vOffset_;
 }
 
-const RInputModule *RWindow::inputModule() const
+const RInputModule *RWindow::input() const
 {
     return &input_;
 }
@@ -480,7 +480,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
     }
 
     // 传递Translation info
-    TransInfo info{ &wctrl->ctrl_, { wctrl->size_.width(), wctrl->size_.height() } };
+    TransEvent info{ &wctrl->ctrl_, { wctrl->size_.width(), wctrl->size_.height() } };
     wctrl->ctrl_.translation(&info);
 }
 
@@ -535,6 +535,7 @@ int RWindow::defaultExec()
     RSize size = windowSize();
     resizeCallback(window_.get(), size.width(), size.height());
 
+    processEvent instruct(&ctrl_);
     while(ctrl_.loopingCheck() == RController::Status::Looping)
     {
         // 清屏 清除颜色缓冲和深度缓冲
@@ -543,9 +544,9 @@ int RWindow::defaultExec()
         poolFunc();
 
         // 传递输入
-        InputInfo input(this);
-        ctrl_.inputProcess(&input);
+        ctrl_.inputProcess(&instruct);
         input_.updataInputCache();
+        instruct.clear();
 
         if(glfwWindowShouldClose(window_.get()))
             ctrl_.breakLoop();

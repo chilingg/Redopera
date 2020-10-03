@@ -108,14 +108,16 @@ void startEvent(StartEvent*)
 RPoint2 offset;
 RPlane *hold;
 
-void inputEvent(InputInfo *e)
+void inputEvent(processEvent *e)
 {
-    if (e->press(Keys::KEY_ESCAPE))
-        e->sender->closeWindow();
+    const RInputModule *input = RWindow::mainWindow()->input();
 
-    if (e->press(MouseBtn::MOUSE_BUTTON_LEFT))
+    if (input->press(Keys::KEY_ESCAPE))
+        e->sender->breakLoop();
+
+    if (input->press(MouseBtn::MOUSE_BUTTON_LEFT))
     {
-        RPoint2 pos = e->pos().mirrorV(HEIGHT / 2);
+        RPoint2 pos = input->pos().mirrorV(HEIGHT / 2);
 
         if (textbox[0].rect().contains(pos))
             hold = &textbox[0];
@@ -131,13 +133,13 @@ void inputEvent(InputInfo *e)
             offset = pos - hold->pos();
         }
     }
-    if (e->release(MouseBtn::MOUSE_BUTTON_LEFT))
+    if (input->release(MouseBtn::MOUSE_BUTTON_LEFT))
     {
         hold = nullptr;
     }
-    if (hold && e->status(MouseBtn::MOUSE_BUTTON_LEFT) == BtnAct::PRESS)
+    if (hold && input->status(MouseBtn::MOUSE_BUTTON_LEFT) == BtnAct::PRESS)
     {
-        hold->rPos() = e->pos().mirrorV(HEIGHT / 2) - offset;
+        hold->rPos() = input->pos().mirrorV(HEIGHT / 2) - offset;
     }
 }
 

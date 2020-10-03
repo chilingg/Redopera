@@ -167,12 +167,12 @@ void RController::setExecFunc(std::function<int ()> func)
     execFunc = func;
 }
 
-void RController::setTransFunc(std::function<void (TransInfo*)> func)
+void RController::setTransFunc(std::function<void (TransEvent*)> func)
 {
     transFunc = func;
 }
 
-void RController::setInputFunc(std::function<void (InputInfo*)> func)
+void RController::setInputFunc(std::function<void (processEvent*)> func)
 {
     inputFunc = func;
 }
@@ -286,22 +286,22 @@ void RController::control()
     controlFunc();
 }
 
-void RController::translation(TransInfo *info)
+void RController::translation(TransEvent *info)
 {
     transFunc(info);
 }
 
-void RController::inputProcess(InputInfo *info)
+void RController::inputProcess(processEvent *info)
 {
     inputFunc(info);
 }
 
-void RController::defaultTransFunc(TransInfo *info)
+void RController::defaultTransFunc(TransEvent *info)
 {
     std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->transFunc(info); });
 }
 
-void RController::defaultInputFunc(InputInfo *info)
+void RController::defaultInputFunc(processEvent *info)
 {
     std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->inputFunc(info); });
 }

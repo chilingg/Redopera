@@ -8,8 +8,8 @@
 
 namespace Redopera {
 
-class TransInfo;
-class InputInfo;
+class TransEvent;
+class processEvent;
 class CloseEvent;
 class StartEvent;
 class FinishEvent;
@@ -53,8 +53,8 @@ public:
 
     void setControlFunc(std::function<void()> func);
     void setExecFunc(std::function<int()> func);
-    void setTransFunc(std::function<void(TransInfo*)> func);
-    void setInputFunc(std::function<void(InputInfo*)> func);
+    void setTransFunc(std::function<void(TransEvent*)> func);
+    void setInputFunc(std::function<void(processEvent*)> func);
     void setCloseFunc(std::function<void(CloseEvent*)> func);
     void setStartFunc(std::function<void(StartEvent*)> func);
     void setFinishFunc(std::function<void(FinishEvent*)> func);
@@ -72,11 +72,11 @@ public:
 
     void activeOnce();
     void control();
-    void translation(TransInfo *info);
-    void inputProcess(InputInfo *info);
+    void translation(TransEvent *event);
+    void inputProcess(processEvent *event);
 
-    void defaultTransFunc(TransInfo *info);
-    void defaultInputFunc(InputInfo *info);
+    void defaultTransFunc(TransEvent *event);
+    void defaultInputFunc(processEvent *event);
 
     int exec();
 
@@ -92,8 +92,8 @@ private:
 
     std::function<void()> controlFunc;
     std::function<int()> execFunc;
-    std::function<void(TransInfo *event)> transFunc;
-    std::function<void(InputInfo *event)> inputFunc;
+    std::function<void(TransEvent *event)> transFunc;
+    std::function<void(processEvent *event)> inputFunc;
     std::function<void(CloseEvent *event)> closeFunc;   //尝试终止exec循环
     std::function<void(StartEvent *event)> startFunc;   //exec循环开始
     std::function<void(FinishEvent *event)> finishFunc; //exec循环终止

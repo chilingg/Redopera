@@ -52,7 +52,7 @@ void control()
     renderer->renderLine(plane->model());
 }
 
-void translation(TransInfo *e)
+void translation(TransEvent *e)
 {
     plane->rPos() = RPoint((e->size.width() - plane->size().width()) / 2, (e->size.height() - plane->size().height()) / 2);
 }
@@ -66,14 +66,14 @@ void startEvent(StartEvent* e)
     plane->setTexture(tex);
 
     renderer->setViewprot(0, 400, 0, 400);
-    TransInfo info{e->sender, {400, 400}};
+    TransEvent info{e->sender, {400, 400}};
     translation(&info);
 }
 
-void inputEvent(InputInfo *e)
+void inputEvent(processEvent *e)
 {
-    if(e->press(Keys::KEY_ESCAPE))
-        e->sender->closeWindow();
+    if(RWindow::mainWindow()->input()->press(Keys::KEY_ESCAPE))
+        e->sender->breakLoop();
 }
 
 void finishEvent(FinishEvent*)

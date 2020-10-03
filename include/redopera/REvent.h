@@ -4,12 +4,14 @@
 #include "RPoint.h"
 #include "RSize.h"
 
+#include <map>
+#include <string>
+
 class GLFWwindow;
 
 namespace Redopera {
 
 class RController;
-class RWindow;
 
 // 事件通知类集合 ********************
 
@@ -41,44 +43,42 @@ public:
     bool stop = false; // true驳回关闭申请
 };
 
-struct TransInfo
+struct TransEvent
 {
     RController *sender;
     const RSize size;
     const RPoint pos = RPoint(0);
 };
 
-enum class Keys;
-enum class MouseBtn;
-enum class GamepadBtn;
-enum class BtnAct;
-enum class GamepadAxes;
-enum class JoystickID;
-
-struct InputInfo
+struct processEvent
 {
-    InputInfo(RWindow *sender):
+    processEvent(RController *sender):
         sender(sender) {}
 
-    BtnAct status(Keys key);
-    BtnAct status(MouseBtn btn);
-    BtnAct status(GamepadBtn btn, JoystickID jid);
-    float status(GamepadAxes axis, JoystickID jid);
+    void setInstruct(const std::string &instruct, int value)
+    {
+        instructs_[instruct] = value;
+    }
 
-    bool press(Keys key);
-    bool press(MouseBtn btn);
-    bool press(GamepadBtn btn, JoystickID jid);
+    void clear()
+    {
+        instructs_.clear();
+    }
 
-    bool release(Keys key);
-    bool release(MouseBtn btn);
-    bool release(GamepadBtn btn, JoystickID jid);
+    int instruct(const std::string &instruct) const
+    {
+        auto it = instructs_.find(instruct);
 
-    RPoint2 pos();
-    int wheel();
+        if (it == instructs_.end())
+            return -1;
+        else
+            return it->second;
+    }
 
-    bool anyKeyPress();
+    RController *sender;
 
-    RWindow *sender;
+private:
+    std::map<std::string, int> instructs_;
 };
 
 } // Redopera

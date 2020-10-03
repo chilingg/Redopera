@@ -67,12 +67,12 @@ void RGame::joystickPresentCallback(int jid, int event)
     if(event == GLFW_CONNECTED && glfwJoystickIsGamepad(jid))
     {
         RInputModule::addGamepad(RInputModule::toJoystickID(jid));
-        RWindow::getMainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::CONNECTED);
+        RWindow::mainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::CONNECTED);
     }
     else if(event == GLFW_DISCONNECTED)
     {
         RInputModule::deleteGamepad(RInputModule::toJoystickID(jid));
-        RWindow::getMainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::DISCONNECTED);
+        RWindow::mainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::DISCONNECTED);
     }
 }
 

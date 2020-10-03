@@ -54,7 +54,7 @@ public:
         double vRatio_      = 16.0/9.0; // 视口比例 (Scale 模式)
     };
 
-    static RWindow* getMainWindow();
+    static RWindow* mainWindow();
     static RWindow* getWindowUserCtrl(GLFWwindow *window);
 
     explicit RWindow();
@@ -109,7 +109,7 @@ public:
     RController* ctrl();
     const RController* ctrl() const;
     const RPoint2& posOffset() const;
-    const RInputModule* inputModule() const;
+    const RInputModule* input() const;
 
     void closeWindow();
     // 调用showWindow()之后才会连接回调
@@ -140,7 +140,7 @@ private:
     std::function<void()> poolFunc;
 
     static const Format windowFormat;
-    static RWindow *mainWindow;
+    static RWindow *mainWindowP;
 
     RController ctrl_;
     RInputModule input_;

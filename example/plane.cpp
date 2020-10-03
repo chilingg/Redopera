@@ -84,7 +84,7 @@ public:
                 << plane;
     }
 
-    void translation(TransInfo* info)
+    void translation(TransEvent* info)
     {
         viewpro.set(info->size, info->pos);
 
@@ -100,39 +100,39 @@ public:
         rSystem.setViewprot(0, info->size.width(), 0, info->size.height());
     }
 
-    void inputEvent(InputInfo *e)
+    void inputEvent(processEvent *e)
     {
-        RWindow* window = RWindow::getMainWindow();
+        RWindow* window = RWindow::mainWindow();
         if(window->cursorMode() == RWindow::CursorMode::Hidden)
         {
-            if(e->pos() != prePos)
+            if(window->input()->pos() != prePos)
                 window->setCursorModel(RWindow::CursorMode::Normal);
         }
         else if(window->cursorMode() == RWindow::CursorMode::Normal)
         {
-            if(e->pos() != prePos)
+            if(window->input()->pos() != prePos)
                 timer.start();
-            else if(e->pos() == prePos && timer.elapsed() > 1500)
+            else if(window->input()->pos() == prePos && timer.elapsed() > 1500)
                 window->setCursorModel(RWindow::CursorMode::Hidden);
         }
 
         // inputEvent只能监测感兴趣的按键
-        if(e->press(Keys::KEY_ESCAPE))
+        if(window->input()->press(Keys::KEY_ESCAPE))
             ctrl.getParent()->breakLoop();
 
         RPoint3 p(0);
-        if(e->status(Keys::KEY_LEFT) == BtnAct::PRESS)
+        if(window->input()->status(Keys::KEY_LEFT) == BtnAct::PRESS)
             p.rx() -= 4;
-        if(e->status(Keys::KEY_RIGHT) == BtnAct::PRESS)
+        if(window->input()->status(Keys::KEY_RIGHT) == BtnAct::PRESS)
             p.rx() += 4;
-        if(e->status(Keys::KEY_UP) == BtnAct::PRESS)
+        if(window->input()->status(Keys::KEY_UP) == BtnAct::PRESS)
             p.ry() += 4;
-        if(e->status(Keys::KEY_DOWN) == BtnAct::PRESS)
+        if(window->input()->status(Keys::KEY_DOWN) == BtnAct::PRESS)
             p.ry() -= 4;
         if(!p.isOrigin() && viewpro.contains(plane.rect() + p))
             plane.rPos() = plane.pos() + p;
 
-        prePos = e->pos();
+        prePos = window->input()->pos();
     }
 
     RController ctrl;
