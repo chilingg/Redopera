@@ -12,6 +12,7 @@ class GLFWwindow;
 namespace Redopera {
 
 class RController;
+class RInputModule;
 
 // 事件通知类集合 ********************
 
@@ -52,33 +53,29 @@ struct TransEvent
 
 struct processEvent
 {
-    processEvent(RController *sender):
-        sender(sender) {}
+    processEvent(RController *sender, RInputModule* input):
+        sender(sender), input(input) {}
 
-    void setInstruct(const std::string &instruct, int value)
+    void addInstruct(int instruct, float value = 1.f)
     {
-        instructs_[instruct] = value;
+        instructs_.emplace(instruct, value);
     }
 
-    void clear()
-    {
-        instructs_.clear();
-    }
-
-    int instruct(const std::string &instruct) const
+    float instruct(int instruct) const
     {
         auto it = instructs_.find(instruct);
 
         if (it == instructs_.end())
-            return -1;
+            return 0;
         else
             return it->second;
     }
 
     RController *sender;
+    RInputModule *input;
 
 private:
-    std::map<std::string, int> instructs_;
+    std::map<int, float> instructs_;
 };
 
 } // Redopera

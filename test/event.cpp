@@ -80,7 +80,7 @@ int main()
     ctrl.setCloseFunc(closeEvent);
     ctrl.setFinishFunc(finishEvent);
     ctrl.setTransFunc(transInfo);
-    ctrl.setInputFunc(inputEvent);
+    ctrl.setProcessFunc(inputEvent);
 
     window.ctrl()->addChild(&ctrl);
     window.show();

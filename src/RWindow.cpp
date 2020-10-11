@@ -535,7 +535,6 @@ int RWindow::defaultExec()
     RSize size = windowSize();
     resizeCallback(window_.get(), size.width(), size.height());
 
-    processEvent instruct(&ctrl_);
     while(ctrl_.loopingCheck() == RController::Status::Looping)
     {
         // 清屏 清除颜色缓冲和深度缓冲
@@ -543,18 +542,20 @@ int RWindow::defaultExec()
 
         poolFunc();
 
-        // 传递输入
-        ctrl_.inputProcess(&instruct);
-        input_.updataInputCache();
-        instruct.clear();
+        // 发起处理
+        processEvent instruct(&ctrl_, &input_);
+        ctrl_.process(&instruct);
 
-        if(glfwWindowShouldClose(window_.get()))
-            ctrl_.breakLoop();
+        // 清空输入
+        input_.updataInputCache();
 
         ctrl_.activeOnce();
 
         fTimer_.cycle(1000 / format_.fps);
         glfwSwapBuffers(window_.get());
+
+        if(glfwWindowShouldClose(window_.get()))
+            ctrl_.breakLoop();
     }
 
     FinishEvent fEvent(&ctrl_);

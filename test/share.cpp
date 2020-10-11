@@ -88,7 +88,7 @@ int main()
     RWindow window(400, 400, "Share");
     RController ctrl;
     ctrl.setStartFunc(startEvent);
-    ctrl.setInputFunc(inputEvent);
+    ctrl.setProcessFunc(inputEvent);
     ctrl.setFinishFunc(finishEvent);
     ctrl.setTransFunc(translation);
     ctrl.setControlFunc(control);

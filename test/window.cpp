@@ -32,7 +32,7 @@ int main()
 
     RController ctrl;
     ctrl.setControlFunc(control);
-    ctrl.setInputFunc(inputEvent);
+    ctrl.setProcessFunc(inputEvent);
 
     window.ctrl()->addChild(&ctrl);
     window.show();

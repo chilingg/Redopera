@@ -45,7 +45,7 @@ public:
         ctrl.setControlFunc(std::bind(&TestCtl::control, this));
         ctrl.setStartFunc(std::bind(&TestCtl::startEvent, this, std::placeholders::_1));
         ctrl.setFinishFunc(std::bind(&TestCtl::finishEvent, this, std::placeholders::_1));
-        ctrl.setInputFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
+        ctrl.setProcessFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
     }
 
     void control()

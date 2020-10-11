@@ -54,7 +54,7 @@ public:
     void setControlFunc(std::function<void()> func);
     void setExecFunc(std::function<int()> func);
     void setTransFunc(std::function<void(TransEvent*)> func);
-    void setInputFunc(std::function<void(processEvent*)> func);
+    void setProcessFunc(std::function<void(processEvent*)> func);
     void setCloseFunc(std::function<void(CloseEvent*)> func);
     void setStartFunc(std::function<void(StartEvent*)> func);
     void setFinishFunc(std::function<void(FinishEvent*)> func);
@@ -73,7 +73,7 @@ public:
     void activeOnce();
     void control();
     void translation(TransEvent *event);
-    void inputProcess(processEvent *event);
+    void process(processEvent *event);
 
     void defaultTransFunc(TransEvent *event);
     void defaultInputFunc(processEvent *event);

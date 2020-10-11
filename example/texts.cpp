@@ -163,7 +163,7 @@ int main()
     RFont::setDefaultFont(font);
 
     RController ctrl;
-    ctrl.setInputFunc(inputEvent);
+    ctrl.setProcessFunc(inputEvent);
     ctrl.setStartFunc(startEvent);
     ctrl.setControlFunc(control);
     ctrl.setFinishFunc(finishEvent);

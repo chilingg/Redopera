@@ -67,7 +67,7 @@ public:
         arrow[3].setRotate(0, 0, glm::radians(270.0f));
 
         ctrl.setControlFunc(std::bind(&TestCtl::control, this));
-        ctrl.setInputFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
+        ctrl.setProcessFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
         ctrl.setTransFunc(std::bind(&TestCtl::translation, this, std::placeholders::_1));
 
         rSystem.setShaderProg(RShaderProg({ RShader(vCode, RShader::Type::Vertex),

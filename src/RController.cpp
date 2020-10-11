@@ -172,7 +172,7 @@ void RController::setTransFunc(std::function<void (TransEvent*)> func)
     transFunc = func;
 }
 
-void RController::setInputFunc(std::function<void (processEvent*)> func)
+void RController::setProcessFunc(std::function<void (processEvent*)> func)
 {
     inputFunc = func;
 }
@@ -291,7 +291,7 @@ void RController::translation(TransEvent *info)
     transFunc(info);
 }
 
-void RController::inputProcess(processEvent *info)
+void RController::process(processEvent *info)
 {
     inputFunc(info);
 }
