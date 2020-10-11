@@ -328,27 +328,6 @@ JoystickID RInputModule::toJoystickID(int jid)
     }
 }
 
-bool RInputModule::addGamepad(JoystickID jid)
-{
-    if(!glfwJoystickIsGamepad(static_cast<int>(jid)))
-        return false;
-
-    gamepad_.emplace(jid, GamepadValue{});
-    glfwGetGamepadState(static_cast<int>(jid), &gamepad_[jid].status);
-    return true;
-}
-
-bool RInputModule::deleteGamepad(JoystickID jid)
-{
-    if (gamepad_.count(jid))
-    {
-        gamepad_.erase(jid);
-        return true;
-    }
-
-    return false;
-}
-
 int RInputModule::gamepadCount()
 {
     return gamepad_.size();
@@ -499,6 +478,27 @@ void RInputModule::mouseDown(MouseBtn btn)
 void RInputModule::mouseWheel(int value)
 {
     wheel_ = value;
+}
+
+bool RInputModule::addGamepad(JoystickID jid)
+{
+    if(!glfwJoystickIsGamepad(static_cast<int>(jid)))
+        return false;
+
+    gamepad_.emplace(jid, GamepadValue{});
+    glfwGetGamepadState(static_cast<int>(jid), &gamepad_[jid].status);
+    return true;
+}
+
+bool RInputModule::deleteGamepad(JoystickID jid)
+{
+    if (gamepad_.count(jid))
+    {
+        gamepad_.erase(jid);
+        return true;
+    }
+
+    return false;
 }
 
 const char *RInputModule::gamepadMappingCode0 =

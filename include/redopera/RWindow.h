@@ -4,7 +4,6 @@
 #include "RContext.h"
 #include "RSize.h"
 #include "RPoint.h"
-#include "RSigslot.h"
 #include "RInputModule.h"
 #include "RController.h"
 #include "RTimer.h"
@@ -115,8 +114,6 @@ public:
     // 调用showWindow()之后才会连接回调
     void show();
     void hide();
-
-    RSignal<JoystickID, JoystickPresent> joyPresented;
 
 private:
     // OpenGL Debug信息

@@ -1,13 +1,20 @@
 #ifndef RGAME_H
 #define RGAME_H
 
+#include <RSigslot.h>
+
 namespace Redopera {
 
 class RWindow;
 
+enum class JoystickID;
+enum class JoystickPresent;
+
 class RGame
 {
 public:
+    static RSignal<JoystickID, JoystickPresent> joyPresented;
+
     RGame();
     ~RGame();
 

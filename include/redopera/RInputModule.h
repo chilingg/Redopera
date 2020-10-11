@@ -12,6 +12,7 @@ namespace Redopera {
 // 按键的注册是在初次Input Event查询时进行的
 
 class RWindow;
+class RGame;
 
 enum class Keys
 {
@@ -216,6 +217,8 @@ enum class JoystickPresent
 
 class RInputModule
 {
+    friend RGame;
+
     struct GamepadValue
     {
         GLFWgamepadstate status;
@@ -227,9 +230,6 @@ public:
     static Keys toKey(int key);
     static MouseBtn toMouseButtons(int button);
     static JoystickID toJoystickID(int jid);
-
-    static bool addGamepad(JoystickID jid);
-    static bool deleteGamepad(JoystickID jid);
 
     static int gamepadCount();
     static JoystickID getJoystickID(int index = 0);
@@ -271,6 +271,9 @@ public:
     void mouseWheel(int value);
 
 private:
+    static bool addGamepad(JoystickID jid);
+    static bool deleteGamepad(JoystickID jid);
+
     static std::map<JoystickID, GamepadValue> gamepad_;
 
     int wheel_ = 0;

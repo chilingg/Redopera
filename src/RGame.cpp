@@ -17,6 +17,8 @@ bool RGame::once = false;
 
 std::string RResource::rscPath_;
 
+RSignal<JoystickID, JoystickPresent> RGame::joyPresented;
+
 void glfwErrorCallback(int error, const char* description)
 {
     prError("GLFW Error " + std::to_string(error) + ": " + description);
@@ -35,6 +37,17 @@ RGame::RGame()
     if (glfwInit() == GLFW_TRUE)
         std::runtime_error("Failed to initialize GLFW");
 
+    // 需手动检测一次手柄连接，检测之前已连接的手柄
+    for(int i = GLFW_JOYSTICK_1; i <= GLFW_JOYSTICK_LAST; ++i)
+    {
+        if(glfwJoystickIsGamepad(i))
+        {
+            RInputModule::addGamepad(RInputModule::toJoystickID(i));
+            joyPresented.emit(RInputModule::toJoystickID(i), JoystickPresent::CONNECTED);
+        }
+    }
+    // 手柄连接回调
+    glfwSetJoystickCallback(joystickPresentCallback);
 }
 
 RGame::~RGame()
@@ -47,18 +60,6 @@ int RGame::exec(RWindow *window)
 {
     window->setAsMainWindow();
 
-    // 需手动检测一次手柄连接，检测之前已连接的手柄
-    for(int i = GLFW_JOYSTICK_1; i <= GLFW_JOYSTICK_LAST; ++i)
-    {
-        if(glfwJoystickIsGamepad(i))
-        {
-            RInputModule::addGamepad(RInputModule::toJoystickID(i));
-            window->joyPresented.emit(RInputModule::toJoystickID(i), JoystickPresent::CONNECTED);
-        }
-    }
-    // 手柄连接回调
-    glfwSetJoystickCallback(joystickPresentCallback);
-
     return window->ctrl()->exec();
 }
 
@@ -67,12 +68,12 @@ void RGame::joystickPresentCallback(int jid, int event)
     if(event == GLFW_CONNECTED && glfwJoystickIsGamepad(jid))
     {
         RInputModule::addGamepad(RInputModule::toJoystickID(jid));
-        RWindow::mainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::CONNECTED);
+        joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::CONNECTED);
     }
     else if(event == GLFW_DISCONNECTED)
     {
         RInputModule::deleteGamepad(RInputModule::toJoystickID(jid));
-        RWindow::mainWindow()->joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::DISCONNECTED);
+        joyPresented.emit(RInputModule::toJoystickID(jid), JoystickPresent::DISCONNECTED);
     }
 }
 
