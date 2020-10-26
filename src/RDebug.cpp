@@ -3,6 +3,7 @@
 #include <RPoint.h>
 #include <RSize.h>
 #include <RRect.h>
+#include <RTime.h>
 
 #include <locale>
 #include <codecvt>
@@ -17,142 +18,157 @@ RDebug::~RDebug()
     fflush(stdout);
 }
 
-RDebug &RDebug::operator<<(int value)
+const RDebug &RDebug::operator<<(int value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(long value)
+const RDebug &RDebug::operator<<(long value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(long long value)
+const RDebug &RDebug::operator<<(long long value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(unsigned value)
+const RDebug &RDebug::operator<<(unsigned value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(unsigned long value)
+const RDebug &RDebug::operator<<(unsigned long value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(unsigned long long value)
+const RDebug &RDebug::operator<<(unsigned long long value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(double value)
+const RDebug &RDebug::operator<<(double value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(float value)
+const RDebug &RDebug::operator<<(float value) const
 {
     buf_ += std::to_string(value) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(unsigned char c)
+const RDebug &RDebug::operator<<(unsigned char c) const
 {
     buf_ += std::to_string(c*1) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(bool b)
+const RDebug &RDebug::operator<<(bool b) const
 {
     buf_ += b ? "true " : "false ";
     return *this;
 }
 
-RDebug &RDebug::operator<<(char c)
+const RDebug &RDebug::operator<<(char c) const
 {
     buf_ = buf_ + c + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(const char *str)
+const RDebug &RDebug::operator<<(const char *str) const
 {
     buf_ += str;
     return *this;
 }
 
-RDebug &RDebug::operator<<(char *str)
+const RDebug &RDebug::operator<<(char *str) const
 {
     buf_ += str;
     return *this;
 }
 
-RDebug &RDebug::operator<<(const std::string &str)
+const RDebug &RDebug::operator<<(const std::string &str) const
 {
     buf_ += str;
     return *this;
 }
 
-RDebug &RDebug::operator<<(wchar_t c)
+const RDebug &RDebug::operator<<(wchar_t c) const
 {
     buf_ += strcnv.to_bytes(c) + ' ';
     return *this;
 }
 
-RDebug &RDebug::operator<<(const wchar_t *str)
+const RDebug &RDebug::operator<<(const wchar_t *str) const
 {
     buf_ += strcnv.to_bytes(str);
     return *this;
 }
 
-RDebug &RDebug::operator<<(wchar_t *str)
+const RDebug &RDebug::operator<<(wchar_t *str) const
 {
     buf_ += strcnv.to_bytes(str);
     return *this;
 }
 
-RDebug &RDebug::operator<<(const std::wstring &str)
+const RDebug &RDebug::operator<<(const std::wstring &str) const
 {
     buf_ += strcnv.to_bytes(str);
     return *this;
 }
 
-RDebug &RDebug::operator<<(const RColor &color)
+const RDebug &RDebug::operator<<(void *ptr) const
+{
+    char str[64];
+    int i = std::snprintf(str, sizeof(str), "(add: %p) ", ptr);
+    str[i] = '\0';
+    buf_ += str;
+    return *this;
+}
+
+const RDebug &RDebug::operator<<(const RColor &color) const
 {
     buf_ += "(r:" + std::to_string(color.r()) + " g:" + std::to_string(color.g()) + " b:" + std::to_string(color.b()) + ") ";
     return *this;
 }
 
-RDebug &RDebug::operator<<(const RPoint2 &pos)
+const RDebug &RDebug::operator<<(const RPoint2 &pos) const
 {
     buf_ += '(' + std::to_string(pos.x()) + ", " + std::to_string(pos.y()) + ") ";
     return *this;
 }
 
-RDebug &RDebug::operator<<(const RPoint3 &pos)
+const RDebug &RDebug::operator<<(const RPoint3 &pos) const
 {
     buf_ += '(' + std::to_string(pos.x()) + ", " + std::to_string(pos.y()) + ", " + std::to_string(pos.z()) + ") ";
     return *this;
 }
 
-RDebug &RDebug::operator<<(const RSize &size)
+const RDebug &RDebug::operator<<(const RSize &size) const
 {
     buf_ += "(w:" + std::to_string(size.width()) + " h:" + std::to_string(size.height()) + ") ";
     return *this;
 }
 
-RDebug &RDebug::operator<<(const RRect &rect)
+const RDebug &RDebug::operator<<(const RRect &rect) const
 {
     buf_ += "(" + std::to_string(rect.left()) + ", " + std::to_string(rect.bottom())
             + " | w:" + std::to_string(rect.width()) + " h:" + std::to_string(rect.height()) + ") ";
+    return *this;
+}
+
+const RDebug &RDebug::operator<<(const RTime &time) const
+{
+    buf_ += time.toStdString();
     return *this;
 }
 

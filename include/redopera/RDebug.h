@@ -10,7 +10,7 @@ class RPoint2;
 class RPoint3;
 class RSize;
 class RRect;
-class RArea;
+class RTime;
 
 class RDebug
 {
@@ -23,57 +23,43 @@ public:
     RDebug(const RDebug&) = delete;
     RDebug& operator=(const RDebug&) = delete;
 
-    RDebug& operator<<(int value);
-    RDebug& operator<<(long value);
-    RDebug& operator<<(long long value);
-    RDebug& operator<<(unsigned value);
-    RDebug& operator<<(unsigned long value);
-    RDebug& operator<<(unsigned long long value);
-    RDebug& operator<<(double value);
-    RDebug& operator<<(float value);
-    RDebug& operator<<(bool b);
+    const RDebug& operator<<(int value) const;
+    const RDebug& operator<<(long value) const;
+    const RDebug& operator<<(long long value) const;
+    const RDebug& operator<<(unsigned value) const;
+    const RDebug& operator<<(unsigned long value) const;
+    const RDebug& operator<<(unsigned long long value) const;
+    const RDebug& operator<<(double value) const;
+    const RDebug& operator<<(float value) const;
+    const RDebug& operator<<(bool b) const;
 
-    RDebug& operator<<(unsigned char c);
+    const RDebug& operator<<(unsigned char c) const;
 
-    RDebug& operator<<(char c);
-    RDebug& operator<<(const char *str);
-    RDebug& operator<<(char *str);
-    RDebug& operator<<(const std::string &str);
+    const RDebug& operator<<(char c) const;
+    const RDebug& operator<<(const char *str) const;
+    const RDebug& operator<<(char *str) const;
+    const RDebug& operator<<(const std::string &str) const;
 
-    RDebug& operator<<(wchar_t c);
-    RDebug& operator<<(const wchar_t *str);
-    RDebug& operator<<(wchar_t *str);
-    RDebug& operator<<(const std::wstring &str);
+    const RDebug& operator<<(wchar_t c) const;
+    const RDebug& operator<<(const wchar_t *str) const;
+    const RDebug& operator<<(wchar_t *str) const;
+    const RDebug& operator<<(const std::wstring &str) const;
 
-    RDebug& operator<<(const RColor &color);
-    RDebug& operator<<(const RPoint2 &pos);
-    RDebug& operator<<(const RPoint3 &pos);
-    RDebug& operator<<(const RSize &size);
-    RDebug& operator<<(const RRect &rect);
+    const RDebug& operator<<(void *ptr) const;
 
-    template<typename T>
-    RDebug& operator<<(T input)
-    {
-        buf_ += toStdString(std::forward<T>(input));
-        return *this;
-    }
-
-    template<typename T>
-    RDebug& operator<<(T *ptr)
-    {
-        char str[64];
-        int i = std::snprintf(str, sizeof(str), "(add: %p) ", ptr);
-        str[i] = '\0';
-        buf_ += str;
-        return *this;
-    }
+    const RDebug& operator<<(const RColor &color) const;
+    const RDebug& operator<<(const RPoint2 &pos) const;
+    const RDebug& operator<<(const RPoint3 &pos) const;
+    const RDebug& operator<<(const RSize &size) const;
+    const RDebug& operator<<(const RRect &rect) const;
+    const RDebug& operator<<(const RTime &time) const;
 
 private:
     constexpr static unsigned DATA_SIZE = 512;
 
     RDebug();
 
-    std::string buf_;
+    mutable std::string buf_;
 };
 
 void prError(const std::string &err);
