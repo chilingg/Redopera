@@ -19,6 +19,14 @@ public:
             path = rscPath_ + path.substr(2, path.size());
     }
 
+    static std::string rscPath(std::string &&path)
+    {
+        if(path[0] == ':' && path[1] == '/')
+            path = rscPath_ + path.substr(2, path.size());
+
+        return path;
+    }
+
     static void setResourcePath(const std::string &path)
     {
         rscPath_ = path;
