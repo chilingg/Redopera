@@ -5,7 +5,7 @@
 
 namespace Redopera {
 
-using RJosn = nlohmann::json;
+using RJson = nlohmann::json;
 
 }
 
