@@ -19,7 +19,7 @@ RController::RController(const std::string &name, void *holder):
     controlFunc([]{}),
     execFunc(std::bind(&RController::defaultExecFunc, this)),
     transFunc(std::bind(&RController::defaultTransFunc, this, std::placeholders::_1)),
-    inputFunc(std::bind(&RController::defaultProcessFunc, this, std::placeholders::_1)),
+    processFunc(std::bind(&RController::defaultProcessFunc, this, std::placeholders::_1)),
     closeFunc([](CloseEvent*){}),
     startFunc([](StartEvent*){}),
     finishFunc([](FinishEvent*){}),
@@ -174,7 +174,7 @@ void RController::setTransFunc(std::function<void (TransEvent*)> func)
 
 void RController::setProcessFunc(std::function<void (ProcessEvent*)> func)
 {
-    inputFunc = func;
+    processFunc = func;
 }
 
 void RController::setCloseFunc(std::function<void (CloseEvent*)> func)
@@ -250,8 +250,9 @@ void RController::changeParent(RController *parent)
 
 void RController::dispatchEvent(CloseEvent *event)
 {
-    for(auto node : children_)
-        node->dispatchEvent(event);
+    for(auto node = children_.begin(); node != children_.end();)
+        (*node++)->dispatchEvent(event);
+
     closeFunc(event);
 }
 
@@ -260,17 +261,18 @@ void RController::dispatchEvent(StartEvent *event)
     if(state_ == Status::Error) return;//错误状态无法进入循环
 
     startFunc(event);
-    for(auto node : children_)
-        node->dispatchEvent(event);
+    for(auto node = children_.begin(); node != children_.end();)
+        (*node++)->dispatchEvent(event);
+
     state_ = Status::Looping;
 }
 
 void RController::dispatchEvent(FinishEvent *event)
 {
-    for(auto node : children_)
+    for(auto node = children_.begin(); node != children_.end();)
     {
-        node->state_ = state_.load();
-        node->dispatchEvent(event);
+        (*node)->state_ = state_.load();
+        (*node++)->dispatchEvent(event);
     }
     finishFunc(event);
 }
@@ -278,7 +280,8 @@ void RController::dispatchEvent(FinishEvent *event)
 void RController::activeOnce()
 {
     controlFunc();
-    std::for_each(children_.begin(), children_.end(), [](RController *ctrl){ ctrl->activeOnce(); });
+    for(auto node = children_.begin(); node != children_.end();)
+        (*node++)->activeOnce();
 }
 
 void RController::control()
@@ -293,17 +296,19 @@ void RController::translation(TransEvent *info)
 
 void RController::process(ProcessEvent *info)
 {
-    inputFunc(info);
+    processFunc(info);
 }
 
 void RController::defaultTransFunc(TransEvent *info)
 {
-    std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->transFunc(info); });
+    for(auto node = children_.begin(); node != children_.end();)
+        (*node++)->transFunc(info);
 }
 
 void RController::defaultProcessFunc(ProcessEvent *info)
 {
-    std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->inputFunc(info); });
+    for(auto node = children_.begin(); node != children_.end();)
+        (*node++)->processFunc(info);
 }
 
 int RController::exec()
