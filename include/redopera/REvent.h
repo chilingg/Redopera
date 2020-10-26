@@ -56,12 +56,12 @@ struct processEvent
     processEvent(RController *sender, RInputModule* input):
         sender(sender), input(input) {}
 
-    void addInstruct(int instruct, float value = 1.f)
+    void addInstruct(int instruct, int value = 1)
     {
         instructs_.emplace(instruct, value);
     }
 
-    float instruct(int instruct) const
+    int instruct(int instruct) const
     {
         auto it = instructs_.find(instruct);
 
@@ -75,7 +75,7 @@ struct processEvent
     RInputModule *input;
 
 private:
-    std::map<int, float> instructs_;
+    std::map<int, int> instructs_;
 };
 
 } // Redopera
