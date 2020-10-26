@@ -108,7 +108,7 @@ void startEvent(StartEvent*)
 RPoint2 offset;
 RPlane *hold;
 
-void inputEvent(processEvent *e)
+void inputEvent(ProcessEvent *e)
 {
     const RInputModule *input = RWindow::mainWindow()->input();
 

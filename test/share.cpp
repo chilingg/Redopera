@@ -70,7 +70,7 @@ void startEvent(StartEvent* e)
     translation(&info);
 }
 
-void inputEvent(processEvent *e)
+void inputEvent(ProcessEvent *e)
 {
     if(RWindow::mainWindow()->input()->press(Keys::KEY_ESCAPE))
         e->sender->breakLoop();

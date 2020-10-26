@@ -96,10 +96,10 @@ public:
         VBO.reset();
     }
 
-    void inputEvent(processEvent *e)
+    void inputEvent(ProcessEvent *e)
     {
         // inputEvent只能监测感兴趣的按键
-        if(RWindow::mainWindow()->input()->anyKeyPress())
+        if(e->input->anyKeyPress())
             ctrl.breakLoop();
     }
 

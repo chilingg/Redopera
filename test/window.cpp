@@ -7,7 +7,7 @@
 
 using namespace Redopera;
 
-void inputEvent(processEvent *e)
+void inputEvent(ProcessEvent *e)
 {
     if(RWindow::mainWindow()->input()->anyKeyPress())
         e->sender->breakLoop();

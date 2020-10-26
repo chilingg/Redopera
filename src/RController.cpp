@@ -19,7 +19,7 @@ RController::RController(const std::string &name, void *holder):
     controlFunc([]{}),
     execFunc(std::bind(&RController::defaultExecFunc, this)),
     transFunc(std::bind(&RController::defaultTransFunc, this, std::placeholders::_1)),
-    inputFunc(std::bind(&RController::defaultInputFunc, this, std::placeholders::_1)),
+    inputFunc(std::bind(&RController::defaultProcessFunc, this, std::placeholders::_1)),
     closeFunc([](CloseEvent*){}),
     startFunc([](StartEvent*){}),
     finishFunc([](FinishEvent*){}),
@@ -172,7 +172,7 @@ void RController::setTransFunc(std::function<void (TransEvent*)> func)
     transFunc = func;
 }
 
-void RController::setProcessFunc(std::function<void (processEvent*)> func)
+void RController::setProcessFunc(std::function<void (ProcessEvent*)> func)
 {
     inputFunc = func;
 }
@@ -291,7 +291,7 @@ void RController::translation(TransEvent *info)
     transFunc(info);
 }
 
-void RController::process(processEvent *info)
+void RController::process(ProcessEvent *info)
 {
     inputFunc(info);
 }
@@ -301,7 +301,7 @@ void RController::defaultTransFunc(TransEvent *info)
     std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->transFunc(info); });
 }
 
-void RController::defaultInputFunc(processEvent *info)
+void RController::defaultProcessFunc(ProcessEvent *info)
 {
     std::for_each(children_.begin(), children_.end(), [info](RController *ctrl) { ctrl->inputFunc(info); });
 }

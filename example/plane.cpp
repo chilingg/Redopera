@@ -100,7 +100,7 @@ public:
         rSystem.setViewprot(0, info->size.width(), 0, info->size.height());
     }
 
-    void inputEvent(processEvent *e)
+    void inputEvent(ProcessEvent *e)
     {
         RWindow* window = RWindow::mainWindow();
         if(window->cursorMode() == RWindow::CursorMode::Hidden)
@@ -122,13 +122,13 @@ public:
 
         RPoint3 p(0);
         if(window->input()->status(Keys::KEY_LEFT) == BtnAct::PRESS)
-            p.rx() -= 4;
+            p.rx() -= 1;
         if(window->input()->status(Keys::KEY_RIGHT) == BtnAct::PRESS)
-            p.rx() += 4;
+            p.rx() += 1;
         if(window->input()->status(Keys::KEY_UP) == BtnAct::PRESS)
-            p.ry() += 4;
+            p.ry() += 1;
         if(window->input()->status(Keys::KEY_DOWN) == BtnAct::PRESS)
-            p.ry() -= 4;
+            p.ry() -= 1;
         if(!p.isOrigin() && viewpro.contains(plane.rect() + p))
             plane.rPos() = plane.pos() + p;
 

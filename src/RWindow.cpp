@@ -543,7 +543,7 @@ int RWindow::defaultExec()
         poolFunc();
 
         // 发起处理
-        processEvent instruct(&ctrl_, &input_);
+        ProcessEvent instruct(&ctrl_, &input_);
         ctrl_.process(&instruct);
 
         // 清空输入

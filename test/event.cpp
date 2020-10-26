@@ -32,7 +32,7 @@ void transInfo(TransEvent *info)
     rDebug << "Translate info:" << info->pos << info->size;
 }
 
-void inputEvent(processEvent *e)
+void inputEvent(ProcessEvent *e)
 {
     const RInputModule *input = RWindow::mainWindow()->input();
 

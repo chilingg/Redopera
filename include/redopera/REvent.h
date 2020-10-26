@@ -51,9 +51,9 @@ struct TransEvent
     const RPoint pos = RPoint(0);
 };
 
-struct processEvent
+struct ProcessEvent
 {
-    processEvent(RController *sender, RInputModule* input):
+    ProcessEvent(RController *sender, RInputModule* input):
         sender(sender), input(input) {}
 
     void addInstruct(int instruct, int value = 1)

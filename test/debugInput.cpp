@@ -17,9 +17,9 @@ public:
     int x = 9, y = 8;
 };
 
-std::string toStdString(const Test &test)
+const RDebug& operator<<(const RDebug &debug, const Test &test)
 {
-    return test.toStdString();
+    return debug << test.toStdString();
 }
 
 int main()
