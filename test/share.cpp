@@ -91,7 +91,7 @@ int main()
     ctrl.setProcessFunc(inputEvent);
     ctrl.setFinishFunc(finishEvent);
     ctrl.setTransFunc(translation);
-    ctrl.setControlFunc(control);
+    ctrl.setUpdataFunc(control);
     window.ctrl()->addChild(&ctrl);
 
     plane = std::make_unique<RPlane>();

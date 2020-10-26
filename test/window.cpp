@@ -31,7 +31,7 @@ int main()
     RWindow window(250, 250, "Window", format);
 
     RController ctrl;
-    ctrl.setControlFunc(control);
+    ctrl.setUpdataFunc(control);
     ctrl.setProcessFunc(inputEvent);
 
     window.ctrl()->addChild(&ctrl);

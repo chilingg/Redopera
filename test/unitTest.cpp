@@ -78,7 +78,7 @@ int main()
     RController ctl;
     std::string order;
     ctl.setStartFunc([&order](StartEvent*){ order += '1'; });
-    ctl.setControlFunc([&order, &ctl]{ order += '2'; ctl.breakLoop(); });
+    ctl.setUpdataFunc([&order, &ctl]{ order += '2'; ctl.breakLoop(); });
     ctl.setCloseFunc([&order](CloseEvent*){ order += '3'; });
     ctl.setFinishFunc([&order](FinishEvent*){ order += '4'; });
     ctl.exec();

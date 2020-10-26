@@ -51,7 +51,7 @@ public:
         return reinterpret_cast<T*>(holder_);
     }
 
-    void setControlFunc(std::function<void()> func);
+    void setUpdataFunc(std::function<void()> func);
     void setExecFunc(std::function<int()> func);
     void setTransFunc(std::function<void(TransEvent*)> func);
     void setProcessFunc(std::function<void(ProcessEvent*)> func);
@@ -70,8 +70,8 @@ public:
     void dispatchEvent(StartEvent *event);
     void dispatchEvent(FinishEvent *event);
 
-    void activeOnce();
-    void control();
+    void updataAll();
+    void updata();
     void translation(TransEvent *event);
     void process(ProcessEvent *event);
 
@@ -90,10 +90,10 @@ public:
 private:
     int defaultExecFunc();
 
-    std::function<void()> controlFunc;
+    std::function<void()> updataFunc;
     std::function<int()> execFunc;
     std::function<void(TransEvent *event)> transFunc;
-    std::function<void(ProcessEvent *event)> inputFunc;
+    std::function<void(ProcessEvent *event)> processFunc;
     std::function<void(CloseEvent *event)> closeFunc;   //尝试终止exec循环
     std::function<void(StartEvent *event)> startFunc;   //exec循环开始
     std::function<void(FinishEvent *event)> finishFunc; //exec循环终止

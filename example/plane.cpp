@@ -66,7 +66,7 @@ public:
         arrow[2].setRotate(0, 0, glm::radians(180.0f));
         arrow[3].setRotate(0, 0, glm::radians(270.0f));
 
-        ctrl.setControlFunc(std::bind(&TestCtl::control, this));
+        ctrl.setUpdataFunc(std::bind(&TestCtl::control, this));
         ctrl.setProcessFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
         ctrl.setTransFunc(std::bind(&TestCtl::translation, this, std::placeholders::_1));
 

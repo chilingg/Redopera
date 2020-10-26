@@ -165,7 +165,7 @@ int main()
     RController ctrl;
     ctrl.setProcessFunc(inputEvent);
     ctrl.setStartFunc(startEvent);
-    ctrl.setControlFunc(control);
+    ctrl.setUpdataFunc(control);
     ctrl.setFinishFunc(finishEvent);
     textWin.ctrl()->addChild(&ctrl);
 

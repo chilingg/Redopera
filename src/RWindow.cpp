@@ -552,7 +552,7 @@ int RWindow::defaultExec()
         if (fTimer_.elapsed() > 1000 / format_.fps)
         {
             fTimer_.start();
-            ctrl_.activeOnce();
+            ctrl_.updataAll();
             glfwSwapBuffers(window_.get());
         }
 

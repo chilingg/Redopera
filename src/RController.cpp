@@ -16,7 +16,7 @@ RController::RController():
 }
 
 RController::RController(const std::string &name, void *holder):
-    controlFunc([]{}),
+    updataFunc([]{}),
     execFunc(std::bind(&RController::defaultExecFunc, this)),
     transFunc(std::bind(&RController::defaultTransFunc, this, std::placeholders::_1)),
     processFunc(std::bind(&RController::defaultProcessFunc, this, std::placeholders::_1)),
@@ -157,9 +157,9 @@ RController *RController::root()
         return this;
 }
 
-void RController::setControlFunc(std::function<void ()> func)
+void RController::setUpdataFunc(std::function<void ()> func)
 {
-    controlFunc = func;
+    updataFunc = func;
 }
 
 void RController::setExecFunc(std::function<int ()> func)
@@ -277,16 +277,16 @@ void RController::dispatchEvent(FinishEvent *event)
     finishFunc(event);
 }
 
-void RController::activeOnce()
+void RController::updataAll()
 {
-    controlFunc();
+    updataFunc();
     for(auto node = children_.begin(); node != children_.end();)
-        (*node++)->activeOnce();
+        (*node++)->updataAll();
 }
 
-void RController::control()
+void RController::updata()
 {
-    controlFunc();
+    updataFunc();
 }
 
 void RController::translation(TransEvent *info)
@@ -356,7 +356,10 @@ int RController::defaultExecFunc()
 
     while(loopingCheck() == Status::Looping)
     {
-        activeOnce();
+        ProcessEvent instruct(this, nullptr);
+        process(&instruct);
+
+        updataAll();
     }
 
     FinishEvent fEvent(this);

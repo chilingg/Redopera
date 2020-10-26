@@ -42,7 +42,7 @@ public:
         shaders({RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}),
         model(glm::mat4(1))
     {
-        ctrl.setControlFunc(std::bind(&TestCtl::control, this));
+        ctrl.setUpdataFunc(std::bind(&TestCtl::control, this));
         ctrl.setStartFunc(std::bind(&TestCtl::startEvent, this, std::placeholders::_1));
         ctrl.setFinishFunc(std::bind(&TestCtl::finishEvent, this, std::placeholders::_1));
         ctrl.setProcessFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
