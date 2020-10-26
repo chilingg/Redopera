@@ -95,13 +95,7 @@ private:
     std::tm* (*transformation)(const std::time_t *clock);
     std::string format;
     std::tm time_;
-
 };
-
-std::string toStdString(const RTime &time)
-{
-    return time.toStdString();
-}
 
 } // Redopera
 
