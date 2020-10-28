@@ -83,6 +83,12 @@ int main()
     ctl.setFinishFunc([&order](FinishEvent*){ order += '4'; });
     ctl.exec();
     assert(order == "1234");
+    RController ctl1("c", nullptr), ctl2("c", nullptr), ctl3("c", nullptr);
+    ctl.addChild(&ctl1);
+    ctl.addChild(&ctl2);
+    assert(ctl1.name() == "c" && ctl2.name() == "c1");
+    ctl3.changeParent(&ctl);
+    assert(ctl3.name() == "c2");
 
     // RKeeper
     int n = 0;

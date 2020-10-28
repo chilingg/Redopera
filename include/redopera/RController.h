@@ -35,6 +35,7 @@ public:
     bool isNormal() const;
     bool isValid() const;
     bool isChild(RController *child) const;
+    bool isChild(const std::string &child) const;
     bool isAncestor(RController *node) const; // 祖辈
     bool isFree() const;
     Status status() const;
@@ -63,6 +64,8 @@ public:
     void freeChild(RController *child);
     void freeAllChild();
     void changeParent(RController *parent);
+
+    bool rename(const std::string &name);
 
     // 事件发布接口 PS:深度优先、由下至上
     // 已由RController负责调用

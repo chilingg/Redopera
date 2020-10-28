@@ -10,7 +10,7 @@ using namespace Redopera;
 template class Redopera::RSignal<>;
 
 RController::RController():
-    RController("", nullptr)
+    RController("Ctrl", nullptr)
 {
 
 }
@@ -56,6 +56,15 @@ bool RController::isValid() const
 bool RController::isChild(RController *child) const
 {
     return children_.count(child);
+}
+
+bool RController::isChild(const std::string &child) const
+{
+    auto it = std::find_if(children_.begin(), children_.end(), [&child](RController *ctrl){
+            return ctrl->name_ == child;
+    });
+
+    return it != children_.end();
 }
 
 bool RController::isAncestor(RController *node) const
@@ -217,6 +226,9 @@ void RController::freeAllChild()
 
 void RController::changeParent(RController *parent)
 {
+    if(check(parent == this, "Failure to change parent!"))
+        return;
+
     if(parent_)
         parent_->children_.erase(this);
 
@@ -225,6 +237,15 @@ void RController::changeParent(RController *parent)
     Status s;
     if(parent_)
     {
+        if (parent_->isChild(name_))
+        {
+            size_t n = 1;
+            std::string rename = name_ + std::to_string(n);
+            for (;parent_->isChild(rename); ++n)
+                rename = name_ + std::to_string(n);
+            name_ = rename;
+        }
+
         s = parent_->state_;
         parent_->children_.insert(this);
     }
@@ -245,6 +266,33 @@ void RController::changeParent(RController *parent)
             FinishEvent e(parent_);
             dispatchEvent(&e);
         }
+    }
+}
+
+bool RController::rename(const std::string &name)
+{
+    if (!parent_)
+    {
+        name_ = name;
+        return true;
+    }
+    else {
+        auto it = std::find_if(parent_->children_.begin(), parent_->children_.end(), [&name](RController *ctrl){
+            return ctrl->name_ == name;
+        });
+
+        std::string rename = name;
+        for (size_t n = 1; it != children_.end(); ++n)
+        {
+           rename = name + std::to_string(n);
+
+           it = std::find_if(parent_->children_.begin(), parent_->children_.end(), [&rename](RController *ctrl){
+               return ctrl->name_ == rename;
+           });
+        }
+
+        name_ = name;
+        return name == rename;
     }
 }
 
