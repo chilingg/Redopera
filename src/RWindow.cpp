@@ -549,12 +549,8 @@ int RWindow::defaultExec()
         // 清空输入
         input_.updataInputCache();
 
-        if (fTimer_.elapsed() > 1000 / format_.fps)
-        {
-            fTimer_.start();
-            ctrl_.updataAll();
-            glfwSwapBuffers(window_.get());
-        }
+        ctrl_.updataAll();
+        glfwSwapBuffers(window_.get());
 
         if(glfwWindowShouldClose(window_.get()))
             ctrl_.breakLoop();

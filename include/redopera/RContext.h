@@ -11,7 +11,7 @@ class RContext
 public:
     struct Format
     {
-        bool vSync          = false;     // 垂直同步
+        bool vSync          = true;     // 垂直同步
         bool forward        = true;     // 前向兼容(清除当前版本不推荐的特性）
         bool debug          = false;    // OpenGL的Debug输出
         bool depth          = false;    // 深度测试
