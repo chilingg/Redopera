@@ -40,5 +40,4 @@ if(R_TEST)
     target_link_libraries(rtest redopera)
 endif()
 
-message($(SOURCE_DIR))
 file(COPY TestFile/ DESTINATION ${EXECUTABLE_OUTPUT_PATH}TestFile)
