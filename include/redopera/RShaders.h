@@ -2,7 +2,7 @@
 #define RSHADERS_H
 
 #include "rsc/RShader.h"
-#include "../RMath.h"
+#include "RMath.h"
 
 #include <initializer_list>
 #include <map>
