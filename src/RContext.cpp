@@ -69,8 +69,11 @@ bool RContext::setContext(GLFWwindow *context, const RContext::Format &fmt)
     format_.versionMajor = GLVersion.major;
     format_.versionMinor = GLVersion.minor;
 
+    // Debug Context 需要OpenGL4.3以上版本
+    if(format_.versionMajor * 10 + format_.versionMinor < 43)
+        format_.debug = false;
     //若启用 OpenGL Debug
-    if(fmt.debug && GL_CONTEXT_FLAG_DEBUG_BIT)
+    if(format_.debug && GL_CONTEXT_FLAG_DEBUG_BIT)
     {
         rDebug << EscCtl::green << EscCtl::bold << "OpenGL Context: "
                << reinterpret_cast<const char*>(glGetString(GL_VERSION))
