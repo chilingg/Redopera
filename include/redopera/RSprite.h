@@ -1,39 +1,39 @@
 #ifndef RSPRITE_H
 #define RSPRITE_H
 
-#include "RPlane.h"
+#include "rsc/RTexture.h"
+
 #include <initializer_list>
 #include <vector>
 
 namespace Redopera {
 
-class RSprite : public RPlane
+class RSprite
 {
 public:
-    RSprite();
-    RSprite(int width, int height, int x, int y, int z = 0);
-    RSprite(int width, int height, const RPoint &pos);
-    RSprite(const RSize &size, const RPoint &pos);
-    explicit RSprite(const RRect &rect, int z = 0);
-    RSprite(const RSprite &sprite);
-    RSprite(const RSprite &&sprite);
-    RPlane& operator=(const RSprite &plane);
-    RPlane& operator=(const RSprite &&plane);
+    RSprite() = default;
     ~RSprite() = default;
 
+    RSprite(const RSprite &sprite);
+    RSprite(const RSprite &&sprite);
+    RSprite& operator=(const RSprite &sprite);
+    RSprite& operator=(const RSprite &&sprite);
+
+    const RTexture& texture() const;
+
+    int delta() const;
     size_t frameCount() const;
     size_t currentIndex() const;
-    int delta() const;
-    const RTexture frame(size_t index) const;
+    const RTexture& frame(size_t index) const;
 
-    void setInterval(int interval = 20);
+    void setInterval(int interval);
     void setFrameSequence(const std::vector<size_t> &seque);
-    void clear();
 
     void add(const RTexture &frame);
     void add(const std::vector<RTexture> &texs);
+    void remove(size_t index);
 
-    const RTexture& texture() const;
+    void clear();
 
 private:
     std::vector<RTexture> frames_;

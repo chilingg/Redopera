@@ -1,13 +1,15 @@
 #ifndef RMP3_H
 #define RMP3_H
 
-#include "RResource.h"
+#include <string>
 #include <memory>
 
 typedef struct Mp3dec_t mp3dec_t;
 typedef int16_t mp3d_sample_t;
 
 namespace Redopera {
+
+using RData = uint8_t;
 
 class RMp3
 {
@@ -31,7 +33,7 @@ public:
     int channel() const;
     Sample* data() const;
 
-    bool load(std::string path);
+    bool load(const std::string &path);
     bool load(const RData *data, size_t size);
     void release();
 

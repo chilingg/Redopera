@@ -1,12 +1,11 @@
-#include <RInputModule.h>
+#include <RInput.h>
 #include <RWindow.h>
-#include <stdexcept>
+#include <RDebug.h>
+#include <rsc/RFile.h>
 
 using namespace Redopera;
 
-std::map<JoystickID, RInputModule::GamepadValue> RInputModule::gamepad_;
-
-BtnAct RInputModule::toButtonAction(int action)
+BtnAct RInput::toButtonAction(int action)
 {
     switch(action)
     {
@@ -19,7 +18,7 @@ BtnAct RInputModule::toButtonAction(int action)
     }
 }
 
-Keys RInputModule::toKey(int key)
+Keys RInput::toKey(int key)
 {
     switch(key)
     {
@@ -272,7 +271,7 @@ Keys RInputModule::toKey(int key)
     }
 }
 
-MouseBtn RInputModule::toMouseButtons(int button)
+MouseBtn RInput::toMouseButtons(int button)
 {
     switch(button)
     {
@@ -287,161 +286,157 @@ MouseBtn RInputModule::toMouseButtons(int button)
     }
 }
 
-JoystickID RInputModule::toJoystickID(int jid)
+RInput &RInput::input()
 {
-    switch(jid)
-    {
-    case 0:
-        return JoystickID::JOYSTICK_1;
-    case 1:
-        return JoystickID::JOYSTICK_2;
-    case 2:
-        return JoystickID::JOYSTICK_3;
-    case 3:
-        return JoystickID::JOYSTICK_4;
-    case 4:
-        return JoystickID::JOYSTICK_5;
-    case 5:
-        return JoystickID::JOYSTICK_6;
-    case 6:
-        return JoystickID::JOYSTICK_7;
-    case 7:
-        return JoystickID::JOYSTICK_8;
-    case 8:
-        return JoystickID::JOYSTICK_9;
-    case 9:
-        return JoystickID::JOYSTICK_10;
-    case 10:
-        return JoystickID::JOYSTICK_11;
-    case 11:
-        return JoystickID::JOYSTICK_12;
-    case 12:
-        return JoystickID::JOYSTICK_13;
-    case 13:
-        return JoystickID::JOYSTICK_14;
-    case 14:
-        return JoystickID::JOYSTICK_15;
-    case 15:
-        return JoystickID::JOYSTICK_16;
-    default:
-        throw std::invalid_argument("Invalid value: " + std::to_string(jid) + " to Enum JoystickID!");
-    }
+    static RInput input;
+    return input;
 }
 
-int RInputModule::gamepadCount()
+BtnAct RInput::status(Keys key) const
 {
-    return gamepad_.size();
+    return toButtonAction(glfwGetKey(RWindow::focusWindow()->getHandle(), static_cast<int>(key)));
 }
 
-JoystickID RInputModule::getJoystickID(int index)
+BtnAct RInput::status(MouseBtn btn) const
 {
-    auto it = gamepad_.begin();
-    for (int i = 0; i < index; ++i)
-        ++it;
-
-    return it->first;
+    return toButtonAction(glfwGetMouseButton(RWindow::focusWindow()->getHandle(), static_cast<int>(btn)));
 }
 
-bool RInputModule::isValidJid(JoystickID jid)
+BtnAct RInput::status(GamepadBtn btn, unsigned player) const
 {
-    return glfwJoystickIsGamepad(static_cast<int>(jid));
+    if (gamepad_.size() <= player)
+        player = 0;
+
+    return RInput::toButtonAction((gamepad_[player].status.buttons[static_cast<unsigned>(btn)]));
 }
 
-RInputModule::RInputModule(RWindow *window):
-    window_(window)
+float RInput::status(GamepadAxes axis, unsigned player) const
 {
+    if (gamepad_.size() <= player)
+        player = 0;
 
+    return gamepad_[player].status.axes[static_cast<unsigned>(axis)];
 }
 
-BtnAct RInputModule::status(Keys key) const
-{
-    return toButtonAction(glfwGetKey(window_->getWindowHandle(), static_cast<int>(key)));
-}
-
-BtnAct RInputModule::status(MouseBtn btn) const
-{
-    return toButtonAction(glfwGetMouseButton(window_->getWindowHandle(), static_cast<int>(btn)));
-}
-
-BtnAct RInputModule::status(GamepadBtn btn, JoystickID jid) const
-{
-    if (!gamepad_.count(jid))
-        return BtnAct::RELEASE;
-
-    return RInputModule::toButtonAction(gamepad_[jid].status.buttons[static_cast<unsigned>(btn)]);
-}
-
-float RInputModule::status(GamepadAxes axis, JoystickID jid) const
-{
-    if (!gamepad_.count(jid))
-    {
-        if(axis == GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER || axis == GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER)
-            return -1.f;
-        else
-            return 0.f;
-    }
-
-    return gamepad_[jid].status.axes[static_cast<unsigned>(axis)];
-}
-
-bool RInputModule::press(Keys key) const
+bool RInput::press(Keys key) const
 {
     return status(key) == BtnAct::PRESS && keyDown_.count(key);
 }
 
-bool RInputModule::press(MouseBtn btn) const
+bool RInput::press(MouseBtn btn) const
 {
     return status(btn) == BtnAct::PRESS && mouseDown_.count(btn);
 }
 
-bool RInputModule::press(GamepadBtn btn, JoystickID jid) const
+bool RInput::press(GamepadBtn btn, unsigned player) const
 {
-    if (!gamepad_.count(jid))
+    if (gamepad_.size() <= player)
         return false;
 
     unsigned index = static_cast<unsigned>(btn);
-    return gamepad_[jid].status.buttons[index] && !gamepad_[jid].preButtons[index];
+    return gamepad_[player].status.buttons[index] && !gamepad_[player].preButtons[index];
 }
 
-bool RInputModule::release(Keys key) const
+bool RInput::release(Keys key) const
 {
     return status(key) == BtnAct::RELEASE && keyUp_.count(key);
 }
 
-bool RInputModule::release(MouseBtn btn) const
+bool RInput::release(MouseBtn btn) const
 {
     return status(btn) == BtnAct::RELEASE && mouseUp_.count(btn);
 }
 
-bool RInputModule::release(GamepadBtn btn, JoystickID jid) const
+bool RInput::release(GamepadBtn btn, unsigned player) const
 {
-    if (!gamepad_.count(jid))
+    if (gamepad_.size() <= player)
         return false;
 
     unsigned index = static_cast<unsigned>(btn);
-    return !gamepad_[jid].status.buttons[index] && gamepad_[jid].preButtons[index];
+    return !gamepad_[player].status.buttons[index] && gamepad_[player].preButtons[index];
 }
 
-RPoint2 RInputModule::pos() const
+bool RInput::cursorMove() const
+{
+    return move_;
+}
+
+RPoint2 RInput::cursorPos() const
 {
     double x, y;
-    glfwGetCursorPos(window_->getWindowHandle(), &x, &y);
-    return RPoint2(x, y) - window_->posOffset();
+    glfwGetCursorPos(RWindow::focusWindow()->getHandle(), &x, &y);
+    RPoint2 pos(x, y);
+    pos -= RWindow::focusWindow()->posOffset();
+    pos.mirrorV(RWindow::focusWindow()->height() / 2);
+
+    return pos;
 }
 
-int RInputModule::wheel() const
+RPoint2 RInput::wheel() const
 {
     return wheel_;
 }
 
-bool RInputModule::anyKeyPress() const
+
+int RInput::gamepadCount() const
+{
+    return gamepad_.size() - 1;
+}
+
+bool RInput::anyKeyPress() const
 {
     return !keyDown_.empty();
 }
 
-void RInputModule::updataInputCache()
+bool RInput::anyMouseBtnPress() const
 {
-    wheel_ = 0;
+    return !mouseDown_.empty();
+}
+
+bool RInput::updateGamepadMappings(const char *path) const
+{
+    RFile file = RFile::load(path);
+    if (!file.size)
+        rPrError("Failed to load gamepad mappings file: " + std::string(path));
+
+    if(glfwUpdateGamepadMappings(reinterpret_cast<char*>(file.data.get())) == GLFW_FALSE)
+    {
+        rPrError("Failed to update gamepad mapping! In path: " + std::string(path) + '\n' +
+                   "To https://github.com/gabomdq/SDL_GameControllerDB download gamecontrollerdb.txt file.");
+        rDebug << "Updata to default gameoad mapping is " << (updateGamepadMappings() ? "success." : "failed!");
+        return false;
+    } else
+        return true;
+}
+
+bool RInput::updateGamepadMappings() const
+{
+    // 加载手柄映射
+    std::string mappingCode = std::string() + RInput::gamepadMappingCode0
+            + RInput::gamepadMappingCode1 + RInput::gamepadMappingCode2;
+
+    return glfwUpdateGamepadMappings(mappingCode.c_str()) == GLFW_TRUE;
+}
+
+void RInput::joystickPresentCallback(int jid, int event)
+{
+    if(event == GLFW_CONNECTED && glfwJoystickIsGamepad(jid))
+    {
+        RInput::input().gamepad_.emplace_back(jid);
+        RInput::input().joyPresented.emit(JoystickPresent::CONNECTED);
+    }
+    else if(event == GLFW_DISCONNECTED)
+    {
+        auto it = std::find_if(RInput::input().gamepad_.begin(), RInput::input().gamepad_.end(), [jid](const Gamepad &g){ return g.jid == jid; });
+        RInput::input().gamepad_.erase(it);
+        RInput::input().joyPresented.emit(JoystickPresent::DISCONNECTED);
+    }
+}
+
+void RInput::updataInput()
+{
+    move_ = false;
+    wheel_.set(0, 0);
     keyUp_.clear();
     mouseUp_.clear();
     keyDown_.clear();
@@ -449,59 +444,75 @@ void RInputModule::updataInputCache()
 
     for(auto &player : gamepad_)
     {
-        std::swap(player.second.status.buttons, player.second.preButtons);
-
-        glfwGetGamepadState(static_cast<int>(player.first), &player.second.status);
+        std::swap(player.status.buttons, player.preButtons);
+        glfwGetGamepadState(static_cast<int>(player.jid), &player.status);
     }
 }
 
-void RInputModule::keyUp(Keys key)
+void RInput::keyUp(Keys key)
 {
     keyUp_.insert(key);
 }
 
-void RInputModule::keyDown(Keys key)
+void RInput::keyDown(Keys key)
 {
     keyDown_.insert(key);
 }
 
-void RInputModule::mouseUp(MouseBtn btn)
+void RInput::mouseUp(MouseBtn btn)
 {
     mouseUp_.insert(btn);
 }
 
-void RInputModule::mouseDown(MouseBtn btn)
+void RInput::mouseDown(MouseBtn btn)
 {
     mouseDown_.insert(btn);
 }
 
-void RInputModule::mouseWheel(int value)
+void RInput::mouseWheel(int x, int y)
 {
-    wheel_ = value;
+    wheel_.set(x, y);
 }
 
-bool RInputModule::addGamepad(JoystickID jid)
+void RInput::setCursorMove()
 {
-    if(!glfwJoystickIsGamepad(static_cast<int>(jid)))
-        return false;
-
-    gamepad_.emplace(jid, GamepadValue{});
-    glfwGetGamepadState(static_cast<int>(jid), &gamepad_[jid].status);
-    return true;
+    move_ = true;
 }
 
-bool RInputModule::deleteGamepad(JoystickID jid)
+RInput::RInput()
 {
-    if (gamepad_.count(jid))
+    gamepad_.emplace_back(0); // add empty gamepad
+
+    updateGamepadMappings();
+    // 需手动检测一次手柄连接，检测之前已连接的手柄
+    for(unsigned i = GLFW_JOYSTICK_1; i <= GLFW_JOYSTICK_LAST; ++i)
     {
-        gamepad_.erase(jid);
-        return true;
+        if(glfwJoystickIsGamepad(i))
+            gamepad_.emplace_back(i);
     }
-
-    return false;
+    // 手柄连接回调
+    glfwSetJoystickCallback(joystickPresentCallback);
 }
 
-const char *RInputModule::gamepadMappingCode0 =
+RInput::Gamepad::Gamepad(int jid):
+    jid(jid)
+{
+    for(size_t i = 0; i <= GLFW_GAMEPAD_BUTTON_LAST; ++i)
+    {
+        status.buttons[i] = GLFW_RELEASE;
+        preButtons[i] = GLFW_RELEASE;
+    }
+    for(size_t i = 0; i <= GLFW_GAMEPAD_AXIS_LAST; ++i)
+        status.axes[i] = (i == GLFW_GAMEPAD_AXIS_LEFT_TRIGGER || i == GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER) ? -1.f : 0.f;
+}
+
+RInput::Gamepad::Gamepad(const RInput::Gamepad &gamepad):
+    Gamepad(gamepad.jid)
+{
+
+}
+
+const char *RInput::gamepadMappingCode0 =
 "# Game Controller DB for SDL in 2.0.9 format\n"
 "# Source: https://github.com/gabomdq/SDL_GameControllerDB\n"
 "# Windows\n"
@@ -714,7 +725,7 @@ const char *RInputModule::gamepadMappingCode0 =
 "030000004f04000003d0000000000000,run'n'drive,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b7,leftshoulder:a3,leftstick:b10,lefttrigger:b4,leftx:a0,lefty:a1,rightshoulder:a4,rightstick:b11,righttrigger:b5,rightx:a2,righty:a5,start:b9,x:b0,y:b3,platform:Windows,\n"
 "03000000a30600001af5000000000000,Saitek Cyborg,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,leftshoulder:b4,leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:b7,rightx:a3,righty:a4,start:b9,x:b0,y:b3,platform:Windows,\n";
 
-const char *RInputModule::gamepadMappingCode1 =
+const char *RInput::gamepadMappingCode1 =
 "03000000a306000023f6000000000000,Saitek Cyborg V.1 Game pad,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:b7,rightx:a2,righty:a4,start:b9,x:b0,y:b3,platform:Windows,\n"
 "03000000300f00001201000000000000,Saitek Dual Analog Pad,a:b2,b:b3,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,leftshoulder:b4,leftstick:b10,lefttrigger:b5,leftx:a0,lefty:a1,rightshoulder:b6,rightstick:b11,righttrigger:b7,rightx:a3,righty:a2,start:b9,x:b0,y:b1,platform:Windows,\n"
 "03000000a30600000701000000000000,Saitek P220,a:b2,b:b3,back:b4,dpdown:+a1,dpleft:-a0,dpright:+a0,dpup:-a1,leftshoulder:b6,rightshoulder:b7,start:b5,x:b0,y:b1,platform:Windows,\n"
@@ -925,7 +936,7 @@ const char *RInputModule::gamepadMappingCode1 =
 "030000000d0f00009200000011010000,Hori Pokken Tournament DX Pro Pad,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,leftshoulder:b4,lefttrigger:b6,rightshoulder:b5,righttrigger:b7,start:b9,x:b0,y:b3,platform:Linux,\n"
 "030000000d0f00006e00000011010000,HORIPAD 4 (PS3),a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:b7,rightx:a2,righty:a3,start:b9,x:b0,y:b3,platform:Linux,\n";
 
-const char *RInputModule::gamepadMappingCode2 =
+const char *RInput::gamepadMappingCode2 =
 "030000000d0f00006600000011010000,HORIPAD 4 (PS4),a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:a3,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:a4,rightx:a2,righty:a5,start:b9,x:b0,y:b3,platform:Linux,\n"
 "030000000d0f0000ee00000011010000,HORIPAD mini4,a:b1,b:b2,back:b8,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b12,leftshoulder:b4,leftstick:b10,lefttrigger:b6,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b11,righttrigger:b7,rightx:a2,righty:a5,start:b9,x:b0,y:b3,platform:Linux,\n"
 "030000000d0f00006700000001010000,HORIPAD ONE,a:b0,b:b1,back:b6,dpdown:h0.4,dpleft:h0.8,dpright:h0.2,dpup:h0.1,guide:b8,leftshoulder:b4,leftstick:b9,lefttrigger:a2,leftx:a0,lefty:a1,rightshoulder:b5,rightstick:b10,righttrigger:a5,rightx:a3,righty:a4,start:b7,x:b2,y:b3,platform:Linux,\n"

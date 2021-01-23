@@ -1,66 +1,10 @@
 #include <RGame.h>
 #include <RWindow.h>
-#include <RInputModule.h>
-#include <RController.h>
-#include <REvent.h>
+#include <RInput.h>
+#include <RTransform.h>
 #include <RDebug.h>
-#include <RTime.h>
 
 using namespace Redopera;
-
-RPoint2 pos;
-
-void startEvent(StartEvent *)
-{
-    rDebug << "Loop start.";
-}
-
-void closeEvent(CloseEvent *e)
-{
-    rDebug << "Loop would close.";
-    // e->stop = true; // Stop close
-    e->stop = false;
-}
-
-void finishEvent(FinishEvent *)
-{
-    rDebug << "Loop finish.";
-}
-
-void transInfo(TransEvent *info)
-{
-    rDebug << "Translate info:" << info->pos << info->size;
-}
-
-void inputEvent(ProcessEvent *e)
-{
-    const RInputModule *input = RWindow::mainWindow()->input();
-
-    if (input->press(Keys::KEY_ESCAPE))
-        e->sender->breakLoop();
-
-    if (input->anyKeyPress())
-        rDebug << "Any key Press.";
-    if (input->press(Keys::KEY_S))
-        rDebug << "Key S is press.";
-    if (input->release(Keys::KEY_S))
-        rDebug << "Key S is release.";
-
-    RPoint2 p = input->pos();
-    if (pos != p)
-    {
-        pos = p;
-        rDebug << "Cursor position move to " << p;
-    }
-
-    if (input->wheel())
-        rDebug << "Mouse whell is" << input->wheel();
-
-    if (input->press(MouseBtn::MOUSE_BUTTON_LEFT))
-        rDebug << "Mouse left button is press.";
-    if (input->release(MouseBtn::MOUSE_BUTTON_LEFT))
-        rDebug << "Mouse left button is release.";
-}
 
 int main()
 {
@@ -68,22 +12,61 @@ int main()
 
     RWindow::Format format;
     format.debug = false;
-    format.versionMajor = 3;
-    format.versionMinor = 3;
-    format.fix = false;
-    format.viewport = RWindow::Viewport::Fix;
 
     RWindow window(640, 480, "Window", format);
+    RPoint2 pos;
 
-    RController ctrl;
-    ctrl.setStartFunc(startEvent);
-    ctrl.setCloseFunc(closeEvent);
-    ctrl.setFinishFunc(finishEvent);
-    ctrl.setTransFunc(transInfo);
-    ctrl.setProcessFunc(inputEvent);
+    window.node.setStartFunc([&pos]{
+        rDebug << "Start Event";
+        pos = RInput::input().cursorPos();
+        rDebug  << "Gamepad number " << RInput::input().gamepadCount();
 
-    window.ctrl()->addChild(&ctrl);
+        RInput::input().joyPresented.connect([](JoystickPresent state){
+            rDebug << "Joystick " << (state == JoystickPresent::CONNECTED ? "connected" : "disconnected");
+            return true;
+        });
+    });
+
+    window.node.setFinishFunc([]{ rDebug << "Finish Event"; });
+
+    window.node.setTransformFunc([](RNode *, const RTransform &info){ rDebug << "Translation Event: " << info; });
+
+    window.node.setProcessFunc([&pos](RNode *, RNode::Instructs *)
+    {
+        if(RInput::input().anyKeyPress())
+            rDebug << "Any key Press";
+        if(RInput::input().anyMouseBtnPress())
+            rDebug << "Any mouse button Press";
+        if(!RInput::input().wheel().isOrigin())
+            rDebug << "Mouse whell " << RInput::input().wheel();
+        if(RInput::input().cursorPos() != pos)
+        {
+            pos = RInput::input().cursorPos();
+            rDebug << "Move cursor to " << pos;
+        }
+
+        if(RInput::input().gamepadCount())
+        {
+            for(size_t i = 0; i <= GLFW_GAMEPAD_BUTTON_LAST; ++i)
+            {
+                if(RInput::input().press(static_cast<GamepadBtn>(i)))
+                    rDebug << "Gamepad button " << i << "is pressed";
+            }
+            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_X)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_LEFT_X " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_X);
+            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_Y)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_LEFT_Y " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_Y);
+            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_X)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_RIGHT_X " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_X);
+            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_Y)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_RIGHT_Y " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_Y);
+            if(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER) > -.8f)
+                rDebug << "GAMEPAD_AXIS_LEFT_TRIGGER " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER);
+            if(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER) > -.8f)
+                rDebug << "GAMEPAD_AXIS_RIGHT_TRIGGER " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER);
+        }
+    });
+
     window.show();
-
-    return game.exec(&window);
+    return window.node.exec();
 }

@@ -1,6 +1,8 @@
 #ifndef RSIZE_H
 #define RSIZE_H
 
+#include <string>
+
 namespace Redopera {
 
 class RSize
@@ -48,6 +50,11 @@ public:
     void set(int width, int height) { width_ = width; height_ = height; }
 
     void expand(int width, int height) { width_ += width; height_ += height; }
+
+    std::string toString() const
+    {
+        return "(w:" + std::to_string(width_) + " h:" + std::to_string(height_) + ") ";
+    }
 
 private:
     int width_;

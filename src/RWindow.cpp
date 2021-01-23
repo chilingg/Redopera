@@ -1,18 +1,19 @@
 #include <RWindow.h>
-#include <REvent.h>
+#include <RTransform.h>
 #include <RDebug.h>
-#include <RColor.h>
-#include <rsc/RCursor.h>
+#include <RRect.h>
+#include <RInput.h>
 #include <rsc/RImage.h>
+#include <rsc/RCursor.h>
 
 using namespace Redopera;
 
-const RWindow::Format RWindow::windowFormat;
-RWindow *RWindow::mainWindowP = nullptr;
+RWindow::Format RWindow::defaultFormat;
+std::atomic<RWindow*> RWindow::focusWindowP;
 
-RWindow *RWindow::mainWindow()
+RWindow *RWindow::focusWindow()
 {
-    return mainWindowP;
+    return focusWindowP;
 }
 
 RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
@@ -20,30 +21,34 @@ RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
     return static_cast<RWindow*>(glfwGetWindowUserPointer(window));
 }
 
+const RWindow::Format &RWindow::defaultWindowFormat()
+{
+    return defaultFormat;
+}
+
+void RWindow::setDefaultWindowFormat(RWindow::Format fmt)
+{
+    defaultFormat = fmt;
+}
+
 RWindow::RWindow():
-    RWindow(800, 540, "Redopera", windowFormat)
+    RWindow(800, 540, "Redopera")
 {
 
 }
 
-RWindow::RWindow(int width, int height, const std::string title, const RWindow::Format &format):
-    poolFunc([]{}),
-    ctrl_("Window", this),
-    input_(this),
+RWindow::RWindow(int width, int height, const std::string &title, const RWindow::Format &format):
+    node("Window", this),
     format_(format),
-    window_(nullptr, glfwDestroyWindow),
+    context_(nullptr),
     vOffset_(0),
-    size_(width, height), // 真正的尺寸在循环时决定
-    focused_(false)
+    size_(width, height)
 {
-    // Debug Context 需要OpenGL4.3以上版本
-    if(format_.versionMajor * 10 + format_.versionMinor < 43)
-        format_.debug = false;
-
+    glfwDefaultWindowHints();
+    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, format_.debug);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, format_.forward);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, format_.versionMajor);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, format_.versionMinor);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, format_.forward);
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, format_.debug);
     glfwWindowHint(GLFW_RESIZABLE, format_.fix ? GLFW_FALSE : GLFW_TRUE);
     glfwWindowHint(GLFW_DECORATED, format_.decorate ? GLFW_TRUE : GLFW_FALSE);
     glfwWindowHint(GLFW_MAXIMIZED, format_.maximization ? GLFW_TRUE : GLFW_FALSE);
@@ -62,114 +67,92 @@ RWindow::RWindow(int width, int height, const std::string title, const RWindow::
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
+    GLFWwindow *window;
     if(format_.fullScreen)
-        window_.reset(glfwCreateWindow(mode->width, mode->height, title.c_str(), monitor, format_.shared));
+        window = glfwCreateWindow(mode->width, mode->height, title.c_str(), monitor, format_.shared);
     else
-        window_.reset(glfwCreateWindow(width, height, title.c_str(), nullptr, format_.shared));
+        window = glfwCreateWindow(width, height, title.c_str(), nullptr, format_.shared);
 
-    if(!window_)
+    if(!window)
         throw std::runtime_error("Fainled to create GLFW window");
 
-    if(glfwGetCurrentContext())
-        throw std::runtime_error("A thread can only have one window context");
-    glfwMakeContextCurrent(window_.get());
-
-    //绑定上下文与this指针
-    glfwSetWindowUserPointer(window_.get(), this);
-
-    if(!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+    format_.rasterizer = true;
+    if(!context_.setContext(window, format_))
         throw std::runtime_error("Failed to initialize GLAD");
 
-    // 申请到的OpenGL版本
-    format_.versionMajor = GLVersion.major;
-    format_.versionMinor = GLVersion.minor;
+    // 绑定上下文与this指针
+    glfwSetWindowUserPointer(context_.getHandle(), this);
 
-    //若启用 OpenGL Debug
-    if(format_.debug && GL_CONTEXT_FLAG_DEBUG_BIT)
-    {
-        rDebug << EscCtl::green << EscCtl::bold << "Window " << title << ": "
-               << reinterpret_cast<const char*>(glGetString(GL_VERSION))
-               << "\nEnable OpenGL debug output" << EscCtl::non;
-        glEnable(GL_DEBUG_OUTPUT);
-        glDebugMessageCallback(openglDebugMessageCallback, nullptr);
-        //过滤着色器编译成功消息通知
-        glDebugMessageControl(GL_DEBUG_SOURCE_SHADER_COMPILER, GL_DEBUG_TYPE_OTHER,
-                              GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
-        glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER,
-                              GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
-    }
-
-    setVSync(format_.vSync);
-    //设置混合
+    // 设置混合（未开启）
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    //默认背景色
+    // 默认背景色
     RColor color(format_.background);
     glClearColor(color.r()/255.0f, color.g()/255.0f, color.b()/255.0f, 1.0f);
-    //禁用字节对齐限制
+    // 禁用字节对齐限制（字体图片1位缓存）
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-    if(format_.depth)
-        enableDepthTest();
 
     RImage img = RImage::redoperaIcon();
     GLFWimage icon{ img.width(), img.height(), img.data() };
-    glfwSetWindowIcon(window_.get(), 1, &icon);
+    glfwSetWindowIcon(context_.getHandle(), 1, &icon);
 
-    ctrl_.setCloseFunc([this](CloseEvent *e){ if(e->stop) glfwSetWindowShouldClose(window_.get(), GLFW_FALSE); });
-    ctrl_.setExecFunc(std::bind(&RWindow::defaultExec, this));
-}
+    node.setExecFunc([this]{ return defaultExec(); });
+    node.setTransformFunc([this](RNode *sender, const RTransform &info){ defaultTransform(sender, info); });
 
-void RWindow::setAsMainWindow()
-{
-    mainWindowP = this;
-    poolFunc = glfwPollEvents;
+    renderSys_ = std::make_unique<RRenderSys>();
+    renderSys_->addShaders("SimpleShader", RRenderSys::createSimpleShaders());
+    renderSys_->addShaders("SingleShader", RRenderSys::createSimpleSingleShaders());
+    renderSys_->setMainShaders("SimpleShader");
+    renderSys_->setCamera();
+
+    if(!focusWindowP)
+        focusWindowP = this;
 }
 
 void RWindow::setWindowSize(int width, int height)
 {
-    glfwSetWindowSize(window_.get(), width, height);
+    glfwSetWindowSize(context_.getHandle(), width, height);
 }
 
 void RWindow::setWindowMinimumSize(int minW, int minH)
 {
-    glfwSetWindowSizeLimits(window_.get(), minW, minH, GLFW_DONT_CARE, GLFW_DONT_CARE);
+    glfwSetWindowSizeLimits(context_.getHandle(), minW, minH, GLFW_DONT_CARE, GLFW_DONT_CARE);
 }
 
 void RWindow::setWindowMaximumSize(int maxW, int maxH)
 {
-    glfwSetWindowSizeLimits(window_.get(), GLFW_DONT_CARE, GLFW_DONT_CARE, maxW, maxH);
+    glfwSetWindowSizeLimits(context_.getHandle(), GLFW_DONT_CARE, GLFW_DONT_CARE, maxW, maxH);
 }
 
 void RWindow::setWindowFixedSize(bool b)
 {
-    glfwSetWindowAttrib(window_.get(), GLFW_RESIZABLE, b ? GLFW_FALSE : GLFW_TRUE);
+    glfwSetWindowAttrib(context_.getHandle(), GLFW_RESIZABLE, b ? GLFW_FALSE : GLFW_TRUE);
 }
 
 void RWindow::setWindowTitle(const std::string &title)
 {
-    glfwSetWindowTitle(window_.get(), title.c_str());
+    glfwSetWindowTitle(context_.getHandle(), title.c_str());
 }
 
 void RWindow::setWindowDecrate(bool b)
 {
-    glfwSetWindowAttrib(window_.get(), GLFW_DECORATED, b ? GLFW_TRUE: GLFW_FALSE);
+    glfwSetWindowAttrib(context_.getHandle(), GLFW_DECORATED, b ? GLFW_TRUE: GLFW_FALSE);
 }
 
 void RWindow::setWindowFloatOnTop(bool b)
 {
-    glfwSetWindowAttrib(window_.get(), GLFW_FLOATING, b ? GLFW_TRUE: GLFW_FALSE);
+    glfwSetWindowAttrib(context_.getHandle(), GLFW_FLOATING, b ? GLFW_TRUE: GLFW_FALSE);
 }
 
 void RWindow::setWindowIcon(const RImage &img)
 {
     GLFWimage icon{ img.width(), img.height(), img.data() };
-    glfwSetWindowIcon(window_.get(), 1, &icon);
+    glfwSetWindowIcon(context_.getHandle(), 1, &icon);
 }
 
 void RWindow::setMaximizaWindow()
 {
-    glfwMaximizeWindow(window_.get());
+    glfwMaximizeWindow(context_.getHandle());
 }
 
 void RWindow::setFullScreenWindow(bool b)
@@ -180,14 +163,14 @@ void RWindow::setFullScreenWindow(bool b)
 
     if(b)
     {
-        glfwSetWindowMonitor(window_.get(), monitor, 0, 0, vidmode->width, vidmode->height, vidmode->refreshRate);
+        glfwSetWindowMonitor(context_.getHandle(), monitor, 0, 0, vidmode->width, vidmode->height, vidmode->refreshRate);
         // 全屏时GLFW似乎会取消垂直同步
         setVSync(format_.vSync);
         // Windows下需手动调用resize回调
-        resizeCallback(window_.get(), vidmode->width, vidmode->height);
+        resizeCallback(context_.getHandle(), vidmode->width, vidmode->height);
     }
     else {
-        glfwSetWindowMonitor(window_.get(), nullptr, (vidmode->width - format_.defaultWidth)/2,
+        glfwSetWindowMonitor(context_.getHandle(), nullptr, (vidmode->width - format_.defaultWidth)/2,
                              (vidmode->height - format_.defaultHeight)/2, format_.defaultWidth,
                              format_.defaultHeight, vidmode->refreshRate);
     }
@@ -202,23 +185,23 @@ void RWindow::setVSync(bool enable)
 
 void RWindow::setCursor(const RCursor *cursor)
 {
-    glfwSetCursor(window_.get(), cursor ? cursor->data() : nullptr);
+    glfwSetCursor(context_.getHandle(), cursor ? cursor->data() : nullptr);
 }
 
 void RWindow::setCursorModel(RWindow::CursorMode mode)
 {
     format_.cMode = mode;
-    glfwSetInputMode(window_.get(), GLFW_CURSOR, static_cast<int>(mode));
+    glfwSetInputMode(context_.getHandle(), GLFW_CURSOR, static_cast<int>(mode));
 }
 
 void RWindow::setWindowFocus()
 {
-    glfwFocusWindow(window_.get());
+    glfwFocusWindow(context_.getHandle());
 }
 
 void RWindow::restoreWindow()
 {
-    glfwRestoreWindow(window_.get());
+    glfwRestoreWindow(context_.getHandle());
 }
 
 void RWindow::setBackColor(unsigned r, unsigned g, unsigned b)
@@ -240,36 +223,51 @@ void RWindow::setBackColor(RGBA rgba)
 void RWindow::setViewportSize(int width, int height)
 {
     size_.set(width, height);
-    resizeCallback(window_.get(), windowWidth(), windowHeight());
+    resizeCallback(context_.getHandle(), windowWidth(), windowHeight());
 }
 
 void RWindow::setViewportRatio(double ratio)
 {
     format_.vRatio_ = ratio;
-    resizeCallback(window_.get(), windowWidth(), windowHeight());
+    resizeCallback(context_.getHandle(), windowWidth(), windowHeight());
 }
 
 void RWindow::setViewportPattern(RWindow::Viewport pattern)
 {
     format_.viewport = pattern;
-    resizeCallback(window_.get(), windowWidth(), windowHeight());
+    resizeCallback(context_.getHandle(), windowWidth(), windowHeight());
 }
 
 void RWindow::enableDepthTest()
 {
     glEnable(GL_DEPTH_TEST);
-    clearMask |= static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
+    clearMask_ |= static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
 }
 
 void RWindow::disableDepthTest()
 {
     glDisable(GL_DEPTH_TEST);
-    clearMask |= !static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
+    clearMask_ |= !static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
 }
 
-GLFWwindow *RWindow::getWindowHandle() const
+void RWindow::enableCapability(GLenum cap)
 {
-    return window_.get();
+    glEnable(cap);
+}
+
+void RWindow::disableCapability(GLenum cap)
+{
+    glDisable(cap);
+}
+
+RRenderSys *RWindow::renderSys() const
+{
+    return renderSys_.get();
+}
+
+GLFWwindow *RWindow::getHandle() const
+{
+    return context_.getHandle();
 }
 
 const RWindow::Format &RWindow::format() const
@@ -295,21 +293,21 @@ RSize RWindow::size() const
 RSize RWindow::windowSize() const
 {
     int w, h;
-    glfwGetWindowSize(window_.get(), &w, &h);
+    glfwGetWindowSize(context_.getHandle(), &w, &h);
     return RSize(w, h);
 }
 
 int RWindow::windowWidth() const
 {
     int w, h;
-    glfwGetWindowSize(window_.get(), &w, &h);
+    glfwGetWindowSize(context_.getHandle(), &w, &h);
     return w;
 }
 
 int RWindow::windowHeight() const
 {
     int w, h;
-    glfwGetWindowSize(window_.get(), &w, &h);
+    glfwGetWindowSize(context_.getHandle(), &w, &h);
     return h;
 }
 
@@ -320,12 +318,12 @@ RWindow::CursorMode RWindow::cursorMode() const
 
 bool RWindow::isFocus() const
 {
-    return focused_;
+    return focusWindowP == this;
 }
 
 bool RWindow::isShouldCloused() const
 {
-    return glfwWindowShouldClose(window_.get()) == GLFW_TRUE;
+    return glfwWindowShouldClose(context_.getHandle()) == GLFW_TRUE;
 }
 
 bool RWindow::isFullScreen() const
@@ -333,102 +331,29 @@ bool RWindow::isFullScreen() const
     return format_.fullScreen;
 }
 
-RController *RWindow::ctrl()
-{
-    return &ctrl_;
-}
-
-const RController *RWindow::ctrl() const
-{
-    return &ctrl_;
-}
-
 const RPoint2 &RWindow::posOffset() const
 {
     return vOffset_;
 }
 
-const RInputModule *RWindow::input() const
+GLbitfield RWindow::clearMask() const
 {
-    return &input_;
+    return clearMask_;
 }
 
 void RWindow::closeWindow()
 {
-    glfwSetWindowShouldClose(window_.get(), GLFW_TRUE);
+    glfwSetWindowShouldClose(context_.getHandle(), GLFW_TRUE);
 }
 
 void RWindow::show()
 {
-    glfwShowWindow(window_.get());
+    glfwShowWindow(context_.getHandle());
 }
 
 void RWindow::hide()
 {
-    glfwHideWindow(window_.get());
-}
-
-void RWindow::openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei , const GLchar *message, const void *)
-{
-    std::string sourceStr;
-    switch (source)
-    {
-    case GL_DEBUG_SOURCE_API:
-        sourceStr = "API"; break;
-    case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-        sourceStr = "Window System"; break;
-    case GL_DEBUG_SOURCE_SHADER_COMPILER:
-        sourceStr = "Shader Compiler"; break;
-    case GL_DEBUG_SOURCE_THIRD_PARTY:
-        sourceStr = "Third Party"; break;
-    case GL_DEBUG_SOURCE_APPLICATION:
-        sourceStr = "Application"; break;
-    case GL_DEBUG_SOURCE_OTHER:
-        sourceStr = "Other"; break;
-    }
-
-    std::string typeStr;
-    switch (type)
-    {
-    case GL_DEBUG_TYPE_ERROR:
-        typeStr = "Error"; break;
-    case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        typeStr = "Deprecated Behaviour"; break;
-    case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        typeStr = "Undefined Behaviour"; break;
-    case GL_DEBUG_TYPE_PORTABILITY:
-        typeStr = "Portability"; break;
-    case GL_DEBUG_TYPE_PERFORMANCE:
-        typeStr = "Performance"; break;
-    case GL_DEBUG_TYPE_MARKER:
-        typeStr = "Marker"; break;
-    case GL_DEBUG_TYPE_PUSH_GROUP:
-        typeStr = "Push Group"; break;
-    case GL_DEBUG_TYPE_POP_GROUP:
-        typeStr = "Pop Group"; break;
-    case GL_DEBUG_TYPE_OTHER:
-        typeStr = "Other"; break;
-    }
-
-    switch (severity)
-    {
-    case GL_DEBUG_SEVERITY_HIGH:
-        fprintf(stderr, "(%d)%s-%s-high: %s\n", id, sourceStr.c_str(), typeStr.c_str(), message);
-        std::runtime_error("OpenGL high error");
-        break;
-    case GL_DEBUG_SEVERITY_MEDIUM:
-        rDebug << EscCtl::yellow << EscCtl::bold << '(' << id << ')' << sourceStr << typeStr << "-medium: "
-               << message << EscCtl::non;
-        break;
-    case GL_DEBUG_SEVERITY_LOW:
-        rDebug << EscCtl::yellow << EscCtl::bold << '(' << id << ')' << sourceStr << typeStr << "-low "
-               << message << EscCtl::non;
-        break;
-    case GL_DEBUG_SEVERITY_NOTIFICATION:
-        rDebug << EscCtl::green << '(' << id << ')' << sourceStr << typeStr << "-notification "
-               << message << EscCtl::non;
-        break;
-    }
+    glfwHideWindow(context_.getHandle());
 }
 
 void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
@@ -480,88 +405,104 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
     }
 
     // 传递Translation info
-    TransEvent info{ &wctrl->ctrl_, { wctrl->size_.width(), wctrl->size_.height() } };
-    wctrl->ctrl_.translation(&info);
+    wctrl->node.transform(&wctrl->node, RTransform(RPoint(0), wctrl->size_));
 }
 
-void RWindow::mouseScrollCallback(GLFWwindow *window, double , double y)
+void RWindow::mouseScrollCallback(GLFWwindow *, double x, double y)
 {
-    getWindowUserCtrl(window)->input_.mouseWheel(static_cast<int>(y));
+    RInput::input().mouseWheel(x, y);
 }
 
 void RWindow::windowFocusCallback(GLFWwindow *window, int focused)
 {
-    RWindow *wctrl = getWindowUserCtrl(window);
-    wctrl->focused_ = focused ? true : false;
+    if(focused == GLFW_TRUE)
+    {
+        RWindow *wctrl = getWindowUserCtrl(window);
+        focusWindowP = wctrl;
+    }
 }
 
 void RWindow::windowCloseCallback(GLFWwindow *window)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
-    wctrl->ctrl_.breakLoop();
+    bool stop = false;
+    wctrl->closed(stop);
+
+    if(stop)
+        glfwSetWindowShouldClose(window, GLFW_FALSE);
+    else
+        wctrl->node.breakLooping();
 }
 
-void RWindow::keyboardCollback(GLFWwindow *window, int key, int, int action, int)
+void RWindow::keyboardCollback(GLFWwindow *, int key, int , int action, int )
 {
-    RWindow *wctrl = getWindowUserCtrl(window);
     if (action == GLFW_RELEASE)
-        wctrl->input_.keyUp(RInputModule::toKey(key));
+        RInput::input().keyUp(RInput::toKey(key));
     else if (action == GLFW_PRESS)
-        wctrl->input_.keyDown(RInputModule::toKey(key));
+        RInput::input().keyDown(RInput::toKey(key));
 }
 
-void RWindow::mouseButtonCollback(GLFWwindow *window, int btn, int action, int)
+void RWindow::mouseButtonCollback(GLFWwindow *, int btn, int action, int )
 {
-    RWindow *wctrl = getWindowUserCtrl(window);
     if (action == GLFW_RELEASE)
-        wctrl->input_.mouseUp(RInputModule::toMouseButtons(btn));
+        RInput::input().mouseUp(RInput::toMouseButtons(btn));
     else if (action == GLFW_PRESS)
-        wctrl->input_.mouseDown(RInputModule::toMouseButtons(btn));
+        RInput::input().mouseDown(RInput::toMouseButtons(btn));
+}
+
+void RWindow::cursorPosCollback(GLFWwindow *, double, double)
+{
+    RInput::input().setCursorMove();
 }
 
 int RWindow::defaultExec()
 {
     // 不在构造函数时设置回调，防止多线程中在未构造完成时被调用
-    glfwSetWindowFocusCallback(window_.get(), windowFocusCallback);
-    glfwSetFramebufferSizeCallback(window_.get(), resizeCallback);
-    glfwSetScrollCallback(window_.get(), mouseScrollCallback);
-    glfwSetWindowCloseCallback(window_.get(), windowCloseCallback);
-    glfwSetKeyCallback(window_.get(), keyboardCollback);
-    glfwSetMouseButtonCallback(window_.get(), mouseButtonCollback);
+    glfwSetWindowFocusCallback(context_.getHandle(), windowFocusCallback);
+    glfwSetFramebufferSizeCallback(context_.getHandle(), resizeCallback);
+    glfwSetScrollCallback(context_.getHandle(), mouseScrollCallback);
+    glfwSetWindowCloseCallback(context_.getHandle(), windowCloseCallback);
+    glfwSetKeyCallback(context_.getHandle(), keyboardCollback);
+    glfwSetMouseButtonCallback(context_.getHandle(), mouseButtonCollback);
+    glfwSetCursorPosCallback(context_.getHandle(), cursorPosCollback);
 
-    StartEvent sEvent(&ctrl_);
-    ctrl_.dispatchEvent(&sEvent);
+    node.dispatchStartEvent();
 
     RSize size = windowSize();
-    resizeCallback(window_.get(), size.width(), size.height());
+    resizeCallback(context_.getHandle(), size.width(), size.height());
 
-    while(ctrl_.loopingCheck() == RController::Status::Looping)
+    RNode::Instructs instructs;
+    while(node.isLooping())
     {
-        // 清屏 清除颜色缓冲和深度缓冲
-        glClear(clearMask);
-
-        poolFunc();
-
-        // 发起处理
-        ProcessEvent instruct(&ctrl_, &input_);
-        ctrl_.process(&instruct);
-
+        // 清理指令
+        instructs.clear();
         // 清空输入
-        input_.updataInputCache();
+        RInput::input().updataInput();
+        // 清屏 清除颜色缓冲[深度缓冲、模板缓冲]
+        glClear(clearMask_);
 
-        ctrl_.updataAll();
-        glfwSwapBuffers(window_.get());
+        if(isFocus())
+        {
+            // GLFW event process
+            glfwPollEvents();
+            // 发起处理event
+            node.process(&node, &instructs);
+        }
+        // 发起更新
+        node.update(renderSys_.get());
 
-        if(glfwWindowShouldClose(window_.get()))
-            ctrl_.breakLoop();
+        glfwSwapBuffers(context_.getHandle());
     }
 
-    FinishEvent fEvent(&ctrl_);
-    ctrl_.dispatchEvent(&fEvent);
-    ctrl_.closed.emit();
+    node.dispatchFinishEvent();
 
-    if(check(ctrl_.status() == RController::Status::Error, "The Loop has unexpectedly finished"))
+    if(!node.isNormal())
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
+}
 
+void RWindow::defaultTransform(RNode *sender, const RTransform &info)
+{
+    renderSys_->setViewprot(0, info.size().width(), 0, info.size().height());
+    node.transformEventToChild(sender, info);
 }

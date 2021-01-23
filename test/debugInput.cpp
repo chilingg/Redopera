@@ -4,6 +4,8 @@
 #include <RSize.h>
 #include <RRect.h>
 #include <RTime.h>
+#include <RMath.h>
+#include <RTransform.h>
 
 using namespace Redopera;
 
@@ -24,10 +26,10 @@ const RDebug& operator<<(const RDebug &debug, const Test &test)
 
 int main()
 {
-    prError("\nTest RDebug error output");
-    prError("Test prErrot()");
-    check(true, "Test check(true)");
-    check(false, "Test check(false)");
+    rPrError("\nTest RDebug error output");
+    rPrError("Test prErrot()");
+    rCheck(true, "Test check(true)");
+    rCheck(false, "Test check(false)");
 
     rDebug << "\nTest RDebug output";
     rDebug << -123456 << -123456789l << -1234567890ll;
@@ -53,11 +55,17 @@ int main()
     rDebug << EscCtl::bold << EscCtl::yellow << "Yellow" << EscCtl::non;
 
     rDebug << "Test class debug input";
-    rDebug << "RColor(0xffeedd)\t>>\t" << RColor(0xffeedd);
+    rDebug << "RColor(0xeeddccff)\t>>\t" << RColor(0xeeddccff);
     rDebug << "RPoint(2, 3)\t>>\t" << RPoint(2, 3);
     rDebug << "RSize(5, 6) \t>>\t" << RSize(5, 6);
     rDebug << "RRect(8, 8, 2, 3)\t>>\t" << RRect(8, 8, 2, 3);
+    rDebug << "RTransform(10, 11, 12, 20, 30)\t>>\t" << RTransform(10, 11, 12, 20, 30);
     rDebug << RTime();
+
+    rDebug << "Test glm debug input";
+    rDebug << glm::vec3(1, 2, 3);
+    rDebug << glm::vec4(1, 2, 3, 4);
+    rDebug << glm::mat4(1);
 
     rDebug << "End of test.";
 

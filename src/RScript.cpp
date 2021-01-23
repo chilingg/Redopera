@@ -1,112 +1,113 @@
-#include <rsc/RLuaScript.h>
+#include <rsc/RScript.h>
+#include <rsc/RResource.h>
 #include <RDebug.h>
 
 using namespace Redopera;
 
-RLuaScript::RLuaScript(const std::string &lua)
+RScript::RScript(const std::string &lua)
 {
     load(lua);
 }
 
-RLuaScript::RLuaScript(const RData *data, size_t size, const std::string &name)
+RScript::RScript(const RData *data, size_t size, const std::string &name)
 {
     load(data, size, name);
 }
 
-RLuaScript::RLuaScript(const RLuaScript &scp):
+RScript::RScript(const RScript &scp):
     lua_(scp.lua_)
 {
 
 }
 
-RLuaScript::RLuaScript(const RLuaScript &&scp):
+RScript::RScript(const RScript &&scp):
     lua_(std::move(scp.lua_))
 {
 
 }
 
-RLuaScript &RLuaScript::operator=(RLuaScript scp)
+RScript &RScript::operator=(RScript scp)
 {
     swap(scp);
     return *this;
 }
 
-void RLuaScript::swap(RLuaScript &scp)
+void RScript::swap(RScript &scp)
 {
     lua_.swap(scp.lua_);
 }
 
-bool RLuaScript::isValid() const
+bool RScript::isValid() const
 {
     return lua_ != nullptr;
 }
 
-bool RLuaScript::isValidIndex(int index) const
+bool RScript::isValidIndex(int index) const
 {
     return !lua_isnone(lua_.get(), index);
 }
 
-bool RLuaScript::valueIsBool(int index) const
+bool RScript::valueIsBool(int index) const
 {
     return lua_isboolean(lua_.get(), index);
 }
 
-bool RLuaScript::valueIsFunction(int index) const
+bool RScript::valueIsFunction(int index) const
 {
     return lua_isfunction(lua_.get(), index);
 }
 
-bool RLuaScript::valueIsNumber(int index) const
+bool RScript::valueIsNumber(int index) const
 {
     return lua_isnumber(lua_.get(), index);
 }
 
-bool RLuaScript::valueIsString(int index) const
+bool RScript::valueIsString(int index) const
 {
     return lua_isstring(lua_.get(), index);
 }
 
-bool RLuaScript::valueIsTable(int index) const
+bool RScript::valueIsTable(int index) const
 {
     return lua_istable(lua_.get(), index);
 }
 
-LuaType RLuaScript::valueType(int index) const
+Type RScript::valueType(int index) const
 {
-    return static_cast<LuaType>(lua_type(lua_.get(), index));
+    return static_cast<Type>(lua_type(lua_.get(), index));
 }
 
-std::string RLuaScript::typeName(LuaType type)
+std::string RScript::typeName(Type type)
 {
     return lua_typename(lua_.get(), static_cast<int>(type));
 }
 
-int RLuaScript::stackSize() const
+int RScript::stackSize() const
 {
     return lua_gettop(lua_.get());
 }
 
-bool RLuaScript::getBool(int index)
+bool RScript::getBool(int index)
 {
     return lua_toboolean(lua_.get(), index);
 }
 
-double RLuaScript::getNumber(int index)
+double RScript::getNumber(int index)
 {
     return lua_tonumber(lua_.get(), index);
 }
 
-long long RLuaScript::getInteger(int index)
+long long RScript::getInteger(int index)
 {
     return lua_tointeger(lua_.get(), index);
 }
 
-std::string RLuaScript::getString(int index)
+std::string RScript::getString(int index)
 {
     return std::string(lua_tostring(lua_.get(), index));
 }
 
-long long RLuaScript::getTableValueToInt(const std::string &key, int index)
+long long RScript::getTableValueToInt(const std::string &key, int index)
 {
     lua_getfield(lua_.get(), index, key.c_str());
     long long n = lua_tointeger(lua_.get(), -1);
@@ -115,7 +116,7 @@ long long RLuaScript::getTableValueToInt(const std::string &key, int index)
     return n;
 }
 
-double RLuaScript::getTableValueToDouble(const std::string &key, int index)
+double RScript::getTableValueToDouble(const std::string &key, int index)
 {
     lua_getfield(lua_.get(), index, key.c_str());
     double n = lua_tonumber(lua_.get(), -1);
@@ -124,7 +125,7 @@ double RLuaScript::getTableValueToDouble(const std::string &key, int index)
     return n;
 }
 
-std::string RLuaScript::getTableValueToString(const std::string &key, int index)
+std::string RScript::getTableValueToString(const std::string &key, int index)
 {
     lua_getfield(lua_.get(), index, key.c_str());
     std::string str = lua_tostring(lua_.get(), -1);
@@ -133,62 +134,62 @@ std::string RLuaScript::getTableValueToString(const std::string &key, int index)
     return str;
 }
 
-lua_State *RLuaScript::getLuaState()
+lua_State *RScript::getLuaState()
 {
     return lua_.get();
 }
 
-void RLuaScript::pushNil()
+void RScript::pushNil()
 {
     lua_pushnil(lua_.get());
 }
 
-void RLuaScript::push(bool b)
+void RScript::push(bool b)
 {
     lua_pushboolean(lua_.get(), b);
 }
 
-void RLuaScript::push(double num)
+void RScript::push(double num)
 {
     lua_pushnumber(lua_.get(), num);
 }
 
-void RLuaScript::push(const std::string &str)
+void RScript::push(const std::string &str)
 {
     lua_pushstring(lua_.get(), str.c_str());
 }
 
-void RLuaScript::remove(int index)
+void RScript::remove(int index)
 {
     lua_remove(lua_.get(), index);
 }
 
-void RLuaScript::pop(int n)
+void RScript::pop(int n)
 {
     lua_pop(lua_.get(), n);
 }
 
-void RLuaScript::popTopToGlobal(const std::string &name)
+void RScript::popTopToGlobal(const std::string &name)
 {
     lua_setglobal(lua_.get(), name.c_str());
 }
 
-void RLuaScript::setStackSize(int size)
+void RScript::setStackSize(int size)
 {
     lua_settop(lua_.get(), size);
 }
 
-void RLuaScript::setGlobalAsTop(const std::string &name)
+void RScript::setGlobalAsTop(const std::string &name)
 {
     lua_getglobal(lua_.get(), name.c_str());
 }
 
-void RLuaScript::cleanStack()
+void RScript::cleanStack()
 {
     lua_settop(lua_.get(), 0);
 }
 
-bool RLuaScript::call(const std::string &func, std::initializer_list<double> numList, std::initializer_list<const char *> strList, int resultN)
+bool RScript::call(const std::string &func, std::initializer_list<double> numList, std::initializer_list<const char *> strList, int resultN)
 {
     lua_getglobal(lua_.get(), func.c_str());
     for(auto n : numList)
@@ -198,7 +199,7 @@ bool RLuaScript::call(const std::string &func, std::initializer_list<double> num
 
     if(lua_pcall(lua_.get(), numList.size()+strList.size(), resultN, 0) != 0)
     {
-        prError("Failure call in function <" + func + ">: " + lua_tostring(lua_.get(), -1));
+        rPrError("Failure call in function <" + func + ">: " + lua_tostring(lua_.get(), -1));
         lua_pop(lua_.get(), -1);
         return false;
     }
@@ -206,19 +207,18 @@ bool RLuaScript::call(const std::string &func, std::initializer_list<double> num
     return true;
 }
 
-bool RLuaScript::load(const std::string &lua)
+bool RScript::load(const std::string &lua)
 {
     std::shared_ptr<lua_State> temp(luaL_newstate(), lua_close);
     luaL_openlibs(temp.get());
 
-    std::string path = lua;
-    RResource::rscPath(path);
+    std::string path = RResource::rscPath(lua);
     if(luaL_dofile(temp.get(), path.c_str()))
     {
         if(luaL_dostring(temp.get(), lua.c_str()))
         {
-            prError(lua_tostring(temp.get(), -2));
-            prError(lua_tostring(temp.get(), -1));
+            rPrError(lua_tostring(temp.get(), -2));
+            rPrError(lua_tostring(temp.get(), -1));
             return false;
         }
         else {
@@ -230,14 +230,14 @@ bool RLuaScript::load(const std::string &lua)
     return true;
 }
 
-bool RLuaScript::load(const RData *buff, size_t size, const std::string &name)
+bool RScript::load(const RData *buff, size_t size, const std::string &name)
 {
     std::shared_ptr<lua_State> temp(luaL_newstate(), lua_close);
     luaL_openlibs(temp.get());
 
     if(luaL_loadbuffer(temp.get(), reinterpret_cast<const char*>(buff), size, name.c_str()) || lua_pcall(temp.get(), 0, 0, 0))
     {
-        prError(lua_tostring(temp.get(), -1));
+        rPrError(lua_tostring(temp.get(), -1));
         return false;
     }
 
@@ -245,16 +245,15 @@ bool RLuaScript::load(const RData *buff, size_t size, const std::string &name)
     return true;
 }
 
-bool RLuaScript::import(const std::string &lua)
+bool RScript::import(const std::string &lua)
 {
-    std::string path = lua;
-    RResource::rscPath(path);
+    std::string path = RResource::rscPath(lua);
     if(luaL_dofile(lua_.get(), path.c_str()))
     {
         if(luaL_dostring(lua_.get(), lua.c_str()))
         {
-            prError(lua_tostring(lua_.get(), -2));
-            prError(lua_tostring(lua_.get(), -1));
+            rPrError(lua_tostring(lua_.get(), -2));
+            rPrError(lua_tostring(lua_.get(), -1));
             pop(2);
 
             return false;
@@ -267,11 +266,11 @@ bool RLuaScript::import(const std::string &lua)
     return true;
 }
 
-bool RLuaScript::import(const RData *buff, size_t size, const std::string &name)
+bool RScript::import(const RData *buff, size_t size, const std::string &name)
 {
     if(luaL_loadbuffer(lua_.get(), reinterpret_cast<const char*>(buff), size, name.c_str()) || lua_pcall(lua_.get(), 0, 0, 0))
     {
-        prError(lua_tostring(lua_.get(), -1));
+        rPrError(lua_tostring(lua_.get(), -1));
         pop();
         return false;
     }
@@ -279,17 +278,17 @@ bool RLuaScript::import(const RData *buff, size_t size, const std::string &name)
     return true;
 }
 
-void RLuaScript::release()
+void RScript::release()
 {
     lua_.reset();
 }
 
-int RLuaScript::absIndex(int idx)
+int RScript::absIndex(int idx)
 {
     return lua_absindex (lua_.get(), idx);
 }
 
-void swap(RLuaScript &scp1, RLuaScript &scp2)
+void swap(RScript &scp1, RScript &scp2)
 {
     scp1.swap(scp2);
 }

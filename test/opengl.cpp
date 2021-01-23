@@ -1,6 +1,6 @@
 #include <RGame.h>
 #include <RContext.h>
-#include <rsc/RShaderProg.h>
+#include <RShaders.h>
 #include <RDebug.h>
 
 using namespace Redopera;
@@ -19,28 +19,29 @@ const char *vCode =
 int main()
 {
     RGame game;
-    RContext context;
-    if(check(!context, "Failure initialization OpenGL context!"))
-        exit(EXIT_FAILURE);
 
     rDebug << "======== Using OpenGL Transform feedback to sqrt calculat ========\n";
+
     RContext::Format format;
     format.versionMajor = 3;
     format.versionMinor = 3;
+    RContext context(format);
 
-    if(context.setContex(format))
-        rDebug << "OpenGl Version " << GLVersion.major << '.' << GLVersion.minor << " created\n";
+    if(rCheck(!context, "Failure initialization OpenGL context!"))
+        exit(EXIT_FAILURE);
+    else
+        rDebug << "OpenGl Context " << GLVersion.major << '.' << GLVersion.minor << " created\n";
 
     RShader vertex(vCode, RShader::Type::Vertex);
-    RShaderProg renderProg({vertex});
+    RShaders renderProg({vertex});
 
     const char * varyings[] = { "outValue" };
-    glTransformFeedbackVaryings(renderProg.shaderProgramID(), 1, varyings, GL_INTERLEAVED_ATTRIBS);
+    glTransformFeedbackVaryings(renderProg.id(), 1, varyings, GL_INTERLEAVED_ATTRIBS);
 
     renderProg.reLinkProgram();
     // Interface实例存在期间，对应程序都处于using状态
-    RInterface interface = renderProg.useInterface();
-    GLuint program = renderProg.shaderProgramID();
+    RRPI interface = renderProg.use();
+    GLuint program = renderProg.id();
     rDebug << "Number: \t1 \t 2 \t 3 \t 4 \t 5";
 
     // ================ OpenGL ================

@@ -78,7 +78,7 @@ public:
      * %z，%Z 时区名称，如果不能得到时区名称则返回空字符。
      * %% 百分号
      */
-    std::string toStdString() const
+    std::string toString() const
     {
         static char buffer[64] {0};
         std::strftime(buffer, sizeof(buffer), format.c_str(), &time_);
@@ -87,7 +87,7 @@ public:
 
     void setTimeFormat(const std::string &fmt = "")
     {
-        static const std::string DEFAULT_FORMAT = "%Y-%m-%d %H:%M:%S";
+        static std::string DEFAULT_FORMAT = "%Y-%m-%d %H:%M:%S";
         format = fmt.empty() ? DEFAULT_FORMAT : fmt;
     }
 

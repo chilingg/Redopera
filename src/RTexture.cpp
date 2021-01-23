@@ -19,22 +19,22 @@ const RTexture::Format RTexture::SingleN { { Filter::Nearest, Filter::Nearest },
 
 RTexture::Format RTexture::textureFormat;
 
-RTexture RTexture::whiteTex()
+RTexture RTexture::createWhiteTex()
 {
     return { reinterpret_cast<const RData*>("\xff\xff\xff"), 1, 1, 3, RTexture::Nearest3 };
 }
 
-RTexture RTexture::blackTex()
+RTexture RTexture::createBlackTex()
 {
     return { reinterpret_cast<const RData*>("\x0\x0\x0"), 1, 1, 3, RTexture::Nearest3 };
 }
 
-RTexture RTexture::redTex()
+RTexture RTexture::createRedTex()
 {
     return { reinterpret_cast<const RData*>("\xff\x0\x0"), 1, 1, 3, RTexture::Nearest3 };
 }
 
-RTexture RTexture::transTex()
+RTexture RTexture::createTransTex()
 {
     return { reinterpret_cast<const RData*>("\x0\x0\x0\x0"), 1, 1, 4, RTexture::Nearest4 };
 }
@@ -68,9 +68,47 @@ RTexture RTexture::colorTexture(unsigned r, unsigned g, unsigned b, unsigned a)
     return colorTexture(color.rgba());
 }
 
-void RTexture::unbindTexture()
+void RTexture::unbind()
 {
     glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+RTexture::InFormat RTexture::inFormat(int channel)
+{
+    InFormat iformat;
+    switch(channel)
+    {
+    case 4:
+        iformat = InFormat::RGBA8; break;
+    case 3:
+        iformat = InFormat::RGB8; break;
+    case 2:
+        iformat = InFormat::RG8; break;
+    case 1:
+        iformat = InFormat::R8; break;
+    default:
+        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(channel));
+    }
+    return iformat;
+}
+
+RTexture::ExtFormat RTexture::extFormat(int channel)
+{
+    ExtFormat eformat;
+    switch(channel)
+    {
+    case 4:
+        eformat = ExtFormat::RGBA; break;
+    case 3:
+        eformat = ExtFormat::RGB; break;
+    case 2:
+        eformat = ExtFormat::RG; break;
+    case 1:
+        eformat = ExtFormat::RED; break;
+    default:
+        throw std::invalid_argument("Invalid set texture echannel to " + std::to_string(channel));
+    }
+    return eformat;
 }
 
 RTexture::RTexture(const std::string &path, const RTexture::Format &format)
@@ -140,7 +178,12 @@ RSize RTexture::size() const
     return RSize(width_, height_);
 }
 
-GLuint RTexture::textureID() const
+const RTexture::Format &RTexture::format() const
+{
+    return format_;
+}
+
+GLuint RTexture::id() const
 {
     return *textureID_;
 }
@@ -157,36 +200,6 @@ bool RTexture::load(const RData *data, int width, int height, int echannel, cons
     glGenTextures(1, &id);
     textureID_.reset(new GLuint(id), deleteTexture);
 
-    ExtFormat eformat;
-    switch(echannel)
-    {
-    case 4:
-        eformat = ExtFormat::RGBA; break;
-    case 3:
-        eformat = ExtFormat::RGB; break;
-    case 2:
-        eformat = ExtFormat::RG; break;
-    case 1:
-        eformat = ExtFormat::RED; break;
-    default:
-        throw std::invalid_argument("Invalid set texture echannel to " + std::to_string(echannel));
-    }
-
-    inFormat iformat;
-    switch(format.inChannel)
-    {
-    case 4:
-        iformat = inFormat::RGBA8; break;
-    case 3:
-        iformat = inFormat::RGB8; break;
-    case 2:
-        iformat = inFormat::RG8; break;
-    case 1:
-        iformat = inFormat::R8; break;
-    default:
-        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format.inChannel));
-    }
-
     glBindTexture(GL_TEXTURE_2D, *textureID_);
     glTexParameterIuiv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, format.edgeColor.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, static_cast<GLint>(format.wrap.s));
@@ -194,7 +207,8 @@ bool RTexture::load(const RData *data, int width, int height, int echannel, cons
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<GLint>(format.filter.min));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, static_cast<GLint>(format.filter.max));
 
-    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(iformat), width, height, 0, static_cast<GLenum>(eformat), GL_UNSIGNED_BYTE, data);
+    glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(inFormat(format.inChannel)),
+                 width, height, 0, static_cast<GLenum>(extFormat(echannel)), GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     format_ = format;
@@ -215,31 +229,14 @@ bool RTexture::load(const std::string &path, const RTexture::Format &format)
 
 void RTexture::reload(const RData *data)
 {
-    if(!textureID_.unique())
-        load(data, width_, height_, format_.inChannel, format_);
-
-    ExtFormat eformat;
-    switch(format_.inChannel)
+    if(textureID_.unique())
     {
-    case 4:
-        eformat = ExtFormat::RGBA;
-        break;
-    case 3:
-        eformat = ExtFormat::RGB;
-        break;
-    case 2:
-        eformat = ExtFormat::RG;
-        break;
-    case 1:
-        eformat = ExtFormat::RED;
-        break;
-    default:
-        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format_.inChannel));
+        glBindTexture(GL_TEXTURE_2D, *textureID_);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width_, height_, static_cast<GLint>(extFormat(format_.inChannel)), GL_UNSIGNED_BYTE, data);
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
-
-    glBindTexture(GL_TEXTURE_2D, *textureID_);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width_, height_, static_cast<GLint>(eformat), GL_UNSIGNED_BYTE, data);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    else
+        load(data, width_, height_, format_.inChannel, format_);
 }
 
 void RTexture::setSubTexture(const RRect &rect, const RData *data)
@@ -247,37 +244,18 @@ void RTexture::setSubTexture(const RRect &rect, const RData *data)
     setSubTexture(rect.width(), rect.height(), rect.left(), rect.bottom(), data);
 }
 
-void RTexture::setSubTexture(const RSize &size, const RPoint2 &pos, const RData *data)
+void RTexture::setSubTexture(const RPoint2 &pos, const RSize &size, const RData *data)
 {
     setSubTexture(size.width(), size.height(), pos.x(), pos.y(), data);
 }
 
-void RTexture::setSubTexture(int width, int height, int x, int y, const RData *data)
+void RTexture::setSubTexture(int x, int y, int width, int height, const RData *data)
 {
     if(!textureID_.unique())
-        load(data, width_, height_, format_.inChannel, format_);
-
-    ExtFormat eformat;
-    switch(format_.inChannel)
-    {
-    case 4:
-        eformat = ExtFormat::RGBA;
-        break;
-    case 3:
-        eformat = ExtFormat::RGB;
-        break;
-    case 2:
-        eformat = ExtFormat::RG;
-        break;
-    case 1:
-        eformat = ExtFormat::RED;
-        break;
-    default:
-        throw std::invalid_argument("Invalid set texture ichannel to " + std::to_string(format_.inChannel));
-    }
+        copyOnWrite();
 
     glBindTexture(GL_TEXTURE_2D, *textureID_);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, static_cast<GLint>(eformat), GL_UNSIGNED_BYTE, data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, static_cast<GLint>(extFormat(format_.inChannel)), GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
@@ -290,6 +268,14 @@ void RTexture::deleteTexture(GLuint *id)
 {
     glDeleteTextures(1, id);
     delete id;
+}
+
+void RTexture::copyOnWrite()
+{
+    std::unique_ptr<RData[]> data = std::make_unique<RData[]>(width_ * height_ * format_.inChannel);
+    bind();
+    glGetTexImage(GL_TEXTURE_2D, 0, static_cast<GLint>(extFormat(format_.inChannel)), GL_UNSIGNED_BYTE, data.get());
+    load(data.get(), width_, height_, format_.inChannel, format_);
 }
 
 void swap(RTexture &tex, RTexture &tex2)

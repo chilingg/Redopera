@@ -1,38 +1,36 @@
-#include <RTextbox.h>
+#include <RTextsLoader.h>
 #include <RRect.h>
-#include <rsc/RImage.h>
-
 #include <vector>
 
 using namespace Redopera;
 
-RTextbox::Format RTextbox::fontFmt;
+RTextsLoader::Format RTextsLoader::fontFmt;
 
-void RTextbox::setDefaultFontFmt(RTextbox::Format fmt)
+void RTextsLoader::setDefaultFontFmt(const Format &fmt)
 {
     fontFmt = fmt;
 }
 
-const RTextbox::Format &RTextbox::getDefaultFontFmt()
+const RTextsLoader::Format &RTextsLoader::defaultFontFmt()
 {
     return fontFmt;
 }
 
-RTextbox::RTextbox():
-    RTextbox(L"Text Label", 90, 25)
+RTextsLoader::RTextsLoader():
+    RTextsLoader(L"Input Texts", 90, 25)
 {
 
 }
 
-RTextbox::RTextbox(const std::wstring &text, int width, int height, const Format &fmt):
-    RTextbox(text, RSize(width, height), fmt)
+RTextsLoader::RTextsLoader(const std::wstring &text, int width, int height, const Format &fmt):
+    RTextsLoader(text, RSize(width, height), fmt)
 {
 
 }
 
-RTextbox::RTextbox(const std::wstring &text, const RSize &size, const Format &fmt):
+RTextsLoader::RTextsLoader(const std::wstring &text, const RSize &size, const Format &fmt):
     typesetting(fmt.typeset == Typeset::Vertical ?
-                    &RTextbox::verticalTextToTexture : &RTextbox::horizontalTextToTexture),
+                    &RTextsLoader::verticalTextToTexture : &RTextsLoader::horizontalTextToTexture),
     format_(fmt),
     texts_(text),
     size_(size)
@@ -41,185 +39,160 @@ RTextbox::RTextbox(const std::wstring &text, const RSize &size, const Format &fm
 }
 
 
-RTextbox::RTextbox(const RTextbox &box):
-    typeset_(box.typeset_),
+RTextsLoader::RTextsLoader(const RTextsLoader &box):
+    dirty_(box.dirty_),
     typesetting(box.typesetting),
     format_(box.format_),
     texts_(box.texts_),
-    font_(box.font_),
-    size_(box.size_),
-    textTex_(box.textTex_)
+    size_(box.size_)
 {
 
 }
 
-RTextbox::RTextbox(RTextbox &&box):
-    typeset_(box.typeset_),
+RTextsLoader::RTextsLoader(RTextsLoader &&box):
+    dirty_(box.dirty_),
     typesetting(box.typesetting),
     format_(std::move(box.format_)),
     texts_(std::move(box.texts_)),
-    font_(std::move(box.font_)),
-    size_(box.size_),
-    textTex_(std::move(box.textTex_))
+    size_(box.size_)
 {
 
 }
 
-RTextbox &RTextbox::operator=(const RTextbox &box)
+RTextsLoader &RTextsLoader::operator=(const RTextsLoader &box)
 {
-    typeset_ = box.typeset_;
+    dirty_ = box.dirty_;
     typesetting = box.typesetting;
     format_ = box.format_;
     texts_ = box.texts_;
-    font_ = box.font_;
     size_ = box.size_;
-    textTex_ = box.textTex_;
     return *this;
 }
 
-RTextbox &RTextbox::operator=(const RTextbox &&box)
+RTextsLoader &RTextsLoader::operator=(const RTextsLoader &&box)
 {
-    typeset_ = box.typeset_;
+    dirty_ = box.dirty_;
     typesetting = box.typesetting;
     format_ = std::move(box.format_);
     texts_ = std::move(box.texts_);
-    font_ = std::move(box.font_);
     size_ = box.size_;
-    textTex_ = std::move(box.textTex_);
     return *this;
 }
 
-bool RTextbox::isDirty() const
+bool RTextsLoader::isDirty() const
 {
-    return typeset_;
+    return dirty_;
 }
 
-const RSize &RTextbox::size() const
+const RSize &RTextsLoader::size() const
 {
     return size_;
 }
 
-const RTexture &RTextbox::texture()
+const RTexture &RTextsLoader::texture() const
 {
-    if(typeset_)
-        updataTex();
+    if(dirty_)
+        const_cast<RTextsLoader*>(this)->updataTex();
 
-    return textTex_;
+    return tex_;
 }
 
-const RImage &RTextbox::image()
+const RImage &RTextsLoader::image() const
 {
-    if(typeset_)
-        updataTex();
+    if(dirty_)
+        const_cast<RTextsLoader*>(this)->updataTex();
 
-    return loader_;
+    return img_;
 }
 
-const RFont &RTextbox::font() const
+const RFont &RTextsLoader::font() const
 {
     return font_;
 }
 
-const RTextbox::Format &RTextbox::textFormat() const
+const RTextsLoader::Format &RTextsLoader::textFormat() const
 {
     return format_;
 }
 
-const std::wstring &RTextbox::texts() const
+const std::wstring &RTextsLoader::texts() const
 {
     return texts_;
 }
 
-RSize &RTextbox::rSize()
+RSize &RTextsLoader::rSize()
 {
-    typeset_ = true;
+    dirty_ = true;
     return size_;
 }
 
-void RTextbox::setFontColor(RGBA rgba)
-{
-    setFontColor(RColor(rgba));
-}
-
-void RTextbox::setFontColor(const RColor &color)
-{
-    format_.fcolor = color;
-    typeset_ = true;
-}
-
-void RTextbox::setFontColor(unsigned r, unsigned g, unsigned b)
-{
-    setFontColor(RColor(r, g, b));
-}
-
-void RTextbox::setTexts(std::wstring texts)
+void RTextsLoader::setTexts(std::wstring texts)
 {
     texts_ = texts;
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::setFontSize(unsigned size)
+void RTextsLoader::setFontSize(unsigned size)
 {
     font_.setSize(size);
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::setFont(const RFont &font)
+void RTextsLoader::setFont(const RFont &font)
 {
     font_ = font;
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::setTextFormat(const Format &format)
+void RTextsLoader::setTextsFormat(const Format &format)
 {
     typesetting = format.typeset == Typeset::Vertical ?
-                &RTextbox::verticalTextToTexture : &RTextbox::horizontalTextToTexture;
+                &RTextsLoader::verticalTextToTexture : &RTextsLoader::horizontalTextToTexture;
     format_ = format;
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::setAlign(RTextbox::Align v, RTextbox::Align h)
+void RTextsLoader::setAlign(RTextsLoader::Align v, RTextsLoader::Align h)
 {
     format_.align = { v, h };
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::setLineSpacing(float value)
+void RTextsLoader::setLineSpacing(float value)
 {
     format_.lSpacing = value;
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::setWordSpacing(float value)
+void RTextsLoader::setWordSpacing(float value)
 {
     format_.wSpacing = value;
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::vertical()
+void RTextsLoader::vertical()
 {
-    typesetting = &RTextbox::verticalTextToTexture;
+    typesetting = &RTextsLoader::verticalTextToTexture;
     format_.typeset = Typeset::Vertical;
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::horizontal()
+void RTextsLoader::horizontal()
 {
-    typesetting = &RTextbox::horizontalTextToTexture;
+    typesetting = &RTextsLoader::horizontalTextToTexture;
     format_.typeset = Typeset::Horizontal;
-    typeset_ = true;
+    dirty_ = true;
 }
 
-void RTextbox::updataTex()
+void RTextsLoader::updataTex()
 {
-    if (loader_.size() != size_)
-        loader_.load(nullptr, size_.width(), size_.height(), 4);
+    if (img_.size() != size_)
+        img_.load(nullptr, size_.width(), size_.height(), 1);
 
-    uint32_t *p = reinterpret_cast<uint32_t*>(loader_.data());
-    std::fill(p, p + (size_.width() * size().height()), (format_.fcolor.bgr()));
+    std::fill(img_.data(), img_.data() + (size_.width() * size().height()), '\0');
 
     (this->*typesetting)();
-    typeset_ = false;
+    dirty_ = false;
 }
 
 void rotate90(RData *dest, const RData *src, int width, int height)
@@ -233,12 +206,11 @@ void rotate90(RData *dest, const RData *src, int width, int height)
     }
 }
 
-void RTextbox::verticalTextToTexture()
+void RTextsLoader::verticalTextToTexture()
 {
-    RRect area(size_.width() - format_.padding.l - format_.padding.r,
-               size_.height() - format_.padding.t - format_.padding.b,
-               format_.padding.l,
-               format_.padding.t);
+    RRect area(format_.padding.l, format_.padding.t,
+               size_.width() - format_.padding.l - format_.padding.r,
+               size_.height() - format_.padding.t - format_.padding.b);
     const int advanceL = font_.size() * format_.lSpacing; // 行步进
     int linepos = format_.padding.r;
     int fsize = static_cast<int>(font_.size());
@@ -333,8 +305,7 @@ void RTextbox::verticalTextToTexture()
                     {
                         for(int x = 0; x < glyph->width; ++x)
                         {
-                            loader_.data()[(starty + y) * size_.width() * 4 + (startx + x) * 4 + 3]
-                                    = glyph->data.get()[y * glyph->width + x];
+                            img_.data()[(starty + y) * size_.width() + (startx + x)] = glyph->data.get()[y * glyph->width + x];
                         }
                     }
                     wordpos += glyph->advence * format_.wSpacing;
@@ -353,28 +324,24 @@ void RTextbox::verticalTextToTexture()
         {
             for(int x = 0; x < incre; ++x)
             {
-                loader_.data()[y * size().width() * 4 + x * 4] = '\xff';
-                loader_.data()[y * size().width() * 4 + x * 4 + 1] = '\x00';
-                loader_.data()[y * size().width() * 4 + x * 4 + 2] = '\x00';
-                loader_.data()[y * size().width() * 4 + x * 4 + 3] = '\xff';
+                img_.data()[y * size().width() + x] = '\xff';
             }
             ++incre;
         }
     }
 
-    loader_.flipV();
-    if (size_ == textTex_.size())
-        textTex_.reload(loader_.data());
+    img_.flipV();
+    if (size_ == tex_.size())
+        tex_.reload(img_.data());
     else
-        textTex_.load(loader_.data(), size_.width(), size_.height(), 4, RTexture::Linear4);
+        tex_.load(img_.data(), size_.width(), size_.height(), 1, RTexture::SingleL);
 }
 
-void RTextbox::horizontalTextToTexture()
+void RTextsLoader::horizontalTextToTexture()
 {
-    RRect area(size_.width() - format_.padding.l - format_.padding.r,
-               size_.height() - format_.padding.t - format_.padding.b,
-               format_.padding.l,
-               format_.padding.t);
+    RRect area(format_.padding.l, format_.padding.t,
+               size_.width() - format_.padding.l - format_.padding.r,
+               size_.height() - format_.padding.t - format_.padding.b);
     const int advanceL = font_.size() * format_.lSpacing; // 行步进
     int linepos = area.bottom();
     int fsize = static_cast<int>(font_.size());
@@ -456,8 +423,7 @@ void RTextbox::horizontalTextToTexture()
                     {
                         for(int x = 0; x < glyph->width; ++x)
                         {
-                            loader_.data()[(starty + y) * size_.width() * 4 + (startx + x) * 4 + 3]
-                                    = glyph->data.get()[y * glyph->width + x];
+                            img_.data()[(starty + y) * size_.width() + (startx + x)] = glyph->data.get()[y * glyph->width + x];
                         }
                     }
                     wordpos += glyph->advence * format_.wSpacing;
@@ -476,18 +442,15 @@ void RTextbox::horizontalTextToTexture()
         {
             for(int x = size_.width() - incre; x < size_.width(); ++x)
             {
-                loader_.data()[y * size().width() * 4 + x * 4] = '\xff';
-                loader_.data()[y * size().width() * 4 + x * 4 + 1] = '\x00';
-                loader_.data()[y * size().width() * 4 + x * 4 + 2] = '\x00';
-                loader_.data()[y * size().width() * 4 + x * 4 + 3] = '\xff';
+                img_.data()[y * size().width() + x] = '\xff';
             }
             ++incre;
         }
     }
 
-    loader_.flipV();
-    if (size_ == textTex_.size())
-        textTex_.reload(loader_.data());
+    img_.flipV();
+    if (size_ == tex_.size())
+        tex_.reload(img_.data());
     else
-        textTex_.load(loader_.data(), size_.width(), size_.height(), 4, RTexture::Linear4);
+        tex_.load(img_.data(), size_.width(), size_.height(), 1, RTexture::SingleL);
 }

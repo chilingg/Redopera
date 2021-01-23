@@ -1,10 +1,12 @@
 #ifndef RIMAGE_H
 #define RIMAGE_H
 
-#include "RResource.h"
+#include <string>
 #include <memory>
 
 namespace Redopera {
+
+using RData = uint8_t;
 
 class RSize;
 class RColor;
@@ -31,7 +33,7 @@ public:
     int channel() const;
     RData* data() const;
 
-    bool load(std::string path, bool flip = false);
+    bool load(const std::string &path, bool flip = false);
     bool load(const RData *buf, size_t size, bool flip = false);
     bool load(const RData *data, int width, int height, int channel);
     void flipV();

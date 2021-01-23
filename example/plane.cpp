@@ -1,149 +1,114 @@
 #include <RWindow.h>
-#include <RController.h>
-#include <RInputModule.h>
 #include <RPlane.h>
 #include <RGame.h>
-#include <RRect.h>
 #include <RKeeper.h>
-#include <REvent.h>
-#include <RRenderSystem.h>
-#include <RTextbox.h>
-#include <rsc/RShaderProg.h>
-#include <rsc/RImage.h>
-#include <RDebug.h>
+#include <RInput.h>
+#include <RTimer.h>
 
 using namespace Redopera;
-
-const GLchar *vCode =
-R"--(
-#version 330 core
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec2 aTexCoor;
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-out vec2 texCoor;
-void main(void)
-{
-    texCoor = aTexCoor;
-    gl_Position = projection * view * model* vec4(aPos, 1.0);
-}
-)--";
-
-const GLchar *fCode =
-R"--(
-#version 330 core
-uniform sampler2D tex;
-in vec2 texCoor;
-out vec4 outColor;
-void main(void)
-{
-    outColor = texture(tex, texCoor);
-}
-)--";
 
 class TestCtl
 {
 public:
     TestCtl():
-        ctrl("TestCtrl", this),
-        plane(36, 36, RPoint(0, 0), RImage::redoperaIcon())
+        node("TestCtrl", this),
+        plane({ RPoint(0), RSize(36, 36) })
     {
-        plane.flipV();
+        plane.setTexture(RTexture(RImage::redoperaIcon()));
+        plane.setFlipV();
 
-        RTextbox arrowLoad(L"↑", 50, 50);
+        RTextsLoader arrowLoad(L"↑", 50, 50);
 
-        arrowLoad.setAlign(RTextbox::Align::Mind, RTextbox::Align::Mind);
+        arrowLoad.setAlign(RTextsLoader::Align::Mind, RTextsLoader::Align::Mind);
         arrowLoad.setFontSize(36);
-        arrowLoad.setFontColor(50, 50, 60);
-        arrow[0].setTexture(arrowLoad.texture());
-        arrow[0].rSize() = arrowLoad.size();
-        arrow[1] = arrow[0];
-        arrow[2] = arrow[0];
-        arrow[3] = arrow[0];
 
+        arrow[0].setTexture(arrowLoad.texture(), true);
+        arrow[0].setSize(arrowLoad.size());
+
+        arrow[1] = arrow[0];
         arrow[1].setRotate(0, 0, glm::radians(90.0f));
+
+        arrow[2] = arrow[0];
         arrow[2].setRotate(0, 0, glm::radians(180.0f));
+
+        arrow[3] = arrow[0];
         arrow[3].setRotate(0, 0, glm::radians(270.0f));
 
-        ctrl.setUpdataFunc(std::bind(&TestCtl::control, this));
-        ctrl.setProcessFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
-        ctrl.setTransFunc(std::bind(&TestCtl::translation, this, std::placeholders::_1));
-
-        rSystem.setShaderProg(RShaderProg({ RShader(vCode, RShader::Type::Vertex),
-                                          RShader(fCode, RShader::Type::Fragment)}));
-        rSystem.setCameraMove();
+        node.setUpdateFunc([this](RRenderSys *sys){ update(sys); });
+        node.setTransformFunc([this](RNode *sender, const RTransform &info){ translation(sender, info); });
+        node.setProcessFunc([this](RNode *sender, RNode::Instructs *ins) { processEvent(sender, ins); });
     }
 
-    void control()
+    void update(RRenderSys *sys)
     {
-        rSystem.renderer() << arrow[0]
-                << arrow[1]
-                << arrow[2]
-                << arrow[3]
-                << plane;
+        sys->setMainShaders("SingleShader");
+        RRPI rpi = sys->shaders().use();
+        rpi.setUniform(sys->shaders().uniformLoccal("color"), .1f, .1f, .14f);
+        *sys<< arrow[0] << arrow[1] << arrow[2] << arrow[3];
+        rpi.reset();
+
+        sys->setMainShaders("SimpleShader");
+        *sys << plane;
     }
 
-    void translation(TransEvent* info)
+    void translation(RNode *, const RTransform &info)
     {
-        viewpro.set(info->size, info->pos);
+        viewpro = info.rect();
 
-        plane.rPos().setX(info->size.width()/2 - plane.size().width()/2);
-        plane.rPos().setY(info->size.height()/2 - plane.size().height()/2);
+        plane.rRect().setCenter(info.rect().center());
 
-        arrow[0].rPos().set(info->size.width()/2 - arrow[0].size().width()/2, info->size.height()/2 - arrow[0].size().height()/2 + 60, 0);
-        arrow[1].rPos().set(info->size.width()/2 - arrow[0].size().width()/2 - 60, info->size.height()/2 - arrow[0].size().height()/2, 0);
-        arrow[2].rPos().set(info->size.width()/2 - arrow[0].size().width()/2, info->size.height()/2 - arrow[0].size().height()/2 - 60, 0);
-        arrow[3].rPos().set(info->size.width()/2 - arrow[0].size().width()/2 + 60, info->size.height()/2 - arrow[0].size().height()/2, 0);
-
-        // 必须设置一次的视口
-        rSystem.setViewprot(0, info->size.width(), 0, info->size.height());
+        arrow[0].rRect().setCenter(info.rect().center());
+        arrow[0].rRect().move(0, 60);
+        arrow[1].rRect().setCenter(info.rect().center());
+        arrow[1].rRect().move(-60, 0);
+        arrow[2].rRect().setCenter(info.rect().center());
+        arrow[2].rRect().move(0, -60);
+        arrow[3].rRect().setCenter(info.rect().center());
+        arrow[3].rRect().move(60, 0);
     }
 
-    void inputEvent(ProcessEvent *e)
+    void processEvent(RNode *, RNode::Instructs *)
     {
-        RWindow* window = RWindow::mainWindow();
+        RWindow* window = node.root()->holder<RWindow>();
         if(window->cursorMode() == RWindow::CursorMode::Hidden)
         {
-            if(window->input()->pos() != prePos)
+            if(RInput::input().cursorMove())
                 window->setCursorModel(RWindow::CursorMode::Normal);
         }
         else if(window->cursorMode() == RWindow::CursorMode::Normal)
         {
-            if(window->input()->pos() != prePos)
+            if(RInput::input().cursorMove())
                 timer.start();
-            else if(window->input()->pos() == prePos && timer.elapsed() > 1500)
+            else if(timer.elapsed() > 1500)
                 window->setCursorModel(RWindow::CursorMode::Hidden);
         }
 
         // inputEvent只能监测感兴趣的按键
-        if(window->input()->press(Keys::KEY_ESCAPE))
-            ctrl.getParent()->breakLoop();
+        if(RInput::input().press(Keys::KEY_ESCAPE))
+            node.breakLooping();
 
         RPoint3 p(0);
-        if(window->input()->status(Keys::KEY_LEFT) == BtnAct::PRESS)
-            p.rx() -= 1;
-        if(window->input()->status(Keys::KEY_RIGHT) == BtnAct::PRESS)
-            p.rx() += 1;
-        if(window->input()->status(Keys::KEY_UP) == BtnAct::PRESS)
-            p.ry() += 1;
-        if(window->input()->status(Keys::KEY_DOWN) == BtnAct::PRESS)
-            p.ry() -= 1;
-        if(!p.isOrigin() && viewpro.contains(plane.rect() + p))
-            plane.rPos() = plane.pos() + p;
+        int step = 5;
+        if(RInput::input().status(Keys::KEY_LEFT) == BtnAct::PRESS)
+            p.rx() -= step;
+        if(RInput::input().status(Keys::KEY_RIGHT) == BtnAct::PRESS)
+            p.rx() += step;
+        if(RInput::input().status(Keys::KEY_UP) == BtnAct::PRESS)
+            p.ry() += step;
+        if(RInput::input().status(Keys::KEY_DOWN) == BtnAct::PRESS)
+            p.ry() -= step;
 
-        prePos = window->input()->pos();
+        if(!p.isOrigin() && viewpro.contains(plane.rect() + p))
+            plane.rRect().move(p);
     }
 
-    RController ctrl;
+    RNode node;
 
 private:
     RPlane plane;
     RPlane arrow[4];
     RRect viewpro;
     RTimer timer;
-    RPoint2 prePos;
-    RRenderSystem rSystem;
 };
 
 int main()
@@ -151,11 +116,12 @@ int main()
     RGame game;
     RWindow::Format format;
     format.background = 0x101018ff;
+    format.debug = false;
     RWindow window(480, 480, "Plane", format);
 
     TestCtl t;
-    t.ctrl.changeParent(window.ctrl());
+    t.node.changeParent(&window.node);
 
     window.show();
-    return game.exec(&window);
+    return window.node.exec();
 }

@@ -1,8 +1,5 @@
-#ifndef RLUASCRIPT_H
-#define RLUASCRIPT_H
-
-#include "RResource.h"
-#include <memory>
+#ifndef RSCRIPT_H
+#define RSCRIPT_H
 
 extern "C" {
 
@@ -12,9 +9,14 @@ extern "C" {
 
 }
 
+#include <string>
+#include <memory>
+
 namespace Redopera {
 
-enum class LuaType
+using RData = uint8_t;
+
+enum class Type
 {
     None = LUA_TNONE,
     Nin = LUA_TNIL,
@@ -28,17 +30,17 @@ enum class LuaType
     Thread = LUA_TTHREAD
 };
 
-class RLuaScript
+class RScript
 {
 public:
-    RLuaScript() = default;
-    RLuaScript(const std::string &lua);
-    RLuaScript(const RData *data, size_t size, const std::string &name = "RLua");
-    RLuaScript(const RLuaScript &scp);
-    RLuaScript(const RLuaScript &&scp);
-    RLuaScript& operator=(RLuaScript scp);
-    ~RLuaScript() = default;
-    void swap(RLuaScript &scp);
+    RScript() = default;
+    RScript(const std::string &lua);
+    RScript(const RData *data, size_t size, const std::string &name = "RLua");
+    RScript(const RScript &scp);
+    RScript(const RScript &&scp);
+    RScript& operator=(RScript scp);
+    ~RScript() = default;
+    void swap(RScript &scp);
 
     bool isValid() const;
 
@@ -48,8 +50,8 @@ public:
     bool valueIsNumber(int index = -1) const;
     bool valueIsString(int index = -1) const;
     bool valueIsTable(int index = -1) const;
-    LuaType valueType(int index) const;
-    std::string typeName(LuaType type);
+    Type valueType(int index) const;
+    std::string typeName(Type type);
 
     int stackSize() const;
 
@@ -94,6 +96,6 @@ private:
 
 } // Redopera
 
-void swap(Redopera::RLuaScript &scp1, Redopera::RLuaScript &scp2);
+void swap(Redopera::RScript &scp1, Redopera::RScript &scp2);
 
-#endif // RLUASCRIPT_H
+#endif // RSCRIPT_H

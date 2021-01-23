@@ -5,7 +5,7 @@ using namespace Redopera;
 
 void message()
 {
-    prError("Please enter a path for mp3 file!");
+    rPrError("Please enter a path for mp3 file!");
     exit(EXIT_SUCCESS);
 }
 

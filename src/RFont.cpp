@@ -1,8 +1,8 @@
 #include <rsc/RFont.h>
 #include <rsc/RFile.h>
 #include <RDebug.h>
-#include <dependents/stb_truetype.h>
-#include <dependents/SourceCodePro.h>
+#include <stb_truetype.h>
+#include <SourceCodePro.h>
 
 #include <cstring>
 #include <atomic>
@@ -111,19 +111,22 @@ const RFont::Glyph* RFont::getFontGlyph(RFont::RChar c) const
 void RFont::setSize(unsigned size)
 {
     if (size != cache_.fsize)
-        cache_ = { std::make_shared<std::map<RChar, Glyph>>(), size };
+    {
+        cache_.caches = std::make_shared<std::map<RChar, Glyph>>();
+        cache_.fsize = size;
+    }
 }
 
-bool RFont::load(std::string path)
+bool RFont::load(const std::string &path)
 {
     RFile file = RFile::load(path);
 
-    check(!file.size, "Failed to load font in " + path);
+    rCheck(!file.size, "Failed to load font in " + path);
 
     std::shared_ptr<stbtt_fontinfo> info = std::make_shared<stbtt_fontinfo>();
     stbtt_InitFont(info.get(), file.data.get(), stbtt_GetFontOffsetForIndex(file.data.get(),0));
 
-    if(check(info->numGlyphs == 0, "Unknow font file in " + path))
+    if(rCheck(info->numGlyphs == 0, "Unknow font file in " + path))
         return false;
 
     data_ = { std::move(file.data), std::move(info) };
@@ -135,7 +138,7 @@ bool RFont::load(const RData *data, size_t size)
     std::shared_ptr<stbtt_fontinfo> info = std::make_shared<stbtt_fontinfo>();
     stbtt_InitFont(info.get(), data, 0);
 
-    if(check(info->numGlyphs == 0, "Unknow font file"))
+    if(rCheck(info->numGlyphs == 0, "Unknow font file"))
         return false;
 
     std::shared_ptr<RData[]> p(new RData[size]);

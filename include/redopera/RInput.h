@@ -1,18 +1,15 @@
-#ifndef RINPUTMODULE_H
-#define RINPUTMODULE_H
+#ifndef RINPUT_H
+#define RINPUT_H
 
 #include "ROpenGL.h"
+#include "RSigslot.h"
 #include "RPoint.h"
 
-#include <map>
+#include <vector>
 #include <set>
+#include <atomic>
 
 namespace Redopera {
-
-// 按键的注册是在初次Input Event查询时进行的
-
-class RWindow;
-class RGame;
 
 enum class Keys
 {
@@ -143,9 +140,9 @@ enum class Keys
     KEY_LAST = GLFW_KEY_LAST
 };
 
-enum class GamepadBtn
+enum class GamepadBtn : unsigned
 {
-    GAMEPAD_BUTTON_A,//GLFW_GAMEPAD_BUTTON_A,
+    GAMEPAD_BUTTON_A = 0,//GLFW_GAMEPAD_BUTTON_A,
     GAMEPAD_BUTTON_B,
     GAMEPAD_BUTTON_X,
     GAMEPAD_BUTTON_Y,
@@ -163,9 +160,9 @@ enum class GamepadBtn
     GAMEPAD_BUTTON_LAST = GAMEPAD_BUTTON_DPAD_LEFT
 };
 
-enum class GamepadAxes
+enum class GamepadAxes : unsigned
 {
-    GAMEPAD_AXIS_LEFT_X,//GLFW_GAMEPAD_AXIS_LEFT_X,
+    GAMEPAD_AXIS_LEFT_X = 0,//GLFW_GAMEPAD_AXIS_LEFT_X,
     GAMEPAD_AXIS_LEFT_Y,
     GAMEPAD_AXIS_RIGHT_X,
     GAMEPAD_AXIS_RIGHT_Y,
@@ -188,39 +185,25 @@ enum class BtnAct
     PRESS = GLFW_PRESS
 };
 
-enum class JoystickID
-{
-    JOYSTICK_1 = GLFW_JOYSTICK_1,
-    JOYSTICK_2,
-    JOYSTICK_3,
-    JOYSTICK_4,
-    JOYSTICK_5,
-    JOYSTICK_6,
-    JOYSTICK_7,
-    JOYSTICK_8,
-    JOYSTICK_9,
-    JOYSTICK_10,
-    JOYSTICK_11,
-    JOYSTICK_12,
-    JOYSTICK_13,
-    JOYSTICK_14,
-    JOYSTICK_15,
-    JOYSTICK_16,
-    JOYSTICK_LAST = JOYSTICK_16
-};
-
 enum class JoystickPresent
 {
     CONNECTED = GLFW_CONNECTED,
     DISCONNECTED = GLFW_DISCONNECTED
 };
 
-class RInputModule
-{
-    friend RGame;
+class RPoint2;
+class RWindow;
 
-    struct GamepadValue
+class RInput
+{
+    friend RWindow;
+
+    struct Gamepad
     {
+        Gamepad(int jid);
+        Gamepad(const Gamepad &gamepad);
+
+        int jid;
         GLFWgamepadstate status;
         unsigned char preButtons[15];
     };
@@ -229,61 +212,69 @@ public:
     static BtnAct toButtonAction(int action);
     static Keys toKey(int key);
     static MouseBtn toMouseButtons(int button);
-    static JoystickID toJoystickID(int jid);
 
-    static int gamepadCount();
-    static JoystickID getJoystickID(int index = 0);
-    static bool isValidJid(JoystickID jid);
+    static RInput& input();
+
+    RInput(RInput &) = delete;
+    RInput& operator=(const RInput &) = delete;
+
+    ~RInput() = default;
+
+    BtnAct status(Keys key) const;
+    BtnAct status(MouseBtn btn) const;
+    BtnAct status(GamepadBtn btn, unsigned player = 1) const;
+    float status(GamepadAxes axis, unsigned player = 1) const;
+
+    bool press(Keys key) const;
+    bool press(MouseBtn btn) const;
+    bool press(GamepadBtn btn, unsigned player = 1) const;
+
+    bool release(Keys key) const;
+    bool release(MouseBtn btn) const;
+    bool release(GamepadBtn btn, unsigned player = 1) const;
+
+    bool cursorMove() const;
+    RPoint2 cursorPos() const;
+    RPoint2 wheel() const;
+
+    bool anyKeyPress() const;
+    bool anyMouseBtnPress() const;
+
+    int gamepadCount() const;
+
+    bool updateGamepadMappings(const char *path) const;
+    bool updateGamepadMappings() const;
+
+    RSignal<JoystickPresent> joyPresented;
+
+private:
+    static void joystickPresentCallback(int jid, int event);
 
     static const char *gamepadMappingCode0;
     static const char *gamepadMappingCode1;
     static const char *gamepadMappingCode2;
 
-    RInputModule(RWindow *window);
-
-    RInputModule(const RInputModule&) = delete;
-    RInputModule& operator=(const RInputModule&) = delete;
-
-    BtnAct status(Keys key) const;
-    BtnAct status(MouseBtn btn) const;
-    BtnAct status(GamepadBtn btn, JoystickID jid) const;
-    float status(GamepadAxes axis, JoystickID jid) const;
-
-    bool press(Keys key) const;
-    bool press(MouseBtn btn) const;
-    bool press(GamepadBtn btn, JoystickID jid) const;
-
-    bool release(Keys key) const;
-    bool release(MouseBtn btn) const;
-    bool release(GamepadBtn btn, JoystickID jid) const;
-
-    RPoint2 pos() const;
-    int wheel() const;
-
-    bool anyKeyPress() const;
-
-    void updataInputCache();
+    void updataInput();
 
     void keyUp(Keys key);
     void keyDown(Keys key);
     void mouseUp(MouseBtn btn);
     void mouseDown(MouseBtn btn);
-    void mouseWheel(int value);
+    void mouseWheel(int x, int y);
+    void setCursorMove();
 
-private:
-    static bool addGamepad(JoystickID jid);
-    static bool deleteGamepad(JoystickID jid);
+    RInput();
 
-    static std::map<JoystickID, GamepadValue> gamepad_;
+    bool move_ = false;
+    RPoint2 wheel_ = RPoint2(0);
 
-    int wheel_ = 0;
-    RWindow *window_;
     std::set<Keys> keyUp_;
     std::set<Keys> keyDown_;
     std::set<MouseBtn> mouseUp_;
     std::set<MouseBtn> mouseDown_;
+    std::vector<Gamepad> gamepad_;
 };
 
-} // Redopera
+}
 
-#endif // RINPUTMODULE_H
+#endif // RINPUT_H

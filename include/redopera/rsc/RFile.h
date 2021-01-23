@@ -13,12 +13,12 @@ struct RFile
         Append
     };
 
-    static RFile load(std::string path)
+    static RFile load(const std::string &path)
     {
-        RResource::rscPath(path);
+        auto rpath = RResource::rscPath(path);
         RFile file;
 
-        FILE *fp = fopen(path.c_str(), "rb");
+        FILE *fp = fopen(rpath.c_str(), "rb");
         if (fp)
         {
             fseek(fp, 0L, SEEK_END);
@@ -33,11 +33,11 @@ struct RFile
         return file;
     }
 
-    static bool save(std::string path, const RFile& file, Mode mode = Mode::Write)
+    static bool save(const std::string &path, const RFile& file, Mode mode = Mode::Write)
     {
-        RResource::rscPath(path);
+        auto rpath = RResource::rscPath(path);
 
-        FILE *fp = fopen(path.c_str(), mode == Mode::Write ? "wb" : "ab");
+        FILE *fp = fopen(rpath.c_str(), mode == Mode::Write ? "wb" : "ab");
         if (fp)
         {
             bool b = fwrite(file.data.get(), 1, file.size, fp) == file.size;

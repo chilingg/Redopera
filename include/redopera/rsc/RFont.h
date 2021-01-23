@@ -1,14 +1,15 @@
 #ifndef RFONT_H
 #define RFONT_H
 
-#include "RResource.h"
-
-#include <memory>
 #include <map>
+#include <string>
+#include <memory>
 
 class stbtt_fontinfo;
 
 namespace Redopera {
+
+using RData = uint8_t;
 
 class RFont
 {
@@ -46,7 +47,7 @@ public:
     const Glyph *getFontGlyph(RChar c) const;
 
     void setSize(unsigned size);
-    bool load(std::string path);
+    bool load(const std::string &path);
     bool load(const RData *data, size_t size);
     void release();
     void clearCache() const;

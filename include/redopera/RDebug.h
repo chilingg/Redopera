@@ -5,13 +5,6 @@
 
 namespace Redopera {
 
-class RColor;
-class RPoint2;
-class RPoint3;
-class RSize;
-class RRect;
-class RTime;
-
 class RDebug
 {
 public:
@@ -47,23 +40,29 @@ public:
 
     const RDebug& operator<<(void *ptr) const;
 
-    const RDebug& operator<<(const RColor &color) const;
-    const RDebug& operator<<(const RPoint2 &pos) const;
-    const RDebug& operator<<(const RPoint3 &pos) const;
-    const RDebug& operator<<(const RSize &size) const;
-    const RDebug& operator<<(const RRect &rect) const;
-    const RDebug& operator<<(const RTime &time) const;
+    template<typename T>
+    const RDebug& operator<<(T object)const
+    {
+        buf_ += object.toString();
+        return *this;
+    }
+
+    template<typename T>
+    const RDebug& operator<<(T *p)const
+    {
+        return operator<<(static_cast<void*>(p));
+    }
 
 private:
-    constexpr static unsigned DATA_SIZE = 512;
+    constexpr static unsigned DATA_SIZE = 256;
 
     RDebug();
 
     mutable std::string buf_;
 };
 
-void prError(const std::string &err);
-bool check(bool b, const std::string &err);
+void rPrError(const std::string &err);
+bool rCheck(bool b, const std::string &err);
 
 namespace EscCtl {
 

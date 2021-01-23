@@ -1,68 +1,37 @@
 #ifndef RPLANE_H
 #define RPLANE_H
 
-#include "RMath.h"
-#include "RPoint.h"
-#include "RSize.h"
-#include "rsc/RTexture.h"
+#include <RTransform.h>
+#include <RTextsLoader.h>
+
+#include <functional>
 
 namespace Redopera {
 
-class RPlane
+class RSprite;
+
+class RPlane : public RTransform
 {
 public:
-    RPlane();
-    RPlane(int width, int height, int x, int y, int z = 0, const RTexture &tex = RTexture());
-    RPlane(int width, int height, const RPoint &pos, const RTexture &tex = RTexture());
-    RPlane(const RSize &size, const RPoint &pos, const RTexture &tex = RTexture());
-    explicit RPlane(const RRect &rect, int z = 0, const RTexture &tex = RTexture());
-    RPlane(const RPlane &plane);
-    RPlane(const RPlane &&plane);
-    RPlane& operator=(const RPlane &plane);
-    RPlane& operator=(const RPlane &&plane);
+    RPlane(const RTransform &transform);
+
+    RPlane() = default;
+    RPlane(const RPlane &plane) = default;
+    RPlane& operator=(const RPlane &plane) = default;
     ~RPlane() = default;
 
-    const glm::mat4& model();
-    bool isDirty() const;
-    const RPoint& pos() const;
-    const RSize& size() const;
-    RRect rect() const;
+    bool isSingleTex() const;
     const RTexture& texture() const;
-    const float* rotate() const;
-    bool isFlipH() const;
-    bool isFlipV() const;
 
-    RPoint& rPos();
-    RSize& rSize();
-
-    void setRect(const RRect &rect);
-    void setRotate(float x, float y, float z);
-    void setRotate(float *xyz);
-    void setTexture(const RTexture &tex);
-    void setModel(const glm::mat4& model);
-
-    void flipH();
-    void flipH(bool b);
-    void flipV();
-    void flipV(bool b);
-
-    void updataMat();
+    void setTexture(const std::function<const RTexture &()> &func, bool singleTex = false);
+    void setTexture(const RTexture& tex, bool singleTex = false);
+    void setTexture(const RSprite &sprite, bool singleTex = false);
 
 private:
-    bool dirty_ = true;
-    struct {
-        bool h, v;
-    } flip_ { false, false };
-    struct {
-        float x, y, z;
-    } rotate_ { 0.f, 0.f, 0.f };
-
-    RSize size_;
-    RPoint pos_;
-    glm::mat4 model_;
-    RTexture texture_;
+    bool singleTex_ = false;
+    std::function<const RTexture&()> texFunc_;
 };
 
-} // Redopera
+}
 
 #endif // RPLANE_H

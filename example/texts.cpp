@@ -1,15 +1,8 @@
 #include <RWindow.h>
 #include <RGame.h>
-#include <RRenderSystem.h>
-#include <RController.h>
-#include <RInputModule.h>
-#include <RTextbox.h>
 #include <RPlane.h>
-#include <REvent.h>
-#include <RDebug.h>
 #include <RRect.h>
-
-#include <dependents/stb_truetype.h>
+#include <RInput.h>
 
 using namespace Redopera;
 
@@ -19,134 +12,102 @@ const wchar_t* texts =
         "How should I greet you?\n"
         "With silence and tears?";
 
-const GLchar *vCode =
-R"--(
-#version 330 core
-layout(location = 0) in vec2 aPos;
-layout(location = 1) in vec2 aTexCoor;
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 projection;
-out vec2 texCoor;
-void main(void)
-{
-    texCoor = aTexCoor;
-    gl_Position = projection * view * model* vec4(aPos, 0.0, 1.0);
-}
-)--";
-
-const GLchar *fCode =
-R"--(
-#version 330 core
-uniform sampler2D tex;
-in vec2 texCoor;
-out vec4 outColor;
-void main(void)
-{
-    outColor = texture(tex, texCoor);
-}
-)--";
-
 const int WIDTH = 480;
 const int HEIGHT = 480;
-const RColor fcolor(180, 180, 180);
+const glm::vec3 fcolor(.7f, .7f, .7f);
 
-std::unique_ptr<RPlane[]> textbox;
-std::unique_ptr<RRenderSystem> renderer;
+std::unique_ptr<RPlane[]> label;
 
-void control()
+void update(RRenderSys *sys)
 {
-    renderer->renderer() << textbox[0] << textbox[1] << textbox[2] << textbox[3];
-    renderer->renderLine(textbox[0].model());
-    renderer->renderLine(textbox[1].model());
-    renderer->renderLine(textbox[2].model());
-    renderer->renderLine(textbox[3].model());
+    *sys << label[0] << label[1] << label[2] << label[3];
+
+    sys->renderLine(label[0].model());
+    sys->renderLine(label[1].model());
+    sys->renderLine(label[2].model());
+    sys->renderLine(label[3].model());
 }
 
-void startEvent(StartEvent*)
+void startEvent()
 {
-    textbox = std::make_unique<RPlane[]>(4);
-    renderer = std::make_unique<RRenderSystem>();
+    label = std::make_unique<RPlane[]>(4);
 
-    RTextbox::Format fmt;
-    fmt.fcolor = fcolor;
+    RTextsLoader::Format fmt;
     fmt.lSpacing = 1.6f;
     fmt.wSpacing = 1.3f;
-    fmt.align = { RTextbox::Align::Top, RTextbox::Align::Left };
+    fmt.align = { RTextsLoader::Align::Top, RTextsLoader::Align::Left };
 
-    RTextbox textsLoader(texts, 220, 110);
-    textsLoader.setTextFormat(fmt);
-    textbox[0].setTexture(textsLoader.texture());
-    textbox[0].rSize().set(220, 110);
-    textbox[0].rPos().set(20, HEIGHT - textbox[0].size().height() - 20, 0);
+    RTextsLoader textsLoader(texts, 220, 110);
+    textsLoader.setTextsFormat(fmt);
+    label[0].setTexture(textsLoader.texture());
+    label[0].setSize(220, 110);
+    label[0].rRect().setPosX(20);
+    label[0].rRect().setTop(HEIGHT - 20);
 
-    textsLoader.setAlign(RTextbox::Align::Mind, RTextbox::Align::Mind);
-    textbox[1] = textbox[0];
-    textbox[1].setTexture(textsLoader.texture());
-    textbox[1].rPos().setY(textbox[0].pos().y() - (textbox[0].size().height() + 20) * 1);
+    textsLoader.setAlign(RTextsLoader::Align::Mind, RTextsLoader::Align::Mind);
+    label[1].setSize(textsLoader.size());
+    label[1].setTexture(textsLoader.texture());
+    label[1].rRect().setPosX(20);
+    label[1].rRect().setTop(label[0].rect().bottom() - 20);
 
-    textsLoader.setAlign(RTextbox::Align::Bottom, RTextbox::Align::Right);
-    textbox[2] = textbox[0];
-    textbox[2].setTexture(textsLoader.texture());
-    textbox[2].rPos().setY(textbox[0].pos().y() - (textbox[0].size().height() + 20) * 2);
+    textsLoader.setAlign(RTextsLoader::Align::Bottom, RTextsLoader::Align::Right);
+    label[2].setSize(textsLoader.size());
+    label[2].setTexture(textsLoader.texture());
+    label[2].rRect().setPosX(20);
+    label[2].rRect().setTop(label[1].rect().bottom() - 20);
 
-    textsLoader.setAlign(RTextbox::Align::Top, RTextbox::Align::Right);
+    textsLoader.setAlign(RTextsLoader::Align::Top, RTextsLoader::Align::Right);
     textsLoader.rSize().set(90, 240);
     textsLoader.vertical();
-    textbox[3] = textbox[0];
-    textbox[3].setTexture(textsLoader.texture());
-    textbox[3].rSize().set(90, 240);
-    textbox[3].rPos().setX(textbox[0].rect().right() + 20);
-    textbox[3].rPos().move(0, -(textbox[3].size().height() - textbox[0].size().height()));
+    label[3].setTexture(textsLoader.texture());
+    label[3].setSize(textsLoader.size());
+    label[3].rRect().setPosX(label[0].rect().right() + 20);
+    label[3].rRect().setTop(label[0].rect().top());
 
-    renderer->setShaderProg(RShaderProg({ RShader(vCode, RShader::Type::Vertex),
-                                      RShader(fCode, RShader::Type::Fragment)}));
-    renderer->setCameraMove();
-    renderer->setViewprot(0, WIDTH, 0, HEIGHT);
+    RWindow::focusWindow()->renderSys()->setMainShaders("SingleShader");
+    RRPI rpi = RWindow::focusWindow()->renderSys()->shaders().use();
+    rpi.setUniform(RWindow::focusWindow()->renderSys()->shaders().uniformLoccal("color"), fcolor);
 }
 
-RPoint2 offset;
-RPlane *hold;
-
-void inputEvent(ProcessEvent *e)
+void inputEvent(RNode *sender, RNode::Instructs*)
 {
-    const RInputModule *input = RWindow::mainWindow()->input();
+    static RPlane *hold;
+    static RPoint2 offset;
 
-    if (input->press(Keys::KEY_ESCAPE))
-        e->sender->breakLoop();
+    if (RInput::input().press(Keys::KEY_ESCAPE))
+        sender->breakLooping();
 
-    if (input->press(MouseBtn::MOUSE_BUTTON_LEFT))
+    if (RInput::input().press(MouseBtn::MOUSE_BUTTON_LEFT))
     {
-        RPoint2 pos = input->pos().mirrorV(HEIGHT / 2);
+        RPoint2 pos = RInput::input().cursorPos();
 
-        if (textbox[0].rect().contains(pos))
-            hold = &textbox[0];
-        else if (textbox[1].rect().contains(pos))
-            hold = &textbox[1];
-        else if (textbox[2].rect().contains(pos))
-            hold = &textbox[2];
-        else if (textbox[3].rect().contains(pos))
-            hold = &textbox[3];
+        if (label[0].rect().contains(pos))
+            hold = &label[0];
+        else if (label[1].rect().contains(pos))
+            hold = &label[1];
+        else if (label[2].rect().contains(pos))
+            hold = &label[2];
+        else if (label[3].rect().contains(pos))
+            hold = &label[3];
 
         if (hold)
         {
             offset = pos - hold->pos();
         }
     }
-    if (input->release(MouseBtn::MOUSE_BUTTON_LEFT))
+    else if (RInput::input().release(MouseBtn::MOUSE_BUTTON_LEFT))
     {
         hold = nullptr;
     }
-    if (hold && input->status(MouseBtn::MOUSE_BUTTON_LEFT) == BtnAct::PRESS)
+    if (hold && RInput::input().status(MouseBtn::MOUSE_BUTTON_LEFT) == BtnAct::PRESS)
     {
-        hold->rPos() = input->pos().mirrorV(HEIGHT / 2) - offset;
+        hold->setPos(RInput::input().cursorPos() - offset);
     }
 }
 
-void finishEvent(FinishEvent *)
+void finishEvent()
 {
-    textbox.reset();
-    renderer.reset();
+    label.reset();
 }
 
 int main()
@@ -162,13 +123,13 @@ int main()
     font.setSize(12);
     RFont::setDefaultFont(font);
 
-    RController ctrl;
-    ctrl.setProcessFunc(inputEvent);
-    ctrl.setStartFunc(startEvent);
-    ctrl.setUpdataFunc(control);
-    ctrl.setFinishFunc(finishEvent);
-    textWin.ctrl()->addChild(&ctrl);
+    RNode node;
+    node.setProcessFunc(inputEvent);
+    node.setStartFunc(startEvent);
+    node.setUpdateFunc(update);
+    node.setFinishFunc(finishEvent);
+    textWin.node.addChild(&node);
 
     textWin.show();
-    return game.exec(&textWin);
+    return textWin.node.exec();
 }

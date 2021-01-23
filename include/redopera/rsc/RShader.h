@@ -1,7 +1,6 @@
 #ifndef RSHADER_H
 #define RSHADER_H
 
-#include "RResource.h"
 #include "ROpenGL.h"
 
 #include <memory>
@@ -34,7 +33,7 @@ public:
     bool isValid() const;
     Type type() const;
     const std::string& typeName() const;
-    GLuint shaderID() const;
+    GLuint id() const;
 
     bool load(const std::string &shader, Type type);
     void release();

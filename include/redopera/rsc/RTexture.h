@@ -1,12 +1,13 @@
 #ifndef RTEXTURE_H
 #define RTEXTURE_H
 
-#include "RResource.h"
 #include "../ROpenGL.h"
 
 #include <memory>
 
 namespace Redopera {
+
+using RData = uint8_t;
 
 class RImage;
 class RSize;
@@ -19,7 +20,7 @@ using RGBA = uint32_t;
 class RTexture
 {
 public:
-    enum class inFormat
+    enum class InFormat
     {
         R8 = GL_R8,
         RG8 = GL_RG8,
@@ -71,17 +72,20 @@ public:
     static const Format SingleL;
     static const Format SingleN;
 
-    static RTexture whiteTex();
-    static RTexture blackTex();
-    static RTexture redTex();
-    static RTexture transTex();
+    static RTexture createWhiteTex();
+    static RTexture createBlackTex();
+    static RTexture createRedTex();
+    static RTexture createTransTex();
 
     static void setDefaultTextureFomat(const Format &format);
     static const Format& defaultFormat();
     static RTexture colorTexture(const RColor &color);
     static RTexture colorTexture(RGBA rgba);
     static RTexture colorTexture(unsigned r, unsigned g, unsigned b, unsigned a = 0xffu);
-    static void unbindTexture();
+    static void unbind();
+
+    static InFormat inFormat(int channel);
+    static ExtFormat extFormat(int channel);
 
     RTexture() = default;
     RTexture(const std::string &path, const Format &format = textureFormat);
@@ -97,8 +101,8 @@ public:
     int width() const;
     int height() const;
     RSize size() const;
-    const Format format() const;
-    GLuint textureID() const;
+    const Format& format() const;
+    GLuint id() const;
     void bind(unsigned unit = 0) const; // unit直接指定纹理单元号，无需使用GL_TEXTURE0
 
     bool load(const RData *data, int width, int height, int echannel, const Format &format = textureFormat);
@@ -106,13 +110,15 @@ public:
     bool load(const std::string &path, const Format &format = textureFormat);
     void reload(const RData* data);
     void setSubTexture(const RRect &rect, const RData* data);
-    void setSubTexture(const RSize &size, const RPoint2 &pos, const RData* data);
-    void setSubTexture(int width, int height, int x, int y, const RData* data);
+    void setSubTexture(const RPoint2 &pos, const RSize &size, const RData* data);
+    void setSubTexture(int x, int y, int width, int height, const RData* data);
     void release();
 
 private:
     static void deleteTexture(GLuint *id);
     static Format textureFormat;
+
+    void copyOnWrite();
 
     std::shared_ptr<GLuint> textureID_;
     Format format_;

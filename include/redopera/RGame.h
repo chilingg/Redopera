@@ -1,35 +1,38 @@
 #ifndef RGAME_H
 #define RGAME_H
 
-#include <RSigslot.h>
+#include "ROpenGL.h"
+#include "RDebug.h"
+#include "RWindow.h"
 
 namespace Redopera {
-
-class RWindow;
-
-enum class JoystickID;
-enum class JoystickPresent;
 
 class RGame
 {
 public:
-    static RSignal<JoystickID, JoystickPresent> joyPresented;
+    RGame()
+    {
+        if(init)
+            throw "GLFW has been initialized!";
 
-    RGame();
-    ~RGame();
+        glfwSetErrorCallback(errorCallback);
+        init = glfwInit() == GLFW_TRUE ? true : false;
+    }
+
+    ~RGame() { init = false; };
+
+    operator bool() { return init; }
 
     RGame(const RGame&) = delete;
     RGame& operator=(const RGame&) = delete;
 
-    bool updateGamepadMappings(const char *path);
-    bool updateGamepadMappings();
-    int exec(RWindow *window);
-
 private:
-    // 手柄连接回调
-    static void joystickPresentCallback(int jid, int event);
+    static void errorCallback(int error, const char* description)
+    {
+        rPrError("GLFW Error " + std::to_string(error) + ": " + description);
+    }
 
-    static bool once;
+    static bool init;
 };
 
 } // ns Redopera

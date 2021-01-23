@@ -32,6 +32,7 @@ public:
     RKeeper() {};
 
     operator T& () { return value_; }
+    operator const T& () const { return value_; }
 
     ~RKeeper() { if(free_) free_(value_); }
 

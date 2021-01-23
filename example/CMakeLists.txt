@@ -12,3 +12,7 @@ target_link_libraries(plane redopera)
 
 add_executable(texts texts.cpp)
 target_link_libraries(texts redopera)
+
+add_executable(particle particle.cpp)
+target_link_libraries(particle redopera)
+

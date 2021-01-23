@@ -1,4 +1,5 @@
 #include <rsc/RPack.h>
+#include <rsc/RResource.h>
 #include <RDebug.h>
 #include <RThread.h>
 
@@ -49,11 +50,11 @@ const RPack::FInfo *RPack::getFileInfo(const std::string &file)
     return nullptr;
 }
 
-bool RPack::load(std::string path)
+bool RPack::load(const std::string &path)
 {
-    RResource::rscPath(path);
-    std::ifstream file(path, std::ios::binary);
-    if(check(!file, "Failed to load pack in " + path))
+    auto rpath = RResource::rscPath(path);
+    std::ifstream file(rpath, std::ios::binary);
+    if(rCheck(!file, "Failed to load pack in " + rpath))
         return false;
 
     Head head;
@@ -64,7 +65,7 @@ bool RPack::load(std::string path)
         // 检测文件头是否有效
         if(head.headformat == headformat)
         {
-            if(check(head.signature != packSignature(), "Unknow pack signature:" + std::to_string(head.signature)))
+            if(rCheck(head.signature != packSignature(), "Unknow pack signature:" + std::to_string(head.signature)))
                 return false;
 
             std::vector<PInfo> info(head.fileNum);
@@ -80,13 +81,13 @@ bool RPack::load(std::string path)
         }
         else
         {
-            prError("Invali pack file: " + path);
+            rPrError("Invali pack file: " + rpath);
             return false;
         }
     }
     catch(std::ifstream::failure &e)
     {
-        prError("Wrong access pack file: " + path + '\n' + e.what());
+        rPrError("Wrong access pack file: " + rpath + '\n' + e.what());
         return false;
     }
 
@@ -129,11 +130,11 @@ bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::str
     return false;
 }
 
-bool RPack::packing(std::string path, const std::string &name)
+bool RPack::packing(const std::string &path, const std::string &name)
 {
-    RResource::rscPath(path);
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if(check(!file, "Failed to packing <" + name + "> in " + path))
+    auto rpath = RResource::rscPath(path);
+    std::ifstream file(rpath, std::ios::binary | std::ios::ate);
+    if(rCheck(!file, "Failed to packing <" + name + "> in " + rpath))
         return false;
 
     size_t size = file.tellg();
@@ -147,19 +148,19 @@ bool RPack::packing(std::string path, const std::string &name)
     }
     catch(std::ifstream::failure &f)
     {
-        prError("Wrong access file: " + path + f.what());
+        rPrError("Wrong access file: " + rpath + f.what());
         return false;
     }
 
     return packing(data, size, name);
 }
 
-bool RPack::save(std::string path)
+bool RPack::save(const std::string &path)
 {
-    RResource::rscPath(path);
+    auto rpath = RResource::rscPath(path);
 
-    std::ofstream file(path, std::ios::binary);
-    if(check(!file, "Failure save pack file as <" + path + '>'))
+    std::ofstream file(rpath, std::ios::binary);
+    if(rCheck(!file, "Failure save pack file as <" + rpath + '>'))
         return false;
 
     file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
@@ -190,7 +191,7 @@ bool RPack::save(std::string path)
     }
     catch(std::ofstream::failure &f)
     {
-        prError("Failure save pack file as <" + path + '>');
+        rPrError("Failure save pack file as <" + rpath + '>');
         return false;
     }
 #ifdef R_DEBUG

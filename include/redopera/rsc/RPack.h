@@ -1,11 +1,12 @@
 #ifndef RPACK_H
 #define RPACK_H
 
-#include "RResource.h"
 #include <memory>
 #include <map>
 
 namespace Redopera {
+
+using RData = uint8_t;
 
 class RPack
 {
@@ -48,11 +49,11 @@ public:
     size_t size() const;
     const FInfo* getFileInfo(const std::string &file);
 
-    bool load(std::string path);
+    bool load(const std::string &path);
     bool packing(const RData *buffer, size_t size, const std::string &name);
     bool packing(std::shared_ptr<RData[]> buffer, size_t size, const std::string &name);
-    bool packing(std::string path, const std::string &name);
-    bool save(std::string path);
+    bool packing(const std::string &path, const std::string &name);
+    bool save(const std::string &path);
     void release();
 
     // 检查两个Pack文件之间的校验码是否全部相同

@@ -1,16 +1,11 @@
 #include <RDebug.h>
-#include <RColor.h>
-#include <RPoint.h>
-#include <RSize.h>
-#include <RRect.h>
-#include <RTime.h>
 
 #include <locale>
 #include <codecvt>
 
 using namespace Redopera;
 
-static std::wstring_convert<std::codecvt_utf8<wchar_t>> strcnv;
+std::wstring_convert<std::codecvt_utf8<wchar_t>> strcnv;
 
 RDebug::~RDebug()
 {
@@ -135,57 +130,20 @@ const RDebug &RDebug::operator<<(void *ptr) const
     return *this;
 }
 
-const RDebug &RDebug::operator<<(const RColor &color) const
-{
-    buf_ += "(r:" + std::to_string(color.r()) + " g:" + std::to_string(color.g()) + " b:" + std::to_string(color.b()) + ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RPoint2 &pos) const
-{
-    buf_ += '(' + std::to_string(pos.x()) + ", " + std::to_string(pos.y()) + ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RPoint3 &pos) const
-{
-    buf_ += '(' + std::to_string(pos.x()) + ", " + std::to_string(pos.y()) + ", " + std::to_string(pos.z()) + ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RSize &size) const
-{
-    buf_ += "(w:" + std::to_string(size.width()) + " h:" + std::to_string(size.height()) + ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RRect &rect) const
-{
-    buf_ += "(" + std::to_string(rect.left()) + ", " + std::to_string(rect.bottom())
-            + " | w:" + std::to_string(rect.width()) + " h:" + std::to_string(rect.height()) + ") ";
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(const RTime &time) const
-{
-    buf_ += time.toStdString();
-    return *this;
-}
-
 RDebug::RDebug()
 {
-    buf_.reserve(256);
+    buf_.reserve(DATA_SIZE);
 }
 
-void Redopera::prError(const std::string &err)
+void Redopera::rPrError(const std::string &err)
 {
-    fprintf(stderr, "%s\n", err.c_str());
+    rDebug << EscCtl::red << err << EscCtl::non;
 }
 
-bool Redopera::check(bool b, const std::string &err)
+bool Redopera::rCheck(bool b, const std::string &err)
 {
     if(b)
-        fprintf(stderr, "%s\n", err.c_str());
+        rDebug << EscCtl::red << err << EscCtl::non;
 
     return b;
 }

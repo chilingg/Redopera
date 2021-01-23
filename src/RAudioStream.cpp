@@ -13,7 +13,7 @@ void RAudioStream::setBufferSize(unsigned size)
 RAudioStream::RAudioStream(RAudioStream::Api api):
     stream_(api)
 {
-    if(check(stream_.getDeviceCount() < 1, "No audio devices found!"))
+    if(rCheck(stream_.getDeviceCount() < 1, "No audio devices found!"))
         return;
     parameters_.deviceId = stream_.getDefaultOutputDevice();
 }
@@ -190,7 +190,7 @@ bool RAudioStream::abortStream()
 int RAudioStream::playback(void *outputBuffer, void *, unsigned nBufferFrames, double streamTime,
                            RtAudioStreamStatus status, void *userData)
 {
-    if(check(status, "Stream underflow detected!")) return 2;
+    if(rCheck(status, "Stream underflow detected!")) return 2;
 
     RMp3::Sample *buffer = static_cast<RMp3::Sample*>(outputBuffer);
     RAudioStream *rAudio = static_cast<RAudioStream*>(userData);

@@ -5,6 +5,7 @@
 #include <mutex>
 #include <unordered_map>
 #include <functional>
+#include <thread>
 
 namespace Redopera {
 
@@ -17,7 +18,7 @@ public:
     static void disableSlot(Sloter *sloter)
     {
         while(!sloter->__RSLOT__.flag.unique())
-            ;
+            std::this_thread::yield();
         sloter->__RSLOT__.flag.reset();
     }
 
@@ -31,7 +32,7 @@ public:
     ~RSlot()
     {
         while(!flag.unique())
-            ; // 等待所有槽函数执行完毕才会销毁RSlot，若一直有槽函数执行则死循
+            std::this_thread::yield(); // 等待所有槽函数执行完毕才会销毁RSlot，若一直有槽函数执行则死循
         flag.reset();
     }
 

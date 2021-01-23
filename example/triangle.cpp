@@ -1,23 +1,19 @@
 #include <RGame.h>
 #include <RWindow.h>
-#include <RInputModule.h>
-#include <RController.h>
+#include <RInput.h>
 #include <RKeeper.h>
-#include <REvent.h>
-#include <RDebug.h>
-#include <rsc/RShaderProg.h>
 
 using namespace Redopera;
 
 const char *vCode =
         "#version 330\n"
         "layout (location = 0) in vec3 aPos;\n"
-        "uniform mat4 projection;\n"
+        "uniform mat4 projecte;\n"
         "uniform mat4 model;\n"
         "out vec3 color;\n"
         "void main()\n"
         "{\n"
-        "   gl_Position = projection * model * vec4(aPos, 1.0);\n"
+        "   gl_Position = projecte * model * vec4(aPos, 1.0);\n"
         "   float n = 1 - (gl_Position.z+1)/2;\n"
         "   n = n * n * n * 5;\n"
         "   if(aPos.x > 0) color = vec3(0, 0, n);\n"
@@ -38,26 +34,25 @@ class TestCtl
 {
 public:
     TestCtl():
-        ctrl("TestCtl", this),
+        node("TestCtl", this),
         shaders({RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}),
         model(glm::mat4(1))
     {
-        ctrl.setUpdataFunc(std::bind(&TestCtl::control, this));
-        ctrl.setStartFunc(std::bind(&TestCtl::startEvent, this, std::placeholders::_1));
-        ctrl.setFinishFunc(std::bind(&TestCtl::finishEvent, this, std::placeholders::_1));
-        ctrl.setProcessFunc(std::bind(&TestCtl::inputEvent, this, std::placeholders::_1));
+        node.setUpdateFunc([this](RRenderSys *sys){ update(sys); });
+        node.setStartFunc([this]{ startEvent(); });
+        node.setProcessFunc([this](RNode *sender, RNode::Instructs*ins){ processEvent(sender, ins); });
     }
 
-    void control()
+    void update(RRenderSys *)
     {
         model = glm::rotate(model, 0.05f, { 0.0f, 1.0f, 0.0f });
-        auto itfc = shaders.useInterface();
-        itfc.setUniformMatrix(modelLoc, model);
+        auto itfc = shaders.use();
+        itfc.setUniformMat(modelLoc, model);
         glBindVertexArray(VAO.get());
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
-    void startEvent(StartEvent*)
+    void startEvent()
     {
         // start事件在调用exce()时发起
         GLuint vao, vbo;
@@ -79,59 +74,46 @@ public:
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), R_BUFF_OFF(0));
         glEnableVertexAttribArray(0);
 
-        GLuint projection = shaders.getUniformLocation("projection");
-        modelLoc = shaders.getUniformLocation("model");
+        GLuint projection = shaders.uniformLoccal("projecte");
+        modelLoc = shaders.uniformLoccal("model");
 
         // Interface生存周期内对应的shader program都处于glUseProgram()调用中，析构时自动glUseProgram(0);
-        RInterface intf = shaders.useInterface();
-        intf.setUniformMatrix(modelLoc, model);
-        intf.setUniformMatrix(projection, glm::perspective(-30.0f, 30.0f, 0.0f, 60.0f, 0.0f, 1500.0f));
+        RRPI intf = shaders.use();
+        intf.setUniformMat(modelLoc, model);
+        intf.setUniformMat(projection, glm::perspective(-30.0f, 30.0f, 0.0f, 60.0f, 0.0f, 1500.0f));
     }
 
-    void finishEvent(FinishEvent*)
-    {
-        // finish事件在exce()退出时发起
-        shaders.release(); // 显式释放不是必须的，再次只是示范
-        VAO.reset();
-        VBO.reset();
-    }
-
-    void inputEvent(ProcessEvent *e)
+    void processEvent(RNode *sender, RNode::Instructs*)
     {
         // inputEvent只能监测感兴趣的按键
-        if(e->input->anyKeyPress())
-            ctrl.breakLoop();
+        if(RInput::input().anyKeyPress())
+            sender->breakLooping();
     }
 
-    RController ctrl;
+    RNode node;
 
 private:
     RKeeper<GLuint> VAO, VBO;
-    RShaderProg shaders;
+    RShaders shaders;
     GLuint modelLoc;
     glm::mat4 model;
 };
-
-RWindow *p; // entered信号才能实时监测按键事件
-bool observeKeyboard(Keys, BtnAct)
-{
-    p->closeWindow();
-    return true;
-}
 
 int main()
 {
     RGame game;
 
     RWindow::Format format;
+    format.debug = false;
     format.decorate = false;
     format.background = 0x101018ff;
     RWindow window(500, 500, "Triangle", format);
-    p = &window;
+    // Rwindow默认的transformFunc会对RRenderSys设置Viewport和向下传递Transform，在此两者都不需要
+    window.node.setTransformFunc([](RNode*, const RTransform&){});
 
     TestCtl t;
-    t.ctrl.changeParent(window.ctrl());
+    t.node.changeParent(&window.node);
 
     window.show();
-    return game.exec(&window);
+    return window.node.exec();
 }

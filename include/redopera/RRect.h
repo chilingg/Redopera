@@ -10,16 +10,15 @@ class RRect
 {
 public:
     RRect() noexcept;
-    RRect(int width, int height, int x = 0, int y = 0) noexcept;
-    RRect(int width, int height, const RPoint2 &bottomLeft) noexcept;
-    RRect(const RSize &size, const RPoint2 &bottomLeft) noexcept;
+    RRect(int x, int y, int width, int height) noexcept;
+    RRect(const RPoint2 &pos, const RSize &size) noexcept;
     RRect(const RPoint2 &bottomLeft, const RPoint2 &topRight) noexcept;
 
-    bool operator==(const RRect &rect);
-    bool operator!=(const RRect &rect);
+    bool operator==(const RRect &rect) const;
+    bool operator!=(const RRect &rect) const;
 
-    RRect operator+(const RPoint2 &pos);
-    RRect operator-(const RPoint2 &pos);
+    RRect operator+(const RPoint2 &pos) const;
+    RRect operator-(const RPoint2 &pos) const;
 
     RRect operator+=(const RPoint2 &pos);
     RRect operator-=(const RPoint2 &pos);
@@ -45,20 +44,20 @@ public:
     void setCenter(int x, int y);
     void setCenterX(int x);
     void setCenterY(int y);
-    void set(int width, int height, int x, int y);
-    void set(const RSize &size, const RPoint2 &bottomLeft);
+    void set(int x, int y, int width, int height);
+    void set(const RPoint2 &pos, const RSize &size);
 
     void move(const RPoint2 &pos);
     void move(int x, int y);
 
-    RSize& rsize();
-    RPoint2& rpos();
+    RSize& rSize();
+    RPoint2& rPos();
 
     int top() const;
     int bottom() const;
     int left() const;
     int right() const;
-    RPoint2 pos() const;
+    const RPoint2& pos() const;
     RPoint2 bottomLeft() const;
     RPoint2 bottomRight() const;
     RPoint2 topLeft() const;
@@ -68,64 +67,64 @@ public:
     int centerY() const;
     int width() const;
     int height() const;
-    RSize size() const;
+    const RSize& size() const;
 
-    bool isValid();
-    bool isInvalid();
-    bool isEmpty();
+    bool isValid() const;
+    bool isInvalid() const;
+    bool isEmpty() const;
 
-    bool contains(const RRect &rect);
-    bool contains(const RPoint2 &pos);
-    bool contains(int x, int y);
+    bool contains(const RRect &rect) const;
+    bool contains(const RPoint2 &pos) const;
+    bool contains(int x, int y) const;
 
-    bool overlap(const RRect &rect);
+    bool overlap(const RRect &rect) const;
+
+    std::string toString() const
+    {
+        return "(" + std::to_string(pos_.x()) + ", " + std::to_string(pos_.y())
+                + " | w:" + std::to_string(size_.width()) + " h:" + std::to_string(size_.height()) + ") ";
+    }
 
 private:
-    RSize size_;
     RPoint2 pos_;
+    RSize size_;
 };
 
 inline RRect::RRect() noexcept:
-    RRect(RSize(), RPoint2(0))
+    RRect(RPoint2(0), RSize())
 {}
 
-inline RRect::RRect(int width, int height, int x, int y) noexcept:
-    size_(width, height), pos_(x, y)
+inline RRect::RRect(int x, int y, int width, int height) noexcept:
+    pos_(x, y), size_(width, height)
 {}
 
-inline RRect::RRect(int width, int height, const RPoint2 &bottomLeft) noexcept:
-    size_(width, height), pos_(bottomLeft)
-{
-
-}
-
-inline RRect::RRect(const RSize &size, const RPoint2 &bottomLeft) noexcept:
-    size_(size), pos_(bottomLeft)
+inline RRect::RRect(const RPoint2 &pos, const RSize &size) noexcept:
+    pos_(pos), size_(size)
 {}
 
 inline RRect::RRect(const RPoint2 &bottomLeft, const RPoint2 &topRight) noexcept:
-    size_(topRight.x() - bottomLeft.x(), topRight.y() - bottomLeft.y()),
-    pos_(bottomLeft)
+    pos_(bottomLeft),
+    size_(topRight.x() - bottomLeft.x(), topRight.y() - bottomLeft.y())
 {}
 
-inline bool RRect::operator==(const RRect &rect)
+inline bool RRect::operator==(const RRect &rect) const
 {
     return size_ == rect.size_ && pos_ == rect.pos_;
 }
 
-inline bool RRect::operator!=(const RRect &rect)
+inline bool RRect::operator!=(const RRect &rect) const
 {
     return size_ != rect.size_ || pos_ != rect.pos_;
 }
 
-inline RRect RRect::operator+(const RPoint2 &pos)
+inline RRect RRect::operator+(const RPoint2 &pos) const
 {
-    return RRect(size_, pos_ + pos);
+    return RRect(pos_ + pos, size_);
 }
 
-inline RRect RRect::operator-(const RPoint2 &pos)
+inline RRect RRect::operator-(const RPoint2 &pos) const
 {
-    return RRect(size_, pos_ - pos);
+    return RRect(pos_ - pos, size_);
 }
 
 inline RRect RRect::operator+=(const RPoint2 &pos)
@@ -182,47 +181,42 @@ inline void RRect::setPosY(int y)
 
 inline void RRect::setBottomLeft(const RPoint2 &pos)
 {
-    RPoint2 p = pos_ - pos;
     pos_ = pos;
-    size_.expand(p.x(), p.y());
 }
 
 inline void RRect::setBottomLeft(int x, int y)
 {
-    size_.expand(pos_.x() - x, pos_.y() - y);
     pos_.set(x, y);
 }
 
 inline void RRect::setTopRight(const RPoint2 &pos)
 {
-    size_.set(pos.x() - pos_.x(),  pos.y() - pos_.y());
+    pos_.set(pos.x() - size_.width(), pos.y() - size_.height());
 }
 
 inline void RRect::setTopRIght(int x, int y)
 {
-    size_.set(x - pos_.x(), y - pos_.y());
+    pos_.set(x - size_.width(), y - size_.height());
 }
 
 inline void RRect::setBottom(int bottom)
 {
-    size_.expand(0, pos_.y() - bottom);
     pos_.setY(bottom);
 }
 
 inline void RRect::setLeft(int left)
 {
-    size_.expand(pos_.x() - left, 0);
     pos_.setX(left);
 }
 
 inline void RRect::setTop(int top)
 {
-    size_.setHeight(top - pos_.y());
+    pos_.setY(top - size_.height());
 }
 
 inline void RRect::setRight(int right)
 {
-    size_.setWidth(right - pos_.x());
+    pos_.setX(right - pos_.x());
 }
 
 inline void RRect::setCenter(const RPoint2 &pos)
@@ -245,16 +239,16 @@ inline void RRect::setCenterY(int y)
     pos_.setY(y - size_.height()/2);
 }
 
-inline void RRect::set(int width, int height, int x, int y)
+inline void RRect::set(int x, int y, int width, int height)
 {
     size_.set(width, height);
     pos_.set(x, y);
 }
 
-inline void RRect::set(const RSize &size, const RPoint2 &bottomLeft)
+inline void RRect::set(const RPoint2 &pos, const RSize &size)
 {
     size_ = size;
-    pos_ = bottomLeft;
+    pos_ = pos;
 }
 
 inline void RRect::move(const RPoint2 &pos)
@@ -264,16 +258,15 @@ inline void RRect::move(const RPoint2 &pos)
 
 inline void RRect::move(int x, int y)
 {
-    pos_.rx() += x;
-    pos_.ry() += y;
+    pos_.move(x, y);
 }
 
-inline RSize &RRect::rsize()
+inline RSize &RRect::rSize()
 {
     return size_;
 }
 
-inline RPoint2 &RRect::rpos()
+inline RPoint2 &RRect::rPos()
 {
     return pos_;
 }
@@ -298,7 +291,7 @@ inline int RRect::right() const
     return pos_.x() + size_.width();
 }
 
-inline RPoint2 RRect::pos() const
+inline const RPoint2 &RRect::pos() const
 {
     return pos_;
 }
@@ -348,43 +341,43 @@ inline int RRect::height() const
     return size_.height();
 }
 
-inline RSize RRect::size() const
+inline const RSize& RRect::size() const
 {
     return size_;
 }
 
-inline bool RRect::isValid()
+inline bool RRect::isValid() const
 {
     return size_.isValid();
 }
 
-inline bool RRect::isInvalid()
+inline bool RRect::isInvalid() const
 {
     return size_.isInvalid();
 }
 
-inline bool RRect::isEmpty()
+inline bool RRect::isEmpty() const
 {
     return size_.isEmpty();
 }
 
-inline bool RRect::contains(const RRect &rect)
+inline bool RRect::contains(const RRect &rect) const
 {
     return rect.pos_.x() >= pos_.x() && rect.pos_.y() >= pos_.y()
             && rect.top() <= top() && rect.right() <= right();
 }
 
-inline bool RRect::contains(const RPoint2 &pos)
+inline bool RRect::contains(const RPoint2 &pos) const
 {
     return pos.x() >= pos_.x() && pos.y() >= pos_.y() && pos.x() <= right() && pos.y() <= top();
 }
 
-inline bool RRect::contains(int x, int y)
+inline bool RRect::contains(int x, int y) const
 {
     return x >= pos_.x() && y >= pos_.y() && x <= right() && y <= top();
 }
 
-inline bool RRect::overlap(const RRect &rect)
+inline bool RRect::overlap(const RRect &rect) const
 {
     return rect.bottom() < top() && rect.top() > bottom() && rect.left() < right() && rect.right() > left();
 }

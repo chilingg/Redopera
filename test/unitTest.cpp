@@ -3,17 +3,16 @@
 #include <RPoint.h>
 #include <RSize.h>
 #include <RRect.h>
-#include <RController.h>
 #include <RKeeper.h>
+#include <RNode.h>
 #include <rsc/RResource.h>
 #include <rsc/RImage.h>
-#include <rsc/RLuaScript.h>
+#include <rsc/RScript.h>
 #include <rsc/RMp3.h>
 #include <rsc/RFont.h>
 #include <rsc/RPack.h>
 
-#include <assert.h>
-#include <functional>
+#include <cassert>
 
 using namespace Redopera;
 
@@ -23,8 +22,8 @@ int main()
 
     // RColor ====================
     RColor color;
-    assert(color.a() == 0xff && color.r() == 255 && color.g() == 255 && color.b() == 255);
-    assert(color.rgba() == 0xffffffff && color.rgb() == 0xffffff);
+    assert(color.a() == 0xff && color.r() == 0 && color.g() == 0 && color.b() == 0);
+    assert(color.rgba() == 0xff && color.rgb() == 0);
     color.setA(0xF);
     color.setR(0x1E);
     color.setG(0x2D);
@@ -46,7 +45,10 @@ int main()
     assert(pos1 == pos2 && pos1.x() == 10 && pos1.y() == 20 && pos1.z() == 30);
     pos1 += pos2 + pos1;
     assert(pos1 - RPoint(10, 20, 30) == pos2 + RPoint(10, 20, 30));
-    assert(pos2.mirrorH(20) == RPoint(30, 20) && pos2.mirrorV(-10) == RPoint(10, -40));
+    pos2.mirrorH(20);
+    assert(pos2 == RPoint(30, 20));
+    pos2.mirrorV(-10);
+    assert(pos2 == RPoint(10, -40));
 
     // RSize ====================
     RSize size1, size2(10, 20);
@@ -60,35 +62,23 @@ int main()
     assert(size2 == size1 *2. && size1 / 5 == RSize(6, 3));
 
     // RRect ====================
-    RRect rect1, rect2(20, 20, 10, 10), rect3(RPoint2(10, 10), RPoint2(30, 30));
-    assert(rect1.isEmpty() && rect1.isInvalid() && rect2.isValid() && rect2 == rect3 && rect1 != rect3);
+    RRect rect1, rect2(20, 20, 10, 10), rect3(RPoint2(20, 20), RPoint2(30, 30));
+    assert(rect1.isEmpty());
+    assert(rect1.isInvalid());
+    assert(rect2.isValid());
+    assert(rect2 == rect3);
+    assert(rect1 != rect3);
     rect1.set(10, 10, 1, 1);
     rect2.setBottomLeft(1, 1);
     rect2.setTopRIght(11, 11);
     rect3.setPos(1, 1);
     rect3.setSize(10, 10);
-    assert(rect1 == rect2 && rect2 == rect3 && rect1 == RRect(RSize(10, 10), RPoint2(1, 1)));
+    assert(rect1 == rect2 && rect2 == rect3 && rect1 == RRect(RPoint2(1, 1), RSize(10, 10)));
     rect1.setCenter(10, 10);
     rect2.move(4, 4);
     assert(rect1 == rect2 && rect1.topLeft() == RPoint2(5, 15) && rect1.bottomRight() == RPoint2(15, 5));
     assert(!rect1.contains(rect3) && rect1.contains(rect2) && rect1.contains(5, 5) && !rect1.contains(16, 15));
     assert(rect1.overlap(rect3));
-
-    // RController ====================
-    RController ctl;
-    std::string order;
-    ctl.setStartFunc([&order](StartEvent*){ order += '1'; });
-    ctl.setUpdataFunc([&order, &ctl]{ order += '2'; ctl.breakLoop(); });
-    ctl.setCloseFunc([&order](CloseEvent*){ order += '3'; });
-    ctl.setFinishFunc([&order](FinishEvent*){ order += '4'; });
-    ctl.exec();
-    assert(order == "1234");
-    RController ctl1("c", nullptr), ctl2("c", nullptr), ctl3("c", nullptr);
-    ctl.addChild(&ctl1);
-    ctl.addChild(&ctl2);
-    assert(ctl1.name() == "c" && ctl2.name() == "c1");
-    ctl3.changeParent(&ctl);
-    assert(ctl3.name() == "c2");
 
     // RKeeper
     int n = 0;
@@ -99,6 +89,32 @@ int main()
     keeper.reset(2, [&n](int kn){ n += kn; });
     keeper.reset();
     assert(n == 3);
+
+    // RNode ====================
+    RNode node1("Node-rect1", &rect1), node2;
+    assert(node1.status() == RNode::Status::Normal && node1.status() == node2.status());
+    assert(node1.name() == "Node-rect1");
+    assert(node2.name() == "Node");
+    assert(node1.holder<RRect>()->isValid());
+    std::string order;
+    node1.setStartFunc([&order]{ order += '1'; });
+    node2.setStartFunc([&order]{ order += '2'; });
+    node1.setUpdateFunc([&order](RRenderSys *){ order += '3'; });
+    node2.setUpdateFunc([&order, &node2](RRenderSys *){ order += '4'; node2.breakLooping(); });
+    node1.setFinishFunc([&order]{ order += '6'; });
+    node2.setFinishFunc([&order]{ order += '5'; });
+    node1.addChild(&node2);
+    node1.exec();
+    assert(order == "123456");
+    RNode node3;
+    node3.changeParent(&node1);
+    node2.rename("Node1");
+    assert(node3.name() == "Node1");
+    assert(node2.name() == "Node11");
+    node3.addChild(&node2);
+    assert(node3.path() == "/Node-rect1/Node1");
+    assert(node2.path() == "/Node-rect1/Node1/Node11");
+    assert(node3.node("Node11") == &node2);
 
     // RResource ====================
     RResource::setResourcePath("TestFile/");
@@ -137,7 +153,7 @@ int main()
                 "end\n"
             "end\n";
 
-    RLuaScript scp(luaCode);
+    RScript scp(luaCode);
     assert(scp.isValid() && scp.call("max", {2, 5}, {}, 1) && scp.valueIsNumber() && scp.getInteger() == 5);
     scp.import(":/min.lua");
     assert(scp.isValid() && scp.call("min", {2, 5}, {}, 1) && scp.valueIsNumber() && scp.getInteger() == 2);

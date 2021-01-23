@@ -2,7 +2,8 @@
 #include <RSize.h>
 #include <RDebug.h>
 #include <rsc/RImage.h>
-#include <dependents/stb_image.h>
+#include <rsc/RResource.h>
+#include <stb_image.h>
 
 #include <cstring>
 
@@ -92,14 +93,14 @@ RData *RImage::data() const
     return data_.get();
 }
 
-bool RImage::load(std::string path, bool flip)
+bool RImage::load(const std::string &path, bool flip)
 {
-    RResource::rscPath(path);
+    auto rpath = RResource::rscPath(path);
 
     stbi_set_flip_vertically_on_load(flip);
-    std::shared_ptr<RData> temp(stbi_load(path.c_str(), &width_, &height_, &channel_, 0), stbi_image_free);
+    std::shared_ptr<RData> temp(stbi_load(rpath.c_str(), &width_, &height_, &channel_, 0), stbi_image_free);
 
-    if(check(!temp, "Failed to load image in " + path))
+    if(rCheck(!temp, "Failed to load image in " + rpath))
         return false;
 
     data_.swap(temp);
@@ -111,7 +112,7 @@ bool RImage::load(const RData *buf, size_t size, bool flip)
     stbi_set_flip_vertically_on_load(flip);
     std::shared_ptr<RData> temp(stbi_load_from_memory(buf, size, &width_, &height_, &channel_, 0), stbi_image_free);
 
-    if(check(!temp, "Failed to load image in memory"))
+    if(rCheck(!temp, "Failed to load image in memory"))
         return false;
 
     data_.swap(temp);

@@ -1,6 +1,8 @@
 #ifndef RPOINT_H
 #define RPOINT_H
 
+#include <string>
+
 namespace Redopera {
 
 class RPoint2
@@ -31,11 +33,16 @@ public:
     void setY(int y) { y_ = y; }
     void set(int x, int y) { x_ = x; y_ = y; }
 
-    RPoint2 mirrorH(int axis = 0) { return RPoint2((axis-x_)*2 + x_, y_); }
-    RPoint2 mirrorV(int axis = 0) { return RPoint2(x_, (axis-y_)*2 + y_); }
+    void mirrorH(int axis = 0) { x_ = (axis-x_)*2 + x_; }
+    void mirrorV(int axis = 0) { y_ = (axis-y_)*2 + y_; }
 
     void move(int x, int y) { x_ += x; y_ += y; }
     void move(const RPoint2 &pos) { x_ += pos.x_; y_ += pos.y_; }
+
+    std::string toString() const
+    {
+        return '(' + std::to_string(x_) + ", " + std::to_string(y_) + ") ";
+    }
 
 protected:
     int x_;
@@ -71,6 +78,11 @@ public:
 
     void move(int x, int y, int z = 0) { RPoint2::move(x, y); z_ += z; }
     void move(const RPoint3 &pos) { RPoint2::move(pos); z_ += pos.z_; };
+
+    std::string toString() const
+    {
+        return '(' + std::to_string(x_) + ", " + std::to_string(y_) + ", " + std::to_string(z_) + ") ";
+    }
 
 protected:
     int z_;

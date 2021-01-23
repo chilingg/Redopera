@@ -1,9 +1,9 @@
 #ifndef RMATHS_H
 #define RMATHS_H
 
-#include "dependents/glm/mat4x4.hpp"
-#include "dependents/glm/gtc/matrix_transform.hpp"
-#include "dependents/glm/gtc/type_ptr.hpp"
+#include "dependent/glm/mat4x4.hpp"
+#include "dependent/glm/gtc/matrix_transform.hpp"
+#include "dependent/glm/gtc/type_ptr.hpp"
 
 /* GLM算法和功能
  * min(genType x, genType y)   //返回最小值
@@ -19,10 +19,14 @@ mat4 perspective(float left, float right, float bottom, float top, float near, f
 
 }
 
-#include <string>
+namespace Redopera {
 
-std::string toStdString(glm::vec3 vec);
-std::string toStdString(glm::vec4 vec);
-std::string toStdString(glm::mat4 vec);
+class RDebug;
+
+const RDebug& operator<<(const RDebug &d, const glm::vec3 &vec);
+const RDebug& operator<<(const RDebug &d, const glm::vec4 &vec);
+const RDebug& operator<<(const RDebug &d, const glm::mat4 &mat);
+
+}
 
 #endif // RMATHS_H

@@ -6,71 +6,55 @@
 
 namespace Redopera {
 
+extern thread_local bool threadOnlyContext;
+
 class RContext
 {
 public:
     struct Format
     {
+#ifndef NDEBUG
+        bool debug          = true;     // OpenGL的Debug输出
+#else
+        bool debug          = false;
+#endif
         bool vSync          = true;     // 垂直同步
         bool forward        = true;     // 前向兼容(清除当前版本不推荐的特性）
-        bool debug          = false;    // OpenGL的Debug输出
-        bool depth          = false;    // 深度测试
+        bool rasterizer     = false;    // 光栅化
         int versionMajor    = 3;        // OpenGL主版本号
         int versionMinor    = 3;        // OpenGL副版本号
         GLFWwindow *shared  = nullptr;  // 共享上下文
     };
 
-    RContext(const Format &fmt = format):
-        contex_(nullptr, glfwDestroyWindow)
-    {
-        setContex(fmt);
-    }
+    static const Format& defaultContexFormat() { return defaultFormat; }
+    static void setDefualtContexFormat(const Format &format) { defaultFormat = format; }
 
-    ~RContext() = default;
+    RContext(const Format &fmt = defaultFormat);
+    RContext(GLFWwindow *context);
+    ~RContext();
 
-    operator bool(){ return contex_ != nullptr; }
+    operator bool();
 
-    GLFWwindow* getContex()
-    {
-        return contex_.get();
-    }
+    GLFWwindow* getHandle() const;
 
-    bool setContex(const Format &fmt)
-    {
-        glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, fmt.versionMajor);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, fmt.versionMinor);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, fmt.forward);
-        glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, fmt.debug);
-        glfwWindowHint(GLFW_VISIBLE, false);
-        GLFWwindow *window = glfwCreateWindow(1, 1, "", nullptr, fmt.shared);
+    const Format& format() const;
 
-        glfwMakeContextCurrent(window);
-        if(!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-        {
-            glfwDestroyWindow(window);
-            return false;
-        }
+    bool setContext(const Format &fmt);
+    bool setContext(GLFWwindow *context, const Format &fmt);
 
-        contex_.reset(window);
-        glfwSwapInterval(fmt.vSync ? 1 : 0);
-        return true;
-    }
+    void setRasterizer(bool b);
 
-    void setContex(GLFWwindow *contex)
-    {
-        contex_.reset(contex);
-    }
-
-    void release()
-    {
-        contex_.reset();
-    }
+    void release();
 
 private:
-    static constexpr Format format = { true, true, false, false, 3, 3, nullptr };
+    // OpenGL Debug信息
+    static void openglDebugMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity,
+                                           GLsizei length, const GLchar *message, const void *userParam);
 
-    std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> contex_;
+    static Format defaultFormat;
+
+    Format format_;
+    std::unique_ptr<GLFWwindow, void(*)(GLFWwindow*)> context_;
 };
 
 } // ns Redopera

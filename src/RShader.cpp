@@ -1,7 +1,6 @@
 #include <rsc/RShader.h>
 #include <rsc/RFile.h>
 #include <RDebug.h>
-#include <ROpenGL.h>
 
 using namespace Redopera;
 
@@ -79,7 +78,7 @@ const std::string &RShader::typeName() const
     return shaderTypeName(type_);
 }
 
-GLuint RShader::shaderID() const
+GLuint RShader::id() const
 {
     return *shaderID_;
 }
@@ -102,11 +101,11 @@ bool RShader::load(const std::string &shader, Type type)
 
     int success;
     glGetShaderiv(*id, GL_COMPILE_STATUS, &success);
-    if(check(!success, "Failed to load " + shaderTypeName(type) + " in:\n" + shader))
+    if(rCheck(!success, "Failed to load " + shaderTypeName(type) + " in:\n" + shader))
     {
         char infoLog[256];
         glGetShaderInfoLog(*id, sizeof(infoLog), nullptr, infoLog);
-        prError(infoLog);
+        rPrError(infoLog);
         return false;
     }
 

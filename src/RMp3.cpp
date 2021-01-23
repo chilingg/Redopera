@@ -1,8 +1,9 @@
 #include <rsc/RMp3.h>
+#include <rsc/RResource.h>
 #include <RDebug.h>
 
-#include <dependents/minimp3.h>
-#include <dependents/minimp3_ex.h>
+#include <minimp3.h>
+#include <minimp3_ex.h>
 
 using namespace Redopera;
 
@@ -76,9 +77,9 @@ RMp3::Sample *RMp3::data() const
     return data_.get();
 }
 
-bool RMp3::load(std::string path)
+bool RMp3::load(const std::string &path)
 {
-    RResource::rscPath(path);
+    auto rpath = RResource::rscPath(path);
 
     if(!decoder)
     {
@@ -87,7 +88,7 @@ bool RMp3::load(std::string path)
     }
 
     mp3dec_file_info_t info;
-    if(check(mp3dec_load(decoder.get(), path.c_str(), &info, nullptr, nullptr), "Failed to load mp3 in " + path))
+    if(rCheck(mp3dec_load(decoder.get(), rpath.c_str(), &info, nullptr, nullptr), "Failed to load mp3 in " + rpath))
         return false;
 
     hz_ = static_cast<unsigned>(info.hz);
