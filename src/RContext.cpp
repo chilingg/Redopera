@@ -28,7 +28,7 @@ RContext::~RContext()
     onethread = false;
 }
 
-Redopera::RContext::operator bool()
+Redopera::RContext::operator bool() const
 {
     return context_ != nullptr;
 }

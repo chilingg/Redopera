@@ -21,7 +21,7 @@ public:
 
     ~RGame() { init = false; };
 
-    operator bool() { return init; }
+    explicit operator bool() const { return init; }
 
     RGame(const RGame&) = delete;
     RGame& operator=(const RGame&) = delete;

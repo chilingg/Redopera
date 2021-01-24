@@ -33,7 +33,7 @@ public:
     RContext(GLFWwindow *context);
     ~RContext();
 
-    operator bool();
+    explicit operator bool() const;
 
     GLFWwindow* getHandle() const;
 
