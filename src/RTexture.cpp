@@ -1,8 +1,5 @@
 #include <rsc/RTexture.h>
 #include <rsc/RImage.h>
-#include <RSize.h>
-#include <RPoint.h>
-#include <RRect.h>
 #include <RColor.h>
 
 #include <stdexcept>

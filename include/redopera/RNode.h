@@ -9,9 +9,10 @@
 #include <stdexcept>
 #include <atomic>
 
+#include <RTransform.h>
+
 namespace Redopera {
 
-class RTransform;
 class RRenderSys;
 
 class RNode final

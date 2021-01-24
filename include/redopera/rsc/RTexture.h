@@ -1,6 +1,7 @@
 #ifndef RTEXTURE_H
 #define RTEXTURE_H
 
+#include "RRect.h"
 #include "../ROpenGL.h"
 
 #include <memory>
@@ -10,9 +11,6 @@ namespace Redopera {
 using RData = uint8_t;
 
 class RImage;
-class RSize;
-class RRect;
-class RPoint2;
 class RColor;
 
 using RGBA = uint32_t;

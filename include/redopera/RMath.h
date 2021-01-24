@@ -19,14 +19,10 @@ mat4 perspective(float left, float right, float bottom, float top, float near, f
 
 }
 
-namespace Redopera {
+namespace Redopera { class RDebug; }
 
-class RDebug;
-
-const RDebug& operator<<(const RDebug &d, const glm::vec3 &vec);
-const RDebug& operator<<(const RDebug &d, const glm::vec4 &vec);
-const RDebug& operator<<(const RDebug &d, const glm::mat4 &mat);
-
-}
+const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec3 &vec);
+const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec4 &vec);
+const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::mat4 &mat);
 
 #endif // RMATHS_H

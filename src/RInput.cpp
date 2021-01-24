@@ -367,7 +367,7 @@ RPoint2 RInput::cursorPos() const
     glfwGetCursorPos(RWindow::focusWindow()->getHandle(), &x, &y);
     RPoint2 pos(x, y);
     pos -= RWindow::focusWindow()->posOffset();
-    pos.mirrorV(RWindow::focusWindow()->height() / 2);
+    pos.setY(RWindow::focusWindow()->height() - pos.y());
 
     return pos;
 }
@@ -436,7 +436,7 @@ void RInput::joystickPresentCallback(int jid, int event)
 void RInput::updataInput()
 {
     move_ = false;
-    wheel_.set(0, 0);
+    wheel_.setPos(0, 0);
     keyUp_.clear();
     mouseUp_.clear();
     keyDown_.clear();
@@ -471,7 +471,7 @@ void RInput::mouseDown(MouseBtn btn)
 
 void RInput::mouseWheel(int x, int y)
 {
-    wheel_.set(x, y);
+    wheel_.setPos(x, y);
 }
 
 void RInput::setCursorMove()

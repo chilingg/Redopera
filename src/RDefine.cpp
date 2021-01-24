@@ -2,15 +2,20 @@
 #include <RGame.h>
 #include <RDebug.h>
 #include <RMath.h>
+#include <RPoint.h>
+#include <RSize.h>
+#include <RTransform.h>
 
 using namespace Redopera;
 
 // RResource.h
 std::string RResource::rscPath_ = "./";
 
+// RGame.h
 bool RGame::init = false;
 
-const RDebug& Redopera::operator<<(const RDebug &d, const glm::vec3 &vec)
+// RMath.h
+const RDebug& operator<<(const RDebug &d, const glm::vec3 &vec)
 {
     std::string str('(' + std::to_string(vec.x) + ", "
                     + std::to_string(vec.y) + ", "
@@ -19,7 +24,7 @@ const RDebug& Redopera::operator<<(const RDebug &d, const glm::vec3 &vec)
     return d.operator<<(str);
 }
 
-const RDebug& Redopera::operator<<(const RDebug &d, const glm::vec4 &vec)
+const RDebug& operator<<(const RDebug &d, const glm::vec4 &vec)
 {
     std::string str('(' + std::to_string(vec.x) + ", "
                     + std::to_string(vec.y) + ", "
@@ -29,7 +34,7 @@ const RDebug& Redopera::operator<<(const RDebug &d, const glm::vec4 &vec)
     return d.operator<<(str);
 }
 
-const RDebug& Redopera::operator<<(const RDebug &d, const glm::mat4 &mat)
+const RDebug& operator<<(const RDebug &d, const glm::mat4 &mat)
 {
     char buf[256];
     std::snprintf(buf, sizeof(buf),
@@ -49,7 +54,7 @@ glm::mat4 glm::perspective(float left, float right, float bottom, float top, flo
 {
     static float accuracy = 0.95; // 投影之后far平面拥有的最大z轴标量
 
-    mat4 mat(1);
+    glm::mat4 mat(1);
     float len = far - near;
 
     // 缩放
@@ -66,3 +71,21 @@ glm::mat4 glm::perspective(float left, float right, float bottom, float top, flo
 
     return mat;
 }
+
+// RPoint.h
+template class Redopera::RValue::RPointValue2<int>;
+template class Redopera::RValue::RPointValue2<float>;
+template class Redopera::RValue::RPointValue3<int>;
+template class Redopera::RValue::RPointValue3<float>;
+
+// RSize.h
+template class Redopera::RValue::RSizeValue<int>;
+template class Redopera::RValue::RSizeValue<float>;
+
+// RRect.h
+template class Redopera::RValue::RRectValue<int>;
+template class Redopera::RValue::RRectValue<float>;
+
+// RTransform.h
+template class Redopera::RValue::RTransformValue<int>;
+template class Redopera::RValue::RTransformValue<float>;

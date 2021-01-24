@@ -12,7 +12,7 @@ class TestCtl
 public:
     TestCtl():
         node("TestCtrl", this),
-        plane({ RPoint(0), RSize(36, 36) })
+        plane({ RPoint(), RSize(36, 36) })
     {
         plane.setTexture(RTexture(RImage::redoperaIcon()));
         plane.setFlipV();
@@ -87,7 +87,7 @@ public:
         if(RInput::input().press(Keys::KEY_ESCAPE))
             node.breakLooping();
 
-        RPoint3 p(0);
+        RPoint p;
         int step = 5;
         if(RInput::input().status(Keys::KEY_LEFT) == BtnAct::PRESS)
             p.rx() -= step;

@@ -36,9 +36,9 @@ int main()
     assert(color.a() == 0x24 && color.r() == 0xff && color.g() == 0x22 && color.b() == 0x23);
 
     // RPoint ====================
-    RPoint pos1, pos2(0);
-    assert(pos1 != pos2 && !pos1.isValid() && pos2.isValid() && !pos1.isOrigin() && pos2.isOrigin());
-    pos1.set(10, 20, 30);
+    RPoint pos1, pos2;
+    assert(pos1 == pos2 && !pos1.isOrigin() && pos2.isOrigin());
+    pos1.setPos(10, 20, 30);
     pos2.setX(10);
     pos2.setY(20);
     pos2.setZ(30);
@@ -53,7 +53,7 @@ int main()
     // RSize ====================
     RSize size1, size2(10, 20);
     assert(size1 != size2 && size1.isEmpty() && size1.isInvalid() && size2.isValid());
-    size1.set(20, 10);
+    size1.setSize(20, 10);
     size2.expand(10, -10);
     assert(size1 == size2 && size1.width() == 20 && size1.height() == 10);
     size1.setWidth(30);
@@ -68,7 +68,7 @@ int main()
     assert(rect2.isValid());
     assert(rect2 == rect3);
     assert(rect1 != rect3);
-    rect1.set(10, 10, 1, 1);
+    rect1.setRect(10, 10, 1, 1);
     rect2.setBottomLeft(1, 1);
     rect2.setTopRIght(11, 11);
     rect3.setPos(1, 1);

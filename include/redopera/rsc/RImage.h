@@ -1,6 +1,7 @@
 #ifndef RIMAGE_H
 #define RIMAGE_H
 
+#include <RSize.h>
 #include <string>
 #include <memory>
 
@@ -8,7 +9,6 @@ namespace Redopera {
 
 using RData = uint8_t;
 
-class RSize;
 class RColor;
 
 class RImage

@@ -191,7 +191,6 @@ enum class JoystickPresent
     DISCONNECTED = GLFW_DISCONNECTED
 };
 
-class RPoint2;
 class RWindow;
 
 class RInput
@@ -266,7 +265,7 @@ private:
     RInput();
 
     bool move_ = false;
-    RPoint2 wheel_ = RPoint2(0);
+    RPoint2 wheel_;
 
     std::set<Keys> keyUp_;
     std::set<Keys> keyDown_;

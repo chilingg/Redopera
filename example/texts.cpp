@@ -41,27 +41,27 @@ void startEvent()
     textsLoader.setTextsFormat(fmt);
     label[0].setTexture(textsLoader.texture());
     label[0].setSize(220, 110);
-    label[0].rRect().setPosX(20);
+    label[0].rRect().setX(20);
     label[0].rRect().setTop(HEIGHT - 20);
 
     textsLoader.setAlign(RTextsLoader::Align::Mind, RTextsLoader::Align::Mind);
     label[1].setSize(textsLoader.size());
     label[1].setTexture(textsLoader.texture());
-    label[1].rRect().setPosX(20);
+    label[1].rRect().setX(20);
     label[1].rRect().setTop(label[0].rect().bottom() - 20);
 
     textsLoader.setAlign(RTextsLoader::Align::Bottom, RTextsLoader::Align::Right);
     label[2].setSize(textsLoader.size());
     label[2].setTexture(textsLoader.texture());
-    label[2].rRect().setPosX(20);
+    label[2].rRect().setX(20);
     label[2].rRect().setTop(label[1].rect().bottom() - 20);
 
     textsLoader.setAlign(RTextsLoader::Align::Top, RTextsLoader::Align::Right);
-    textsLoader.rSize().set(90, 240);
+    textsLoader.rSize().setSize(90, 240);
     textsLoader.vertical();
     label[3].setTexture(textsLoader.texture());
     label[3].setSize(textsLoader.size());
-    label[3].rRect().setPosX(label[0].rect().right() + 20);
+    label[3].rRect().setX(label[0].rect().right() + 20);
     label[3].rRect().setTop(label[0].rect().top());
 
     RWindow::focusWindow()->renderSys()->setMainShaders("SingleShader");

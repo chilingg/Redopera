@@ -5,61 +5,62 @@
 
 namespace Redopera {
 
-class RSize
+namespace RValue {
+
+template <typename Value>
+class RSizeValue
 {
 public:
-    RSize() noexcept: RSize(0, 0) {}
-    RSize(int width, int height) noexcept : width_(width), height_(height) {}
+    RSizeValue() noexcept: RSizeValue<Value>(0, 0) {}
+    RSizeValue(Value width, Value height) noexcept : width_(width), height_(height) {}
 
-    bool operator==(const RSize &size) const { return width_ == size.width_ && height_ == size.height_; }
-    bool operator!=(const RSize &size) const { return width_ != size.width_ || height_ != size.height_; }
+    template<typename T>
+    operator RSizeValue<T>() const { return RSizeValue<T>(width_, height_); }
 
-    RSize& operator*=(double value) { width_ *= value; height_ *= value; return *this; }
-    RSize& operator/=(double value) { width_ /= value; height_ /= value; return *this; }
+    bool operator==(const RSizeValue<Value> &size) const { return width_ == size.width_ && height_ == size.height_; }
+    bool operator!=(const RSizeValue<Value> &size) const { return width_ != size.width_ || height_ != size.height_; }
 
-    RSize& operator*=(float value) { width_ *= value; height_ *= value; return *this; }
-    RSize& operator/=(float value) { width_ /= value; height_ /= value; return *this; }
+    template<typename T>
+    RSizeValue<Value>& operator*=(T value) { width_ *= value; height_ *= value; return *this; }
+    template<typename T>
+    RSizeValue<Value>& operator/=(T value) { width_ /= value; height_ /= value; return *this; }
 
-    RSize& operator*=(int value) { width_ *= value; height_ *= value; return *this; }
-    RSize& operator/=(int value) { width_ /= value; height_ /= value; return *this; }
+    template<typename T>
+    RSizeValue<Value> operator*(T value) const { return RSizeValue<Value>(width_ * value, height_ * value); }
+    template<typename T>
+    RSizeValue<Value> operator/(T value) const { return RSizeValue<Value>(width_ / value, height_ / value); }
 
-    RSize& operator*=(unsigned value) { width_ *= value; height_ *= value; return *this; }
-    RSize& operator/=(unsigned value) { width_ /= value; height_ /= value; return *this; }
-
-    RSize operator*(double value) const { return RSize(width_ * value, height_ * value); }
-    RSize operator/(double value) const { return RSize(width_ / value, height_ / value); }
-
-    RSize operator*(float value) const { return RSize(width_ * value, height_ * value); }
-    RSize operator/(float value) const { return RSize(width_ / value, height_ / value); }
-
-    RSize operator*(int value) const { return RSize(width_ * value, height_ * value); }
-    RSize operator/(int value) const { return RSize(width_ / value, height_ / value); }
-
-    RSize operator*(unsigned value) const { return RSize(width_ * value, height_ * value); }
-    RSize operator/(unsigned value) const { return RSize(width_ / value, height_ / value); }
-
-    int width() const { return width_; }
-    int height() const { return height_; }
+    Value width() const { return width_; }
+    Value height() const { return height_; }
 
     bool isEmpty() const { return (width_ == 0) && (height_ == 0); }
     bool isInvalid() const { return (width_ <= 0) || (height_ <= 0); }
     bool isValid() const { return (width_ > 0) && (height_ > 0); }
 
-    void setWidth(int width) { width_ = width; }
-    void setHeight(int height) { height_ = height; }
-    void set(int width, int height) { width_ = width; height_ = height; }
+    void setWidth(Value width) { width_ = width; }
+    void setHeight(Value height) { height_ = height; }
+    void setSize(Value width, Value height) { width_ = width; height_ = height; }
+    void setSize(const RSizeValue<Value> &size) { setSize(size.width(), size.height()); }
 
-    void expand(int width, int height) { width_ += width; height_ += height; }
+    void expand(Value width, Value height) { width_ += width; height_ += height; }
 
     std::string toString() const
     {
         return "(w:" + std::to_string(width_) + " h:" + std::to_string(height_) + ") ";
     }
 
-private:
-    int width_;
-    int height_;
+protected:
+    Value width_;
+    Value height_;
 };
+
+extern template class RSizeValue<int>;
+extern template class RSizeValue<float>;
+
+} // sn RValue
+
+using RSize = RValue::RSizeValue<int>;
+using RSizeF = RValue::RSizeValue<float>;
 
 } // ns Redopera
 

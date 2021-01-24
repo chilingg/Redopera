@@ -41,7 +41,7 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
     node("Window", this),
     format_(format),
     context_(nullptr),
-    vOffset_(0),
+    vOffset_(0, 0),
     size_(width, height)
 {
     glfwDefaultWindowHints();
@@ -222,7 +222,7 @@ void RWindow::setBackColor(RGBA rgba)
 
 void RWindow::setViewportSize(int width, int height)
 {
-    size_.set(width, height);
+    size_.setSize(width, height);
     resizeCallback(context_.getHandle(), windowWidth(), windowHeight());
 }
 
@@ -371,7 +371,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
         {
             n = static_cast<int>(resize.height() * wctrl->format_.vRatio_);
             glViewport((resize.width() - n) / 2, 0, n, resize.height());
-            wctrl->vOffset_.set((resize.width() - n) / 2, 0);
+            wctrl->vOffset_.setPos((resize.width() - n) / 2, 0);
             wctrl->size_.setWidth(n);
             wctrl->size_.setHeight(resize.height());
         }
@@ -379,7 +379,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
         {
             n = static_cast<int>(resize.width() / wctrl->format_.vRatio_);
             glViewport(0, (resize.height() - n) / 2, resize.width(), n);
-            wctrl->vOffset_.set(0, (resize.height() - n) / 2);
+            wctrl->vOffset_.setPos(0, (resize.height() - n) / 2);
             wctrl->size_.setWidth(resize.width());
             wctrl->size_.setHeight(n);
         }
@@ -388,8 +388,8 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
     case Viewport::Full:
     {
         glViewport(0, 0, resize.width(), resize.height());
-        wctrl->vOffset_.set(0, 0);
-        wctrl->size_.set(resize.width(), resize.height());
+        wctrl->vOffset_.setPos(0, 0);
+        wctrl->size_.setSize(resize.width(), resize.height());
         break;
     }
     case Viewport::Fix:
@@ -398,14 +398,14 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
                    (resize.height() - wctrl->size_.height()) / 2.0,
                    wctrl->size_.width(),
                    wctrl->size_.height());
-        wctrl->vOffset_.set((resize.width() - wctrl->size_.width()) / 2.0,
+        wctrl->vOffset_.setPos((resize.width() - wctrl->size_.width()) / 2.0,
                             (resize.height() - wctrl->size_.height()) / 2.0);
         break;
     }
     }
 
     // 传递Translation info
-    wctrl->node.transform(&wctrl->node, RTransform(RPoint(0), wctrl->size_));
+    wctrl->node.transform(&wctrl->node, RTransform(RPoint(), wctrl->size_));
 }
 
 void RWindow::mouseScrollCallback(GLFWwindow *, double x, double y)
@@ -503,6 +503,6 @@ int RWindow::defaultExec()
 
 void RWindow::defaultTransform(RNode *sender, const RTransform &info)
 {
-    renderSys_->setViewprot(0, info.size().width(), 0, info.size().height());
+    renderSys_->setViewprot(0, info.rect().width(), 0, info.rect().height());
     node.transformEventToChild(sender, info);
 }
