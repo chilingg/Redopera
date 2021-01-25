@@ -65,8 +65,8 @@ void startEvent()
     label[3].rRect().setTop(label[0].rect().top());
 
     RWindow::focusWindow()->renderSys()->setMainShaders("SingleShader");
-    RRPI rpi = RWindow::focusWindow()->renderSys()->shaders().use();
-    rpi.setUniform(RWindow::focusWindow()->renderSys()->shaders().uniformLoccal("color"), fcolor);
+    RRPI rpi = RWindow::focusWindow()->renderSys()->shaders()->use();
+    rpi.setUniform(RWindow::focusWindow()->renderSys()->shaders()->uniformLoccal("color"), fcolor);
 }
 
 void inputEvent(RNode *sender, RNode::Instructs*)

@@ -94,9 +94,9 @@ GLuint RRenderSys::modelLocal() const
     return renderers_.at(mainShaders_).mLoc_;
 }
 
-const RShaders &RRenderSys::shaders() const
+const RShaders *RRenderSys::shaders() const
 {
-    return renderers_.at(mainShaders_).shaders_;
+    return &renderers_.at(mainShaders_).shaders_;
 }
 
 const RShaders *RRenderSys::queryShaders(const std::string &name) const
@@ -203,7 +203,7 @@ void RRenderSys::renderLine(const glm::mat4 &mat)
 {
     glBindVertexArray(lineVao_);
 
-    RRPI inter = shaders().use();
+    RRPI inter = shaders()->use();
     inter.setUniformMat(modelLocal(), mat);
     lineColor_.bind();
     glDrawArrays(GL_LINE_LOOP, 0, 4);
@@ -218,7 +218,7 @@ void RRenderSys::renderLine(const RRect &rect)
     glm::mat4 model_ = glm::translate(glm::mat4(1), { rect.left() + rect.width()/2, rect.bottom() + rect.height()/2, 0 });
     model_ = glm::scale(model_, { rect.width(), rect.height(), 0.0f });
 
-    RRPI inter = shaders().use();
+    RRPI inter = shaders()->use();
     inter.setUniformMat(modelLocal(), model_);
     lineColor_.bind();
     glDrawArrays(GL_LINE_LOOP, 0, 4);
@@ -261,7 +261,7 @@ void RRenderSys::initialize()
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), nullptr);
     glBindVertexArray(0);
 
-    lineColor_ = RTexture::createRedTex();
+    lineColor_ = RTexture::createWhiteTex();
 }
 
 std::string RRenderSys::availableName(const std::string &name) const

@@ -33,7 +33,7 @@ public:
     const Redopera::RRenderSys& operator<<(T &obj) const
     {
         bindVAO();
-        auto inter = shaders().use();
+        auto inter = shaders()->use();
         inter.setUniformMat(modelLocal(), obj.model());
         obj.texture().bind();
         drawPlane();
@@ -48,7 +48,7 @@ public:
     GLuint viewLocal() const;
     GLuint modelLocal() const;
 
-    const RShaders& shaders() const;
+    const RShaders* shaders() const;
     const RShaders* queryShaders(const std::string &name) const;
 
     void setMainShaders(const std::string &name);
