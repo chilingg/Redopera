@@ -1,4 +1,4 @@
-#include <rsc/RResource.h>
+#include <RResource.h>
 #include <RGame.h>
 #include <RDebug.h>
 #include <RMath.h>

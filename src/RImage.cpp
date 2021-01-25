@@ -1,8 +1,8 @@
 #include <RColor.h>
 #include <RSize.h>
 #include <RDebug.h>
+#include <RResource.h>
 #include <rsc/RImage.h>
-#include <rsc/RResource.h>
 #include <stb_image.h>
 
 #include <cstring>

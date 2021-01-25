@@ -1,5 +1,5 @@
 #include <rsc/RMp3.h>
-#include <rsc/RResource.h>
+#include <RResource.h>
 #include <RDebug.h>
 
 #include <minimp3.h>

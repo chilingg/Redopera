@@ -1,5 +1,5 @@
 #include <rsc/RPack.h>
-#include <rsc/RResource.h>
+#include <RResource.h>
 #include <RDebug.h>
 #include <RThread.h>
 

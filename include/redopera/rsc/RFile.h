@@ -27,6 +27,7 @@ struct RFile
 
             file.data = std::make_unique<RData[]>(size);
             fread(file.data.get(), 1, size, fp);
+            file.size = size;
             fclose(fp);
         }
 

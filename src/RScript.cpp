@@ -1,5 +1,5 @@
 #include <rsc/RScript.h>
-#include <rsc/RResource.h>
+#include <RResource.h>
 #include <RDebug.h>
 
 using namespace Redopera;

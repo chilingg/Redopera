@@ -5,7 +5,7 @@
 #include <RRect.h>
 #include <RKeeper.h>
 #include <RNode.h>
-#include <rsc/RResource.h>
+#include <RResource.h>
 #include <rsc/RImage.h>
 #include <rsc/RScript.h>
 #include <rsc/RMp3.h>
