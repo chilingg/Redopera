@@ -19,7 +19,14 @@ public:
         init = glfwInit() == GLFW_TRUE ? true : false;
     }
 
-    ~RGame() { init = false; };
+    ~RGame()
+    {
+        if(init)
+        {
+            glfwTerminate();
+            init = false;
+        }
+    };
 
     explicit operator bool() const { return init; }
 
