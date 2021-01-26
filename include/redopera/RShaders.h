@@ -95,7 +95,7 @@ public:
     GLuint id() const;
     RRPI use() const;
 
-    GLint uniformLoccal(const std::string &name) const;
+    GLint getUniformLoc(const std::string &name) const;
 
     // attachShader() 与 detachShader() 都是只在重新linkProgram时生效
     void attachShader(const RShader &shader);

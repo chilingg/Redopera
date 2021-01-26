@@ -43,7 +43,7 @@ public:
     {
         sys->setMainShaders("SingleShader");
         RRPI rpi = sys->shaders()->use();
-        rpi.setUniform(sys->shaders()->uniformLoccal("color"), .1f, .1f, .14f);
+        rpi.setUniform(sys->shaders()->getUniformLoc("color"), .1f, .1f, .14f);
         *sys<< arrow[0] << arrow[1] << arrow[2] << arrow[3];
         rpi.reset();
 

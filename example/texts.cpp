@@ -66,7 +66,7 @@ void startEvent()
 
     RWindow::focusWindow()->renderSys()->setMainShaders("SingleShader");
     RRPI rpi = RWindow::focusWindow()->renderSys()->shaders()->use();
-    rpi.setUniform(RWindow::focusWindow()->renderSys()->shaders()->uniformLoccal("color"), fcolor);
+    rpi.setUniform(RWindow::focusWindow()->renderSys()->shaders()->getUniformLoc("color"), fcolor);
 }
 
 void inputEvent(RNode *sender, RNode::Instructs*)

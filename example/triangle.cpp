@@ -74,8 +74,8 @@ public:
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), R_BUFF_OFF(0));
         glEnableVertexAttribArray(0);
 
-        GLuint projection = shaders.uniformLoccal("projecte");
-        modelLoc = shaders.uniformLoccal("model");
+        GLuint projection = shaders.getUniformLoc("projecte");
+        modelLoc = shaders.getUniformLoc("model");
 
         // Interface生存周期内对应的shader program都处于glUseProgram()调用中，析构时自动glUseProgram(0);
         RRPI intf = shaders.use();

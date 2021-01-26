@@ -61,7 +61,7 @@ RRenderSys::RRenderSys()
 }
 
 RRenderSys::RRenderSys(const std::string &name, const RShaders &shaders):
-    RRenderSys(name, shaders, shaders.uniformLoccal("project"), shaders.uniformLoccal("view"), shaders.uniformLoccal("model"))
+    RRenderSys(name, shaders, shaders.getUniformLoc("project"), shaders.getUniformLoc("view"), shaders.getUniformLoc("model"))
 {
 
 }
@@ -114,7 +114,7 @@ void RRenderSys::setMainShaders(const std::string &name)
 
 std::string RRenderSys::addShaders(const std::string &name, const RShaders &shaders)
 {
-    return addShaders(name, shaders, shaders.uniformLoccal("project"), shaders.uniformLoccal("view"), shaders.uniformLoccal("model"));
+    return addShaders(name, shaders, shaders.getUniformLoc("project"), shaders.getUniformLoc("view"), shaders.getUniformLoc("model"));
 }
 
 std::string RRenderSys::addShaders(const std::string &name, const RShaders &shaders, GLuint pLoc, GLuint vLoc, GLuint mLoc)

@@ -367,7 +367,7 @@ RRPI RShaders::use() const
     return RRPI(*progID_);
 }
 
-GLint RShaders::uniformLoccal(const std::string &name) const
+GLint RShaders::getUniformLoc(const std::string &name) const
 {
     GLint loc = glGetUniformLocation(*progID_, name.c_str());
 #ifndef NDEBUG
