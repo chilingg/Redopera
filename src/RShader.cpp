@@ -85,12 +85,20 @@ GLuint RShader::id() const
 
 bool RShader::load(const std::string &shader, Type type)
 {
-    RFile file = RFile::load(shader);
-
     const char *code;
+    RFile file;
 
-    if (file.size)
-        code = reinterpret_cast<char*>(file.data.get());
+    if(shader.find('\n') == std::string::npos)
+    {
+        file = RFile::load(shader);
+        if (!file.data)
+        {
+            rPrError("Failed to load shader file <" + RResource::rscPath(shader) + '>');
+            return false;
+        }
+        else
+            code = reinterpret_cast<char*>(file.data.get());
+    }
     else
         code = shader.c_str();
 
@@ -101,7 +109,7 @@ bool RShader::load(const std::string &shader, Type type)
 
     int success;
     glGetShaderiv(*id, GL_COMPILE_STATUS, &success);
-    if(rCheck(!success, "Failed to load " + shaderTypeName(type) + " in:\n" + shader))
+    if(rCheck(!success, "Failed to compile shader " + shaderTypeName(type) + shader))
     {
         char infoLog[256];
         glGetShaderInfoLog(*id, sizeof(infoLog), nullptr, infoLog);
