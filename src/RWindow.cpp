@@ -1,5 +1,4 @@
 #include <RWindow.h>
-#include <RTransform.h>
 #include <RDebug.h>
 #include <RRect.h>
 #include <RInput.h>
@@ -97,7 +96,7 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
     glfwSetWindowIcon(context_.getHandle(), 1, &icon);
 
     node.setExecFunc([this]{ return defaultExec(); });
-    node.setTransformFunc([this](RNode *sender, const RTransform &info){ defaultTransform(sender, info); });
+    node.setTransformFunc([this](RNode *sender, const RRect &info){ defaultTransform(sender, info); });
 
     renderSys_ = std::make_unique<RRenderSys>();
     renderSys_->addShaders("SimpleShader", RRenderSys::createSimpleShaders());
@@ -405,7 +404,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
     }
 
     // 传递Translation info
-    wctrl->node.transform(&wctrl->node, RTransform(RPoint(), wctrl->size_));
+    wctrl->node.transform(&wctrl->node, RRect(RPoint(), wctrl->size_));
 }
 
 void RWindow::mouseScrollCallback(GLFWwindow *, double x, double y)
@@ -501,8 +500,8 @@ int RWindow::defaultExec()
     return EXIT_SUCCESS;
 }
 
-void RWindow::defaultTransform(RNode *sender, const RTransform &info)
+void RWindow::defaultTransform(RNode *sender, const RRect &info)
 {
-    renderSys_->setViewprot(0, info.rect().width(), 0, info.rect().height());
+    renderSys_->setViewprot(0, info.width(), 0, info.height());
     node.transformEventToChild(sender, info);
 }

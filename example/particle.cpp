@@ -1,5 +1,6 @@
 #include <RGame.h>
 #include <RPlane.h>
+#include <RWindow.h>
 #include <deque>
 #include <cstdlib>
 

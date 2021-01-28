@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <atomic>
 
-#include <RTransform.h>
+#include <RRect.h>
 
 namespace Redopera {
 
@@ -81,7 +81,7 @@ public:
     void setStartFunc(std::function<void()> func) { startFunc = func; }
     void setFinishFunc(std::function<void()> func) { finishFunc = func; }
 
-    void setTransformFunc(std::function<void(RNode*, const RTransform&)> func) { transformFunc = func; }
+    void setTransformFunc(std::function<void(RNode*, const RRect&)> func) { transformFunc = func; }
     void setProcessFunc(std::function<void(RNode*, Instructs *)> func) { processFunc = func; }
     void setCustomFunc(std::function<bool(std::any*)> func) { customFunc = func; }
 
@@ -94,11 +94,11 @@ public:
     void dispatchCustomEvent(std::any *data);
 
     // Pass only direct childnode
-    void transformEventToChild(RNode *sender, const RTransform &info);
+    void transformEventToChild(RNode *sender, const RRect &info);
     void processEventToChild(RNode *sender, Instructs *instructs);
 
     void updateThis(RRenderSys *sys);
-    void transform(RNode *sender, const RTransform &info); // Default call transformEventTochild
+    void transform(RNode *sender, const RRect &info); // Default call transformEventTochild
     void process(RNode *sender, Instructs *instructs); // Default call processEventToChild
 
     int exec();
@@ -114,7 +114,7 @@ private:
     std::function<void()> finishFunc;
     std::function<void()> startFunc;
 
-    std::function<void(RNode*, const RTransform &info)> transformFunc;
+    std::function<void(RNode*, const RRect &info)> transformFunc;
     std::function<void(RNode*, Instructs*)> processFunc;
     std::function<bool(std::any*)> customFunc;
 

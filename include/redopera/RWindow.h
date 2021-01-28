@@ -13,7 +13,6 @@ namespace Redopera {
 
 class RCursor;
 class RImage;
-class RRenderSys;
 
 class RWindow
 {
@@ -131,7 +130,7 @@ private:
     static void cursorPosCollback(GLFWwindow *window, double x, double y);
 
     int defaultExec();
-    void defaultTransform(RNode *sender, const RTransform &info);
+    void defaultTransform(RNode *sender, const RRect &info);
 
     static Format defaultFormat;
     static std::atomic<RWindow*> focusWindowP;

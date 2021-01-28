@@ -1,5 +1,4 @@
 #include <RNode.h>
-#include <RTransform.h>
 #include <regex>
 #include <cassert>
 
@@ -10,7 +9,7 @@ RNode::RNode():
     updateFunc([](RRenderSys *){}),
     finishFunc([](){}),
     startFunc([](){}),
-    transformFunc([this](RNode *sender, const RTransform &info){ transformEventToChild(sender, info); }),
+    transformFunc([this](RNode *sender, const RRect &info){ transformEventToChild(sender, info); }),
     processFunc([this](RNode *sender, Instructs *instructs){ processEventToChild(sender, instructs); }),
     customFunc([](std::any *){ return true; })
 {
@@ -285,7 +284,7 @@ void RNode::dispatchCustomEvent(std::any *data)
         p->dispatchCustomEvent(data);
 }
 
-void RNode::transformEventToChild(RNode *sender, const RTransform &info)
+void RNode::transformEventToChild(RNode *sender, const RRect &info)
 {
     for(auto& [n, p] : children_)
         p->transformFunc(sender, info);
@@ -302,7 +301,7 @@ void RNode::updateThis(RRenderSys *sys)
     updateFunc(sys);
 }
 
-void RNode::transform(RNode *sender, const RTransform &info)
+void RNode::transform(RNode *sender, const RRect &info)
 {
     transformFunc(sender, info);
 }

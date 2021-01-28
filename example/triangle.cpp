@@ -109,7 +109,7 @@ int main()
     format.background = 0x101018ff;
     RWindow window(500, 500, "Triangle", format);
     // Rwindow默认的transformFunc会对RRenderSys设置Viewport和向下传递Transform，在此两者都不需要
-    window.node.setTransformFunc([](RNode*, const RTransform&){});
+    window.node.setTransformFunc([](RNode*, const RRect&){});
 
     TestCtl t;
     t.node.changeParent(&window.node);
