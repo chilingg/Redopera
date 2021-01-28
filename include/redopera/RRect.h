@@ -140,6 +140,10 @@ public:
         RPointValue2<Value>::setPos(pos.x(), pos.y());
     }
 
+    RPointValue2<Value>& rPos() { return *this; }
+
+    RSizeValue<Value>& rSize() { return *this; }
+
     Value top() const { return RPointValue2<Value>::y() + RSizeValue<Value>::height(); }
 
     Value bottom() const { return RPointValue2<Value>::y(); }
