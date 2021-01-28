@@ -3,7 +3,6 @@
 
 #include "ROpenGL.h"
 #include "RDebug.h"
-#include "RWindow.h"
 
 namespace Redopera {
 
