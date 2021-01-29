@@ -17,12 +17,25 @@ namespace glm {
 
 mat4 perspective(float left, float right, float bottom, float top, float near, float far);
 
-}
+} // ns glm
 
-namespace Redopera { class RDebug; }
+#include <RRect.h>
 
-const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec3 &vec);
-const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec4 &vec);
-const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::mat4 &mat);
+namespace Redopera {
+
+class RDebug;
+
+const RDebug& operator<<(const RDebug &d, const glm::vec3 &vec);
+const RDebug& operator<<(const RDebug &d, const glm::vec4 &vec);
+const RDebug& operator<<(const RDebug &d, const glm::mat4 &mat);
+
+namespace Math {
+
+glm::mat4 modelMat(const RRect &rect);
+glm::mat4 modelMat(const RRectF &rect);
+
+} // ns Math
+
+} // ns Redopera
 
 #endif // RMATHS_H
