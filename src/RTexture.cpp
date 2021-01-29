@@ -108,19 +108,27 @@ RTexture::ExtFormat RTexture::extFormat(int channel)
     return eformat;
 }
 
-RTexture::RTexture(const std::string &path, const RTexture::Format &format)
+RTexture::RTexture(const std::string &path, const RTexture::Format &format):
+    RTexture(RImage(path), format)
 {
-    load(path, format);
+
 }
 
-RTexture::RTexture(const RImage &img, const RTexture::Format &format)
+RTexture::RTexture(const RImage &img, const RTexture::Format &format):
+    RTexture(img.data(), img.width(), img.height(), img.channel(), format)
 {
-    load(img, format);
+
 }
 
 RTexture::RTexture(const RData *data, int width, int height, int channel, const RTexture::Format &format)
 {
     load(data, width, height, channel, format);
+}
+
+RTexture::RTexture(const RData *data, const RSize &size, int channel, const RTexture::Format &format):
+    RTexture(data, size.width(), size.height(), channel, format)
+{
+
 }
 
 RTexture::RTexture(const RTexture &tex):
@@ -212,6 +220,11 @@ bool RTexture::load(const RData *data, int width, int height, int echannel, cons
     width_ = width;
     height_ = height;
     return true;
+}
+
+bool RTexture::load(const RData *data, const RSize &size, int echannel, const RTexture::Format &format)
+{
+    return load(data, size.width(), size.height(), echannel, format);
 }
 
 bool RTexture::load(const RImage &img, const RTexture::Format &format)

@@ -36,6 +36,7 @@ public:
     bool load(const std::string &path, bool flip = false);
     bool load(const RData *buf, size_t size, bool flip = false);
     bool load(const RData *data, int width, int height, int channel);
+    bool load(const RData *data, const RSize &size, int channel);
     void flipV();
     void flipH();
     void rotate90();

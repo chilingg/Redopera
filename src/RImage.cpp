@@ -134,6 +134,11 @@ bool RImage::load(const RData *data, int width, int height, int channel)
     return true;
 }
 
+bool RImage::load(const RData *data, const RSize &size, int channel)
+{
+    return load(data, size.width(), size.height(), channel);
+}
+
 void RImage::flipV()
 {
     copyOnWrite();

@@ -89,6 +89,7 @@ public:
     RTexture(const std::string &path, const Format &format = textureFormat);
     RTexture(const RImage &img, const Format &format = textureFormat);
     RTexture(const RData *data, int width, int height, int channel, const Format &format = textureFormat);
+    RTexture(const RData *data, const RSize &size, int channel, const Format &format = textureFormat);
     RTexture(const RTexture &tex);
     RTexture(const RTexture &&tex);
     RTexture& operator=(RTexture tex);
@@ -104,6 +105,7 @@ public:
     void bind(unsigned unit = 0) const; // unit直接指定纹理单元号，无需使用GL_TEXTURE0
 
     bool load(const RData *data, int width, int height, int echannel, const Format &format = textureFormat);
+    bool load(const RData *data, const RSize &size, int echannel, const Format &format = textureFormat);
     bool load(const RImage &img, const Format &format = textureFormat);
     bool load(const std::string &path, const Format &format = textureFormat);
     void reload(const RData* data);
