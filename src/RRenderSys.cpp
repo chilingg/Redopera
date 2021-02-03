@@ -109,10 +109,7 @@ const RShaders *RRenderSys::queryShaders(const std::string &name) const
 
 void RRenderSys::setMainShaders(const std::string &name)
 {
-#ifndef NDEBUG
-    if(renderers_.count(name) == 0)
-        throw "Set main shader error: " + name + " not found!";
-#endif
+    assert(renderers_.count(name));
     mainShaders_ = name;
 }
 
