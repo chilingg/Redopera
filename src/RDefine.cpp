@@ -5,6 +5,7 @@
 #include <RPoint.h>
 #include <RSize.h>
 #include <RTransform.h>
+#include <RPlane.h>
 
 using namespace Redopera;
 
@@ -107,3 +108,7 @@ template class Redopera::RValue::RRectValue<float>;
 // RTransform.h
 template class Redopera::RValue::RTransformValue<int>;
 template class Redopera::RValue::RTransformValue<float>;
+
+// RPlane.h
+template class Redopera::RValue::RPlaneValue<int>;
+template class Redopera::RValue::RPlaneValue<float>;
