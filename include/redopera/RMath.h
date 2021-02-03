@@ -25,10 +25,6 @@ namespace Redopera {
 
 class RDebug;
 
-const RDebug& operator<<(const RDebug &d, const glm::vec3 &vec);
-const RDebug& operator<<(const RDebug &d, const glm::vec4 &vec);
-const RDebug& operator<<(const RDebug &d, const glm::mat4 &mat);
-
 namespace Math {
 
 glm::mat4 modelMat(const RRect &rect);
@@ -37,5 +33,9 @@ glm::mat4 modelMat(const RRectF &rect);
 } // ns Math
 
 } // ns Redopera
+
+const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec3 &vec);
+const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec4 &vec);
+const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::mat4 &mat);
 
 #endif // RMATHS_H
