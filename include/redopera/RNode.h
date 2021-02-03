@@ -6,7 +6,6 @@
 #include <map>
 #include <any>
 #include <typeinfo>
-#include <stdexcept>
 #include <atomic>
 
 #include <RRect.h>
@@ -64,7 +63,7 @@ public:
     {
         Holder *p;
         if(typeid (p).hash_code() != holder_.hashcode)
-            throw std::runtime_error("Error holder type!");
+            throw "Error holder type!";
         return reinterpret_cast<Holder*>(holder_.p);
     }
 
@@ -109,6 +108,12 @@ public:
 private:
     int defaultExecFunc();
 
+    std::vector<RNode*>::iterator findChild(RNode *node);
+    std::vector<RNode*>::iterator findChild(const std::string &name);
+
+    std::vector<RNode*>::const_iterator findChild(RNode *node) const;
+    std::vector<RNode*>::const_iterator findChild(const std::string &name) const;
+
     std::function<int()> execFunc;
     std::function<void(RRenderSys *sys)> updateFunc;
     std::function<void()> finishFunc;
@@ -118,8 +123,8 @@ private:
     std::function<void(RNode*, Instructs*)> processFunc;
     std::function<bool(std::any*)> customFunc;
 
-    std::map<std::string, RNode*> children_;
-    std::atomic<Status> state_ = Status::Normal;
+    std::vector<RNode*> children_;
+    Status state_ = Status::Normal;
     std::string name_ = "Node";
     RNode *parent_ = nullptr;
     struct {

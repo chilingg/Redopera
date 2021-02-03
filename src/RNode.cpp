@@ -20,7 +20,7 @@ RNode::~RNode()
 {
     freeAllChild();
     if(parent_)
-        parent_->children_.erase(name_);
+        parent_->children_.erase(parent_->findChild(this));
 }
 
 bool RNode::isLooping() const
@@ -40,13 +40,14 @@ bool RNode::isValid() const
 
 bool RNode::isChild(RNode *child) const
 {
-    auto it = children_.find(child->name_);
-    return it->second == child;
+    auto it = findChild(child);
+    return it != children_.end();
 }
 
 bool RNode::isChild(const std::string &child) const
 {
-    return children_.count(child) != 0;
+    auto it = findChild(child);
+    return it != children_.end();
 }
 
 bool RNode::isAncestor(RNode *node) const
@@ -82,11 +83,11 @@ const std::string& RNode::name() const
 std::string RNode::availableName(const std::string &name) const
 {
     std::string an = name;
-    auto it = children_.find(an);
+    auto it = findChild(an);
     for (size_t n = 1; it != children_.end(); ++n)
     {
        an = name + std::to_string(n);
-       it = children_.find(an);
+       it = findChild(an);
     }
 
     return an;
@@ -130,11 +131,11 @@ const RNode *RNode::node(const std::string &path) const
             result = result->parent_;
         else
         {
-            auto find = result->children_.find(it->str());
+            auto find = result->findChild(it->str());
             if(find == result->children_.end())
                 return nullptr;
             else
-                result = find->second;
+                result = *find;
         }
         ++it;
     }
@@ -173,7 +174,7 @@ void RNode::addChild(RNode *child)
 
 bool RNode::freeChild(RNode *child)
 {
-    if(children_.count(child->name_))
+    if(isChild(child))
     {
         child->changeParent(nullptr);
         return true;
@@ -183,10 +184,10 @@ bool RNode::freeChild(RNode *child)
 
 bool RNode::freeChild(const std::string &name)
 {
-    auto it = children_.find(name);
+    auto it = findChild(name);
     if(it != children_.end())
     {
-        it->second->changeParent(nullptr);
+        (*it)->changeParent(nullptr);
         return true;
     }
     return false;
@@ -197,7 +198,7 @@ void RNode::freeAllChild()
     while(!children_.empty())
     {
         auto c = children_.begin();
-        c->second->changeParent(nullptr);
+        (*c)->changeParent(nullptr);
     }
 }
 
@@ -207,7 +208,7 @@ void RNode::changeParent(RNode *parent)
         throw std::runtime_error("This parent is self");
 
     if(parent_)
-        parent_->children_.erase(name_);
+        parent_->children_.erase(findChild(this));
     parent_ = parent;
 
     Status s = Status::Normal;
@@ -216,7 +217,7 @@ void RNode::changeParent(RNode *parent)
         name_ = parent_->availableName(name_);
 
         s = parent_->state_;
-        parent_->children_.emplace(name_, this);
+        parent_->children_.push_back(this);
     }
 
     if(s != state_)
@@ -235,9 +236,11 @@ const std::string &RNode::rename(const std::string &name)
 {
     if(parent_)
     {
-        parent_->children_.erase(name_);
-        name_ = parent_->availableName(name);
-        parent_->children_.emplace(name_, this);
+        auto it = parent_->findChild(name);
+        if(it != children_.end() && *it != this)
+            name_ = parent_->availableName(name);
+        else
+            name_ = name;
     }
     else
         name_ = name;
@@ -248,8 +251,7 @@ const std::string &RNode::rename(const std::string &name)
 void RNode::update(RRenderSys *sys)
 {
     updateFunc(sys);
-    for(auto& [n, p] : children_)
-        p->update(sys);
+    std::for_each(children_.begin(), children_.end(), [sys](RNode *c) { c->update(sys); });
 }
 
 void RNode::dispatchStartEvent()
@@ -259,8 +261,7 @@ void RNode::dispatchStartEvent()
         return;
 
     startFunc();
-    for(auto& [n, p] : children_)
-        p->dispatchStartEvent();
+    std::for_each(children_.begin(), children_.end(), [](RNode *c) { c->dispatchStartEvent(); });
 
     state_ = Status::Looping; // 事件结束后更改状态，避免在Startevent响应中入树重复触发Startevent
 }
@@ -269,31 +270,27 @@ void RNode::dispatchFinishEvent()
 {
     assert(state_ != Status::Looping);
 
-    for(auto& [n, p] : children_)
-    {
-        p->state_ = state_.load();
-        p->dispatchFinishEvent();
-    }
+    std::for_each(children_.begin(), children_.end(), [this](RNode *c) {
+        c->state_ = state_;
+        c->dispatchFinishEvent();
+    });
     finishFunc();
 }
 
 void RNode::dispatchCustomEvent(std::any *data)
 {
     customFunc(data);
-    for(auto& [n, p] : children_)
-        p->dispatchCustomEvent(data);
+    std::for_each(children_.begin(), children_.end(), [&data](RNode *c) { c->dispatchCustomEvent(data); });
 }
 
 void RNode::transformEventToChild(RNode *sender, const RRect &info)
 {
-    for(auto& [n, p] : children_)
-        p->transformFunc(sender, info);
+    std::for_each(children_.begin(), children_.end(), [sender, &info](RNode *c) { c->transformFunc(sender, info); });
 }
 
 void RNode::processEventToChild(RNode *sender, RNode::Instructs *instructs)
 {
-    for(auto& [n, p] : children_)
-        p->processFunc(sender, instructs);
+    std::for_each(children_.begin(), children_.end(), [sender, &instructs](RNode *c) { c->processFunc(sender, instructs); });
 }
 
 void RNode::updateThis(RRenderSys *sys)
@@ -321,8 +318,8 @@ void RNode::breakLooping()
     if (parent_)
         parent_->breakLooping();
     else {
-        Status loop = Status::Looping;
-        state_.compare_exchange_strong(loop, Status::Normal);
+        if(state_ == Status::Looping)
+            state_ = Status::Normal;
     }
 }
 
@@ -331,8 +328,8 @@ void RNode::errorToLooping()
     if (parent_)
         parent_->errorToLooping();
     else {
-        Status loop = Status::Looping;
-        state_.compare_exchange_strong(loop, Status::Error);
+        if(state_ == Status::Looping)
+            state_ = Status::Error;
     }
 }
 
@@ -344,6 +341,7 @@ int RNode::defaultExecFunc()
     while(state_ == Status::Looping)
     {
         process(this, &instructs);
+        update(nullptr);
     }
 
     dispatchFinishEvent();
@@ -351,4 +349,24 @@ int RNode::defaultExecFunc()
     if(state_ == Status::Error)
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
+}
+
+std::vector<RNode*>::iterator RNode::findChild(RNode *node)
+{
+    return std::find(children_.begin(), children_.end(), node);
+}
+
+std::vector<RNode*>::iterator RNode::findChild(const std::string &name)
+{
+    return std::find_if(children_.begin(), children_.end(), [&name](RNode *child) { return child->name_ == name; });
+}
+
+std::vector<RNode*>::const_iterator RNode::findChild(RNode *node) const
+{
+    return std::find(children_.cbegin(), children_.cend(), node);
+}
+
+std::vector<RNode*>::const_iterator RNode::findChild(const std::string &name) const
+{
+    return std::find_if(children_.begin(), children_.end(), [&name](RNode *child) { return child->name_ == name; });
 }
