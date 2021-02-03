@@ -96,7 +96,6 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
     glfwSetWindowIcon(context_.getHandle(), 1, &icon);
 
     node.setExecFunc([this]{ return defaultExec(); });
-    node.setTransformFunc([this](RNode *sender, const RRect &info){ defaultTransform(sender, info); });
 
     renderSys_ = std::make_unique<RRenderSys>();
     renderSys_->addShaders("SimpleShader", RRenderSys::createSimpleShaders());
@@ -498,10 +497,4 @@ int RWindow::defaultExec()
     if(!node.isNormal())
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
-}
-
-void RWindow::defaultTransform(RNode *sender, const RRect &info)
-{
-    renderSys_->setViewprot(0, info.width(), 0, info.height());
-    node.transformEventToChild(sender, info);
 }

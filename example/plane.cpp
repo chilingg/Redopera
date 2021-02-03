@@ -51,19 +51,21 @@ public:
         *sys << plane;
     }
 
-    void translation(RNode *, const RTransform &info)
+    void translation(RNode *sender, const RRect &info)
     {
-        viewpro = info.rect();
+        sender->holder<RWindow>()->renderSys()->setViewprot(0, info.width(), 0, info.height());
 
-        plane.rRect().setCenter(info.rect().center());
+        viewpro = info;
 
-        arrow[0].rRect().setCenter(info.rect().center());
+        plane.rRect().setCenter(info.center());
+
+        arrow[0].rRect().setCenter(info.center());
         arrow[0].rRect().move(0, 60);
-        arrow[1].rRect().setCenter(info.rect().center());
+        arrow[1].rRect().setCenter(info.center());
         arrow[1].rRect().move(-60, 0);
-        arrow[2].rRect().setCenter(info.rect().center());
+        arrow[2].rRect().setCenter(info.center());
         arrow[2].rRect().move(0, -60);
-        arrow[3].rRect().setCenter(info.rect().center());
+        arrow[3].rRect().setCenter(info.center());
         arrow[3].rRect().move(60, 0);
     }
 

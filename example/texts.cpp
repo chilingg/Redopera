@@ -65,6 +65,7 @@ void startEvent()
     label[3].rRect().setTop(label[0].rect().top());
 
     RWindow::focusWindow()->renderSys()->setMainShaders("SingleShader");
+    RWindow::focusWindow()->renderSys()->setViewprot(0, WIDTH, 0, HEIGHT);
     RRPI rpi = RWindow::focusWindow()->renderSys()->shaders()->use();
     rpi.setUniform(RWindow::focusWindow()->renderSys()->shaders()->getUniformLoc("color"), fcolor);
 }
@@ -116,6 +117,7 @@ int main()
 
     RWindow::Format format;
     format.background = 0x101020ff;
+    format.viewport = RWindow::Viewport::Fix;
     RWindow textWin(WIDTH, HEIGHT, "Texts Window", format);
 
     //RFont font("/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc");
