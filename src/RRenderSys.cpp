@@ -75,8 +75,8 @@ RRenderSys::RRenderSys(const std::string &name, const RShaders &shaders, GLuint 
 
 RRenderSys::~RRenderSys()
 {
-    glDeleteVertexArrays(2, &vao_);
-    glDeleteBuffers(2, &vbo_);
+    glDeleteVertexArrays(1, &vao_);
+    glDeleteBuffers(1, &vbo_);
 }
 
 GLuint RRenderSys::projectLocal() const
@@ -109,6 +109,10 @@ const RShaders *RRenderSys::queryShaders(const std::string &name) const
 
 void RRenderSys::setMainShaders(const std::string &name)
 {
+#ifndef NDEBUG
+    if(renderers_.count(name) == 0)
+        throw "Set main shader error: " + name + " not found!";
+#endif
     mainShaders_ = name;
 }
 
@@ -201,19 +205,19 @@ void RRenderSys::drawPlane() const
 
 void RRenderSys::renderLine(const glm::mat4 &mat)
 {
-    glBindVertexArray(lineVao_);
+    bindVAO();
 
     RRPI inter = shaders()->use();
     inter.setUniformMat(modelLocal(), mat);
     lineColor_.bind();
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
+    glDrawArrays(GL_LINE_LOOP, 2, 4);
 
     glBindVertexArray(0);
 }
 
 void RRenderSys::renderLine(const RRect &rect)
 {
-    glBindVertexArray(lineVao_);
+    bindVAO();
 
     glm::mat4 model_ = glm::translate(glm::mat4(1), { rect.left() + rect.width()/2, rect.bottom() + rect.height()/2, 0 });
     model_ = glm::scale(model_, { rect.width(), rect.height(), 0.0f });
@@ -221,21 +225,24 @@ void RRenderSys::renderLine(const RRect &rect)
     RRPI inter = shaders()->use();
     inter.setUniformMat(modelLocal(), model_);
     lineColor_.bind();
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
+    glDrawArrays(GL_LINE_LOOP, 2, 4);
 
     glBindVertexArray(0);
 }
 
 void RRenderSys::initialize()
 {
-    glGenVertexArrays(2, &vao_); // vao_ & lineVao_
-    glGenBuffers(2, &vbo_); // vbo_ & lineVbo
+    glGenVertexArrays(1, &vao_); // vao_ & lineVao_
+    glGenBuffers(1, &vbo_); // vbo_ & lineVbo
 
     float plane[]{
             0.5f,-0.5f, 1.0f, 0.0f,//右下
             0.5f, 0.5f, 1.0f, 1.0f,//右上
            -0.5f,-0.5f, 0.0f, 0.0f,//左下
            -0.5f, 0.5f, 0.0f, 1.0f,//左上
+
+            0.5f, 0.5f, 0.9f, 0.9f,//右上 不知为和1.0采集不到纹素
+            0.5f,-0.5f, 1.0f, 0.0f,//右下
     };
 
     glBindVertexArray(vao_);
@@ -245,20 +252,6 @@ void RRenderSys::initialize()
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), nullptr);
     glEnableVertexAttribArray(1);
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*sizeof(float), R_BUFF_OFF(2*sizeof(float)));
-    glBindVertexArray(0);
-
-    float edge[]{
-             .5f, -.5f, //右下
-             .5f,  .5f, //右上
-            -.5f,  .5f, //左上
-            -.5f, -.5f, //左下
-    };
-
-    glBindVertexArray(lineVao_);
-    glBindBuffer(GL_ARRAY_BUFFER, LineVbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(edge), edge, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2*sizeof(float), nullptr);
     glBindVertexArray(0);
 
     lineColor_ = RTexture::createWhiteTex();

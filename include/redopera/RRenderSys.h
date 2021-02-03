@@ -78,7 +78,7 @@ private:
     void initialize();
     std::string availableName(const std::string &name) const;
 
-    GLuint vao_, lineVao_, vbo_, LineVbo_;
+    GLuint vao_, vbo_;
     std::string mainShaders_;
     RTexture lineColor_;
     std::map<std::string, RenderTools> renderers_;
