@@ -29,7 +29,7 @@ int main()
 
     window.node.setFinishFunc([]{ rDebug << "Finish Event"; });
 
-    window.node.setTransformFunc([](RNode *, const RTransform &info){ rDebug << "Translation Event: " << info; });
+    window.node.setTransformFunc([](RNode *, const RRect &info){ rDebug << "Translation Event: " << info; });
 
     window.node.setProcessFunc([&pos](RNode *, RNode::Instructs *)
     {

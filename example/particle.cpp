@@ -44,7 +44,7 @@ void update(RRenderSys *sys)
     }
 }
 
-void transform(RNode *sender, const RTransform&)
+void transform(RNode *sender, const RRect&)
 {
     sender->holder<RWindow>()->renderSys()->setViewprot(0, 4800, 0, 4800);
 }

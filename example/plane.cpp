@@ -35,7 +35,7 @@ public:
         arrow[3].setRotate(0, 0, glm::radians(270.0f));
 
         node.setUpdateFunc([this](RRenderSys *sys){ update(sys); });
-        node.setTransformFunc([this](RNode *sender, const RTransform &info){ translation(sender, info); });
+        node.setTransformFunc([this](RNode *sender, const RRect &info){ translation(sender, info); });
         node.setProcessFunc([this](RNode *sender, RNode::Instructs *ins) { processEvent(sender, ins); });
     }
 
