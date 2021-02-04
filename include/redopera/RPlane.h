@@ -6,6 +6,7 @@
 #include <RSprite.h>
 
 #include <functional>
+#include <variant>
 
 namespace Redopera {
 
@@ -25,29 +26,33 @@ public:
     ~RPlaneValue() = default;
 
     bool isSingleTex() const { return singleTex_; }
-    const RTexture& texture() const { return texFunc_(); }
+    const RTexture& texture() const { return (this->*texFunc)(); }
+    const RSprite& sprite() const { return std::get<RSprite>(texData_); }
 
-    void setTexture(const std::function<const RTexture &()> &func, bool singleTex = false)
-    {
-        texFunc_ = func;
-        singleTex_ = singleTex;
-    }
+    RSprite& rSprite() { return std::get<RSprite>(texData_); }
 
     void setTexture(const RTexture& tex, bool singleTex = false)
     {
-        texFunc_ = [tex]()->const RTexture& { return tex; };
+        texData_ = tex;
+        texFunc = &RPlaneValue<Value>::getTexForTexture;
         singleTex_ = singleTex;
     }
 
     void setTexture(const RSprite &sprite, bool singleTex = false)
     {
-        texFunc_ = [sprite](){ return sprite.texture(); };
+        texData_ = sprite;
+        texFunc = &RPlaneValue<Value>::getTexForSprite;
         singleTex_ = singleTex;
     }
 
 private:
+    const RTexture& getTexForTexture() const { return std::get<RTexture>(texData_); }
+    const RTexture& getTexForSprite() const { return std::get<RSprite>(texData_).texture(); }
+
+    const RTexture& (RPlaneValue<Value>::*texFunc)() const;
+
     bool singleTex_ = false;
-    std::function<const RTexture&()> texFunc_;
+    std::variant<RTexture, RSprite> texData_;
 };
 
 extern template class RPlaneValue<int>;
