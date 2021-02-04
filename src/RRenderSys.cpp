@@ -33,9 +33,12 @@ void main(void)
 const GLchar *SINGLE_TEXTURE_CODE =
 R"--(
 #version 330 core
-uniform sampler2D tex;
+
 uniform vec3 color = vec3(1., 1., 1.);
 uniform vec4 background = vec4(0., 0., 0., 0.);
+
+uniform sampler2D tex;
+
 in vec2 texCoor;
 out vec4 outColor;
 void main(void)
@@ -128,6 +131,7 @@ std::string RRenderSys::addShaders(const std::string &name, const RShaders &shad
 
 void RRenderSys::removeShaders(const std::string &name)
 {
+    assert(renderers_.count(name));
     renderers_.erase(name);
 }
 
