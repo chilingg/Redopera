@@ -10,11 +10,6 @@
 
 using namespace Redopera;
 
-RPack::RPack(const std::string &path)
-{
-    load(path);
-}
-
 RPack::RPack(const RPack &&pack):
     fileInfo_(std::move(pack.fileInfo_))
 {
@@ -112,7 +107,7 @@ bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::str
         if(fileInfo_[hash].check != check)
         {
             fileInfo_[hash] = FInfo{ size, check, buffer };
-#ifdef R_DEBUG
+#ifndef NDEBUG
             rDebug << EscCtl::green << "RPack: Update file <" + name + '>' <<  EscCtl::non;
 #endif
             return true;
@@ -121,7 +116,7 @@ bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::str
     else
     {
         fileInfo_.emplace(hash, FInfo{ size, check, buffer });
-#ifdef R_DEBUG
+#ifndef NDEBUG
         rDebug << EscCtl::green << "RPack: Insert file <" + name + '>' <<  EscCtl::non;
 #endif
         return true;
@@ -194,7 +189,7 @@ bool RPack::save(const std::string &path)
         rPrError("Failure save pack file as <" + rpath + '>');
         return false;
     }
-#ifdef R_DEBUG
+#ifndef NDEBUG
     rDebug << EscCtl::green << "RPack: Save pack as <" + path + '>' <<  EscCtl::non;
 #endif
     return true;

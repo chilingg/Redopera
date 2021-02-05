@@ -36,7 +36,6 @@ public:
     };
 
     RPack() = default;
-    RPack(const std::string &path);
     RPack(const RPack &&pack);
     void swap(RPack &pack);
     bool operator==(const RPack &pack);
