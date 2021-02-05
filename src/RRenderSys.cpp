@@ -204,6 +204,15 @@ void RRenderSys::drawPlane() const
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
+void RRenderSys::render(const RTexture &tex, const glm::mat4 &model)
+{
+    bindVAO();
+    auto inter = shaders()->use();
+    inter.setUniformMat(modelLocal(), model);
+    tex.bind();
+    drawPlane();
+}
+
 void RRenderSys::renderLine(const glm::mat4 &mat)
 {
     bindVAO();

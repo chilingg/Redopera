@@ -4,18 +4,24 @@
 #include <RKeeper.h>
 #include <RInput.h>
 #include <RTimer.h>
+#include <RTextsLoader.h>
 
 using namespace Redopera;
+
+constexpr float SIZE = 480;
 
 class TestCtl
 {
 public:
     TestCtl():
         node("TestCtrl", this),
-        plane({ RPoint(), RSize(36, 36) })
+        plane({ RPoint(), RSize(36, 36) }, RTexture(RImage::redoperaIcon())),
+        viewpro(0, 0, SIZE, SIZE)
     {
-        plane.setTexture(RTexture(RImage::redoperaIcon()));
-        plane.setFlipV();
+        RRectF rect = plane.rect();
+        rect.setCenter(viewpro.center());
+        plane.setPos(rect.pos());
+        plane.flipV();
 
         RTextsLoader arrowLoad(L"↑", 50, 50);
 
@@ -55,9 +61,11 @@ public:
     {
         sender->holder<RWindow>()->renderSys()->setViewprot(0, info.width(), 0, info.height());
 
-        viewpro = info;
+        float xratio = info.width() / viewpro.width();
+        float yratio = info.height() / viewpro.height();
+        plane.setPos(plane.pos().x() * xratio, plane.pos().y() * yratio);
 
-        plane.rRect().setCenter(info.center());
+        viewpro = info;
 
         arrow[0].rRect().setCenter(info.center());
         arrow[0].rRect().move(0, 60);
@@ -101,15 +109,15 @@ public:
             p.ry() -= step;
 
         if(!p.isOrigin() && viewpro.contains(plane.rect() + p))
-            plane.rRect().move(p);
+            plane.move(p);
     }
 
     RNode node;
 
 private:
     RPlane plane;
-    RPlane arrow[4];
-    RRect viewpro;
+    RPlaneT arrow[4];
+    RRectF viewpro;
     RTimer timer;
 };
 
@@ -119,7 +127,7 @@ int main()
     RWindow::Format format;
     format.background = 0x101018ff;
     format.debug = false;
-    RWindow window(480, 480, "Plane", format);
+    RWindow window(SIZE, SIZE, "Plane", format);
 
     TestCtl t;
     t.node.changeParent(&window.node);

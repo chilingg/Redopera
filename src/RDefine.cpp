@@ -73,24 +73,6 @@ glm::mat4 glm::perspective(float left, float right, float bottom, float top, flo
     return mat;
 }
 
-glm::mat4 Redopera::Math::modelMat(const RRect &rect)
-{
-    glm::mat4 model(1);
-    model = glm::translate(model, { rect.x() + rect.width()/2.f, rect.y() + rect.height()/2.f, 0.f });
-    model = glm::scale(model, { rect.width(), rect.height(), 0.f });
-
-    return model;
-}
-
-glm::mat4 Redopera::Math::modelMat(const RRectF &rect)
-{
-    glm::mat4 model(1);
-    model = glm::translate(model, { rect.x() + rect.width()/2.f, rect.y() + rect.height()/2.f, 0.f });
-    model = glm::scale(model, { rect.width(), rect.height(), 0.f });
-
-    return model;
-}
-
 // RPoint.h
 template class Redopera::RValue::RPointValue2<int>;
 template class Redopera::RValue::RPointValue2<float>;
@@ -108,7 +90,3 @@ template class Redopera::RValue::RRectValue<float>;
 // RTransform.h
 template class Redopera::RValue::RTransformValue<int>;
 template class Redopera::RValue::RTransformValue<float>;
-
-// RPlane.h
-template class Redopera::RValue::RPlaneValue<int>;
-template class Redopera::RValue::RPlaneValue<float>;

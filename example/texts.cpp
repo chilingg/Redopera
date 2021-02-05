@@ -3,6 +3,7 @@
 #include <RPlane.h>
 #include <RRect.h>
 #include <RInput.h>
+#include <RTextsLoader.h>
 
 using namespace Redopera;
 
@@ -39,30 +40,32 @@ void startEvent()
 
     RTextsLoader textsLoader(texts, 220, 110);
     textsLoader.setTextsFormat(fmt);
+    RRect rect;
+
+    rect.setSize(220, 110);
+    rect.setX(20);
+    rect.setTop(HEIGHT - 20);
+    label[0].setModel(rect);
     label[0].setTexture(textsLoader.texture());
-    label[0].setSize(220, 110);
-    label[0].rRect().setX(20);
-    label[0].rRect().setTop(HEIGHT - 20);
 
     textsLoader.setAlign(RTextsLoader::Align::Mind, RTextsLoader::Align::Mind);
-    label[1].setSize(textsLoader.size());
+    rect.setTop(rect.bottom() - 20);
+    label[1].setModel(rect);
     label[1].setTexture(textsLoader.texture());
-    label[1].rRect().setX(20);
-    label[1].rRect().setTop(label[0].rect().bottom() - 20);
 
     textsLoader.setAlign(RTextsLoader::Align::Bottom, RTextsLoader::Align::Right);
-    label[2].setSize(textsLoader.size());
+    rect.setTop(rect.bottom() - 20);
+    label[2].setModel(rect);
     label[2].setTexture(textsLoader.texture());
-    label[2].rRect().setX(20);
-    label[2].rRect().setTop(label[1].rect().bottom() - 20);
 
     textsLoader.setAlign(RTextsLoader::Align::Top, RTextsLoader::Align::Right);
     textsLoader.rSize().setSize(90, 240);
     textsLoader.vertical();
+    rect.setSize(textsLoader.size());
+    rect.setX(label[0].rect().right() + 20);
+    rect.setTop(label[0].rect().top());
     label[3].setTexture(textsLoader.texture());
-    label[3].setSize(textsLoader.size());
-    label[3].rRect().setX(label[0].rect().right() + 20);
-    label[3].rRect().setTop(label[0].rect().top());
+    label[3].setModel(rect);
 
     RWindow::focusWindow()->renderSys()->setCurrentShaders("SingleShaders");
     RWindow::focusWindow()->renderSys()->setViewprot(0, WIDTH, 0, HEIGHT);
@@ -73,7 +76,7 @@ void startEvent()
 void inputEvent(RNode *sender, RNode::Instructs*)
 {
     static RPlane *hold;
-    static RPoint2 offset;
+    static RPoint2 prePos;
 
     if (RInput::input().press(Keys::KEY_ESCAPE))
         sender->breakLooping();
@@ -91,18 +94,20 @@ void inputEvent(RNode *sender, RNode::Instructs*)
         else if (label[3].rect().contains(pos))
             hold = &label[3];
 
-        if (hold)
+        if(hold)
         {
-            offset = pos - hold->pos();
+            prePos = pos;
         }
     }
     else if (RInput::input().release(MouseBtn::MOUSE_BUTTON_LEFT))
     {
         hold = nullptr;
     }
-    if (hold && RInput::input().status(MouseBtn::MOUSE_BUTTON_LEFT) == BtnAct::PRESS)
+
+    if (hold && RInput::input().cursorMove())
     {
-        hold->setPos(RInput::input().cursorPos() - offset);
+        hold->move(RInput::input().cursorPos() - prePos);
+        prePos = RInput::input().cursorPos();
     }
 }
 

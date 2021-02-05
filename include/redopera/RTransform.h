@@ -125,7 +125,7 @@ public:
 private:
     void updateModel() const
     {
-        model_ = glm::translate(glm::mat4(1), { rect_.x() + rect_.width()/2, rect_.y() + rect_.height()/2, 0 });
+        model_ = glm::translate(glm::mat4(1), { rect_.x() + rect_.width()/2, rect_.y() + rect_.height()/2, depth_ });
         model_ *= glm::mat4_cast(glm::qua<float>(glm::vec3{ rotate_.x, rotate_.y, rotate_.z }));
         model_ = glm::scale(model_, { rect_.width(), rect_.height(), 0.0f });
 

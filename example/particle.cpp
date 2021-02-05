@@ -6,17 +6,17 @@
 
 using namespace Redopera;
 
-std::deque<std::pair<RPlaneF, RPoint2F>> particles;
-std::unique_ptr<RPlaneF> init;
+std::deque<std::pair<RPlane, RPoint2F>> particles;
+std::unique_ptr<RPlane> init;
 
 int WIDTH = 480, HEIGHT = 480;
 float gravity = 1.f;
 
 void start()
 {
-    init = std::make_unique<RPlaneF>();
+    init = std::make_unique<RPlane>();
     init->setTexture(RTexture::createWhiteTex());
-    init->setRect(RRectF(WIDTH / 2.f, 0.f, 4.f, 4.f));
+    init->setModel(RRectF(WIDTH / 2.f, 0.f, 4.f, 4.f));
 
     RWindow::focusWindow()->renderSys()->setViewprot(0, WIDTH, 0, HEIGHT);
 }
@@ -36,7 +36,7 @@ void update(RRenderSys *sys)
     for(auto it = particles.begin(); it != particles.end();)
     {
         it->second.ry() -= gravity;
-        it->first.rRect().move(it->second);
+        it->first.move(it->second);
 
         if(it->second.y() < -60.f)
             it = particles.erase(it);

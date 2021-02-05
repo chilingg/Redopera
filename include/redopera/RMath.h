@@ -19,18 +19,9 @@ mat4 perspective(float left, float right, float bottom, float top, float near, f
 
 } // ns glm
 
-#include <RRect.h>
-
 namespace Redopera {
 
 class RDebug;
-
-namespace Math {
-
-glm::mat4 modelMat(const RRect &rect);
-glm::mat4 modelMat(const RRectF &rect);
-
-} // ns Math
 
 } // ns Redopera
 

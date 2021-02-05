@@ -11,6 +11,7 @@
 #include <rsc/RMp3.h>
 #include <rsc/RFont.h>
 #include <rsc/RPack.h>
+#include <RModelMat.h>
 
 #include <cassert>
 
@@ -178,6 +179,29 @@ int main()
     const RPack::FInfo *info = pck2.getFileInfo("mp3");
     mp3.load(info->data.get(), info->size);
     assert(mp3.isValid() && mp3.hz() == 48000 && mp3.channel() == 2);
+
+    // RModelMat ====================
+    float x = 3.f;
+    float y = 12.f;
+    float z = -2.f;
+    float width = 12.f;
+    float height = 16.f;
+    RModelMat model(x, y, z, width, height);
+    glm::mat4 mat(1);
+    mat = glm::translate(mat, { x + width/2.f, y + height/2.f, z});
+    mat = glm::scale(mat, { width, height, 0.f });
+    assert(model.model() == mat);
+    assert(!model.isFlipH() && !model.isFlipV());
+    model.flipH();
+    assert(model.isFlipH() && !model.isFlipV());
+    model.flipV();
+    assert(model.isFlipH() && model.isFlipV());
+    model.move(3.f, -6.f, -4.f);
+    assert(model.pos() == RPointF(6.f, 6.f, -6.f));
+    assert(model.size() == RSizeF(12.f, 16.f));
+    rDebug << model;
+    model.setPos(0, 0);
+    assert(model.pos() == RPointF(0.f, 0.f, -6.f));
 
     rDebug << "End of test, No error occurred.";
 

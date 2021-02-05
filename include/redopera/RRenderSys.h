@@ -71,6 +71,8 @@ public:
 
     void drawPlane() const;
 
+    void render(const RTexture &tex, const glm::mat4 &model);
+
     void renderLine(const glm::mat4 &mat);
     void renderLine(const RRect &rect);
 
