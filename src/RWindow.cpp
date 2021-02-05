@@ -100,7 +100,7 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
     renderSys_ = std::make_unique<RRenderSys>();
     renderSys_->addShaders("SimpleShaders", RRenderSys::createSimpleShaders());
     renderSys_->addShaders("SingleShaders", RRenderSys::createSimpleSingleShaders());
-    renderSys_->setMainShaders("SimpleShaders");
+    renderSys_->setCurrentShaders("SimpleShaders");
     renderSys_->setCamera();
 
     if(!focusWindowP)

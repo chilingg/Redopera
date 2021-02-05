@@ -110,7 +110,7 @@ const RShaders *RRenderSys::queryShaders(const std::string &name) const
     return &it->second.shaders_;
 }
 
-void RRenderSys::setMainShaders(const std::string &name)
+void RRenderSys::setCurrentShaders(const std::string &name)
 {
     assert(renderers_.count(name));
     mainShaders_ = name;

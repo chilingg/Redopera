@@ -51,7 +51,7 @@ public:
     const RShaders* shaders() const;
     const RShaders* queryShaders(const std::string &name) const;
 
-    void setMainShaders(const std::string &name);
+    void setCurrentShaders(const std::string &name);
 
     std::string addShaders(const std::string &name, const RShaders &shaders);
     std::string addShaders(const std::string &name, const RShaders &shaders, GLuint pLoc, GLuint vLoc, GLuint mLoc);
