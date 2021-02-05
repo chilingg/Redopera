@@ -208,7 +208,7 @@ void RNode::changeParent(RNode *parent)
         throw std::runtime_error("This parent is self");
 
     if(parent_)
-        parent_->children_.erase(findChild(this));
+        parent_->children_.erase(parent_->findChild(this));
     parent_ = parent;
 
     Status s = Status::Normal;
