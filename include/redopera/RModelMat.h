@@ -16,9 +16,25 @@ public:
     RModelMat(const RRectF &rect, float depth = 0);
 
     const glm::mat4& model() const;
+
+    float top() const;
+    float bottom() const;
+    float left() const;
+    float right() const;
+    float depth() const;
+    float x() const;
+    float y() const;
+    float centerX() const;
+    float centerY() const;
+    RPoint2F center() const;
     RPointF pos() const;
+
+    float width() const;
+    float height() const;
     RSizeF size() const;
+
     RRectF rect() const;
+
     bool isFlipH() const;
     bool isFlipV() const;
 

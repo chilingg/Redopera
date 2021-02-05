@@ -175,7 +175,8 @@ int main()
     pck.packing(":/bicycle_bell.mp3", "mp3");
     assert(pck.getFileInfo("mp3")->size == 27018);
     pck.save(":/pck");
-    RPack pck2(":/pck");
+    RPack pck2;
+    pck2.load((":/pck"));
     const RPack::FInfo *info = pck2.getFileInfo("mp3");
     mp3.load(info->data.get(), info->size);
     assert(mp3.isValid() && mp3.hz() == 48000 && mp3.channel() == 2);
@@ -199,9 +200,16 @@ int main()
     model.move(3.f, -6.f, -4.f);
     assert(model.pos() == RPointF(6.f, 6.f, -6.f));
     assert(model.size() == RSizeF(12.f, 16.f));
-    rDebug << model;
     model.setPos(0, 0);
     assert(model.pos() == RPointF(0.f, 0.f, -6.f));
+    model.setPos(2.f, 3.f);
+    assert(model.right() == 14.f);
+    assert(model.top() == 19.f);
+    assert(model.left() == 2.f && model.x() == 2.f);
+    assert(model.bottom() == 3.f && model.y() == 3.f);
+    assert(model.centerX() == 8.f);
+    assert(model.centerY() == 11.f);
+    assert(model.center() == RRectF(2.f, 3.f, 12.f, 16.f).center());
 
     rDebug << "End of test, No error occurred.";
 

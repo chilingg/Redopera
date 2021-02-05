@@ -31,11 +31,71 @@ const glm::mat4 &RModelMat::model() const
     return model_;
 }
 
+float RModelMat::top() const
+{
+    return model_[3].y + std::abs(model_[1].y / 2);
+}
+
+float RModelMat::bottom() const
+{
+    return model_[3].y - std::abs(model_[1].y / 2);
+}
+
+float RModelMat::left() const
+{
+    return model_[3].x - std::abs(model_[0].x) / 2;
+}
+
+float RModelMat::right() const
+{
+    return model_[3].x + std::abs(model_[0].x) / 2;
+}
+
+float RModelMat::depth() const
+{
+    return model_[3].z;
+}
+
+float RModelMat::x() const
+{
+    return model_[3].x - std::abs(model_[0].x) / 2;
+}
+
+float RModelMat::y() const
+{
+    return model_[3].y - std::abs(model_[1].y / 2);
+}
+
+float RModelMat::centerX() const
+{
+    return model_[3].x;
+}
+
+float RModelMat::centerY() const
+{
+    return model_[3].y;
+}
+
+RPoint2F RModelMat::center() const
+{
+    return { model_[3].x, model_[3].y };
+}
+
 RPointF RModelMat::pos() const
 {
     return RPointF(model_[3].x - std::abs(model_[0].x) / 2,
             model_[3].y - std::abs(model_[1].y / 2),
             model_[3].z);
+}
+
+float RModelMat::width() const
+{
+    return std::abs(model_[0].x);
+}
+
+float RModelMat::height() const
+{
+    return std::abs(model_[1].y);
 }
 
 RSizeF RModelMat::size() const
