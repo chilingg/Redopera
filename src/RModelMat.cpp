@@ -3,13 +3,13 @@
 using namespace Redopera;
 
 RModelMat::RModelMat():
-    model_(0)
+    model_(1)
 {
-
+    model_[2].z = 0;
 }
 
 RModelMat::RModelMat(float x, float y, float z, float width, float height):
-    model_(0)
+    model_(1)
 {
     setModel(x, y, z, width, height);
 }
@@ -155,6 +155,69 @@ void RModelMat::setDepth(float depth)
     model_[3].z = depth;
 }
 
+void RModelMat::setCenterX(float x)
+{
+    model_[3].x = x;
+}
+
+void RModelMat::setCenterY(float y)
+{
+    model_[3].y = y;
+}
+
+void RModelMat::setCenter(float x, float y)
+{
+    model_[3].x = x;
+    model_[3].y = y;
+}
+
+void RModelMat::setCenter(const RPoint2F &pos)
+{
+    setCenter(pos.x(), pos.y());
+}
+
+void RModelMat::setLeft(float left)
+{
+    model_[3].x = left + std::abs(model_[0].x / 2);
+}
+
+void RModelMat::setRight(float right)
+{
+    model_[3].x = right - std::abs(model_[0].x / 2);
+}
+
+void RModelMat::setTop(float top)
+{
+    model_[3].y = top - std::abs(model_[1].y / 2);
+}
+
+void RModelMat::setBottom(float bottom)
+{
+    model_[3].y = bottom + std::abs(model_[1].y / 2);
+}
+
+void RModelMat::setWidth(float width)
+{
+    model_[0].x = width;
+}
+
+void RModelMat::setHeight(float height)
+{
+    model_[1].y = height;
+}
+
+void RModelMat::setSize(float width, float height)
+{
+    model_[0].x = width;
+    model_[1].y = height;
+}
+
+void RModelMat::setSize(const RSizeF &size)
+{
+    setWidth(size.width());
+    setHeight(size.height());
+}
+
 void RModelMat::flipH()
 {
     model_[0][0] *= -1;
@@ -190,6 +253,11 @@ void RModelMat::setModel(const RRectF &rect)
 void RModelMat::setModel(const RRectF &rect, float depth)
 {
     setModel(rect.x(), rect.y(), depth, rect.width(), rect.height());
+}
+
+void RModelMat::setModel(const glm::mat4 &model)
+{
+    model_ = model;
 }
 
 std::string RModelMat::toString() const

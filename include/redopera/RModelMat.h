@@ -46,6 +46,19 @@ public:
     void setPos(const RPoint2F &pos);
     void setPos(const RPoint2F &pos, float depth);
     void setDepth(float depth);
+    void setCenterX(float x);
+    void setCenterY(float y);
+    void setCenter(float x, float y);
+    void setCenter(const RPoint2F &pos);
+    void setLeft(float left);
+    void setRight(float right);
+    void setTop(float top);
+    void setBottom(float bottom);
+
+    void setWidth(float width);
+    void setHeight(float height);
+    void setSize(float width, float height);
+    void setSize(const RSizeF &size);
 
     void flipH();
     void flipV();
@@ -55,6 +68,7 @@ public:
     void setModel(const RPoint2F &pos, const RSizeF &size, float depth);
     void setModel(const RRectF &rect);
     void setModel(const RRectF &rect, float depth);
+    void setModel(const glm::mat4 &model);
 
     std::string toString() const;
 
