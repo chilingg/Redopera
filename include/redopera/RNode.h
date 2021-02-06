@@ -150,12 +150,12 @@ struct RNode::Instructs
         instructs_.erase(instruct);
     }
 
-    bool inInstructs(const std::string &instruct)
+    bool instruct(const std::string &instruct)
     {
         return instructs_.count(instruct) != 0;
     }
 
-    int instruct(const std::string &instruct)
+    int instructI(const std::string &instruct)
     {
         auto it = instructs_.find(instruct);
 
@@ -164,7 +164,7 @@ struct RNode::Instructs
         return it->second.i;
     }
 
-    float instructf(const std::string &instruct)
+    float instructF(const std::string &instruct)
     {
         auto it = instructs_.find(instruct);
 
