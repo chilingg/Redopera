@@ -105,6 +105,8 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
 
     if(!focusWindowP)
         focusWindowP = this;
+
+    RInput::enableGamepad();
 }
 
 void RWindow::setWindowSize(int width, int height)
@@ -408,7 +410,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
 
 void RWindow::mouseScrollCallback(GLFWwindow *, double x, double y)
 {
-    RInput::input().mouseWheel(x, y);
+    RInput::mouseWheel(x, y);
 }
 
 void RWindow::windowFocusCallback(GLFWwindow *window, int focused)
@@ -435,22 +437,22 @@ void RWindow::windowCloseCallback(GLFWwindow *window)
 void RWindow::keyboardCollback(GLFWwindow *, int key, int , int action, int )
 {
     if (action == GLFW_RELEASE)
-        RInput::input().keyUp(RInput::toKey(key));
+        RInput::keyUp(RInput::toKey(key));
     else if (action == GLFW_PRESS)
-        RInput::input().keyDown(RInput::toKey(key));
+        RInput::keyDown(RInput::toKey(key));
 }
 
 void RWindow::mouseButtonCollback(GLFWwindow *, int btn, int action, int )
 {
     if (action == GLFW_RELEASE)
-        RInput::input().mouseUp(RInput::toMouseButtons(btn));
+        RInput::mouseUp(RInput::toMouseButtons(btn));
     else if (action == GLFW_PRESS)
-        RInput::input().mouseDown(RInput::toMouseButtons(btn));
+        RInput::mouseDown(RInput::toMouseButtons(btn));
 }
 
 void RWindow::cursorPosCollback(GLFWwindow *, double, double)
 {
-    RInput::input().setCursorMove();
+    RInput::setCursorMove();
 }
 
 int RWindow::defaultExec()
@@ -475,7 +477,7 @@ int RWindow::defaultExec()
         // 清理指令
         instructs.clear();
         // 清空输入
-        RInput::input().updataInput();
+        RInput::updataInput();
         // 清屏 清除颜色缓冲[深度缓冲、模板缓冲]
         glClear(clearMask_);
 

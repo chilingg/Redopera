@@ -136,47 +136,46 @@ enum class Keys
     KEY_RIGHT_ALT = GLFW_KEY_RIGHT_ALT,
     KEY_RIGHT_SUPER = GLFW_KEY_RIGHT_SUPER,
     KEY_MENU = GLFW_KEY_MENU,
-    //末尾
-    KEY_LAST = GLFW_KEY_LAST
+    KEY_LAST = GLFW_KEY_LAST //末尾
 };
 
 enum class GamepadBtn : unsigned
 {
-    GAMEPAD_BUTTON_A = 0,//GLFW_GAMEPAD_BUTTON_A,
-    GAMEPAD_BUTTON_B,
-    GAMEPAD_BUTTON_X,
-    GAMEPAD_BUTTON_Y,
-    GAMEPAD_BUTTON_LEFT_BUMPER,
-    GAMEPAD_BUTTON_RIGHT_BUMPER,
-    GAMEPAD_BUTTON_BACK,
-    GAMEPAD_BUTTON_START,
-    GAMEPAD_BUTTON_GUIDE,
-    GAMEPAD_BUTTON_LEFT_THUMB,
-    GAMEPAD_BUTTON_RIGHT_THUMB,
-    GAMEPAD_BUTTON_DPAD_UP,
-    GAMEPAD_BUTTON_DPAD_RIGHT,
-    GAMEPAD_BUTTON_DPAD_DOWN,
-    GAMEPAD_BUTTON_DPAD_LEFT,
-    GAMEPAD_BUTTON_LAST = GAMEPAD_BUTTON_DPAD_LEFT
+    A = 0,//GLFW_GAMEPAD_BUTTON_A,
+    B,
+    X,
+    Y,
+    LEFT_BUMPER,
+    RIGHT_BUMPER,
+    BACK,
+    START,
+    GUIDE,
+    LEFT_THUMB,
+    RIGHT_THUMB,
+    DPAD_UP,
+    DPAD_RIGHT,
+    DPAD_DOWN,
+    DPAD_LEFT,
+    LAST = DPAD_LEFT
 };
 
 enum class GamepadAxes : unsigned
 {
-    GAMEPAD_AXIS_LEFT_X = 0,//GLFW_GAMEPAD_AXIS_LEFT_X,
-    GAMEPAD_AXIS_LEFT_Y,
-    GAMEPAD_AXIS_RIGHT_X,
-    GAMEPAD_AXIS_RIGHT_Y,
-    GAMEPAD_AXIS_LEFT_TRIGGER,
-    GAMEPAD_AXIS_RIGHT_TRIGGER,
-    GAMEPAD_AXIS_LAST = GAMEPAD_AXIS_RIGHT_TRIGGER
+    LEFT_X = 0,//GLFW_GAMEPAD_AXIS_LEFT_X,
+    LEFT_Y,
+    RIGHT_X,
+    RIGHT_Y,
+    LEFT_TRIGGER,
+    RIGHT_TRIGGER,
+    LAST = RIGHT_TRIGGER
 };
 
 enum class MouseBtn
 {
-    MOUSE_BUTTON_LEFT = GLFW_MOUSE_BUTTON_LEFT,
-    MOUSE_BUTTON_RIGHT,
-    MOUSE_BUTTON_MIDDLE,
-    MOUSE_LAST = MOUSE_BUTTON_MIDDLE,
+    LEFT = GLFW_MOUSE_BUTTON_LEFT,
+    RIGHT,
+    MIDDLE,
+    LAST = MIDDLE,
 };
 
 enum class BtnAct
@@ -212,39 +211,39 @@ public:
     static Keys toKey(int key);
     static MouseBtn toMouseButtons(int button);
 
-    static RInput& input();
-
+    RInput() = delete;
     RInput(RInput &) = delete;
     RInput& operator=(const RInput &) = delete;
+    ~RInput() = delete;
 
-    ~RInput() = default;
+    static void enableGamepad();
 
-    BtnAct status(Keys key) const;
-    BtnAct status(MouseBtn btn) const;
-    BtnAct status(GamepadBtn btn, unsigned player = 1) const;
-    float status(GamepadAxes axis, unsigned player = 1) const;
+    static BtnAct status(Keys key);
+    static BtnAct status(MouseBtn btn);
+    static BtnAct status(GamepadBtn btn, unsigned player = 1);
+    static float status(GamepadAxes axis, unsigned player = 1);
 
-    bool press(Keys key) const;
-    bool press(MouseBtn btn) const;
-    bool press(GamepadBtn btn, unsigned player = 1) const;
+    static bool press(Keys key);
+    static bool press(MouseBtn btn);
+    static bool press(GamepadBtn btn, unsigned player = 1);
 
-    bool release(Keys key) const;
-    bool release(MouseBtn btn) const;
-    bool release(GamepadBtn btn, unsigned player = 1) const;
+    static bool release(Keys key);
+    static bool release(MouseBtn btn);
+    static bool release(GamepadBtn btn, unsigned player = 1);
 
-    bool cursorMove() const;
-    RPoint2 cursorPos() const;
-    RPoint2 wheel() const;
+    static bool cursorMove();
+    static RPoint2 cursorPos();
+    static RPoint2 wheel();
 
-    bool anyKeyPress() const;
-    bool anyMouseBtnPress() const;
+    static bool anyKeyPress();
+    static bool anyMouseBtnPress();
 
-    int gamepadCount() const;
+    static int gamepadCount();
 
-    bool updateGamepadMappings(const char *path) const;
-    bool updateGamepadMappings() const;
+    static bool updateGamepadMappings(const char *path);
+    static bool updateGamepadMappings();
 
-    RSignal<JoystickPresent> joyPresented;
+    static RSignal<JoystickPresent> joyPresented;
 
 private:
     static void joystickPresentCallback(int jid, int event);
@@ -253,25 +252,23 @@ private:
     static const char *gamepadMappingCode1;
     static const char *gamepadMappingCode2;
 
-    void updataInput();
+    static void updataInput();
 
-    void keyUp(Keys key);
-    void keyDown(Keys key);
-    void mouseUp(MouseBtn btn);
-    void mouseDown(MouseBtn btn);
-    void mouseWheel(int x, int y);
-    void setCursorMove();
+    static void keyUp(Keys key);
+    static void keyDown(Keys key);
+    static void mouseUp(MouseBtn btn);
+    static void mouseDown(MouseBtn btn);
+    static void mouseWheel(int x, int y);
+    static void setCursorMove();
 
-    RInput();
+    static bool move_;
+    static RPoint2 wheel_;
 
-    bool move_ = false;
-    RPoint2 wheel_;
-
-    std::set<Keys> keyUp_;
-    std::set<Keys> keyDown_;
-    std::set<MouseBtn> mouseUp_;
-    std::set<MouseBtn> mouseDown_;
-    std::vector<Gamepad> gamepad_;
+    static std::set<Keys> keyUp_;
+    static std::set<Keys> keyDown_;
+    static std::set<MouseBtn> mouseUp_;
+    static std::set<MouseBtn> mouseDown_;
+    static std::vector<Gamepad> gamepad_;
 };
 
 }

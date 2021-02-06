@@ -5,6 +5,17 @@
 
 using namespace Redopera;
 
+RSignal<JoystickPresent> RInput::joyPresented;
+
+bool RInput::move_ = false;
+RPoint2 RInput::wheel_;
+
+std::set<Keys> RInput::keyUp_;
+std::set<Keys> RInput::keyDown_;
+std::set<MouseBtn> RInput::mouseUp_;
+std::set<MouseBtn> RInput::mouseDown_;
+std::vector<RInput::Gamepad> RInput::gamepad_;
+
 BtnAct RInput::toButtonAction(int action)
 {
     switch(action)
@@ -276,33 +287,27 @@ MouseBtn RInput::toMouseButtons(int button)
     switch(button)
     {
     case GLFW_MOUSE_BUTTON_LEFT:
-        return MouseBtn::MOUSE_BUTTON_LEFT;
+        return MouseBtn::LEFT;
     case GLFW_MOUSE_BUTTON_RIGHT:
-        return MouseBtn::MOUSE_BUTTON_RIGHT;
+        return MouseBtn::RIGHT;
     case GLFW_MOUSE_BUTTON_MIDDLE:
-        return MouseBtn::MOUSE_BUTTON_MIDDLE;
+        return MouseBtn::MIDDLE;
     default:
         throw std::invalid_argument("Invalid value: " + std::to_string(button) + " to Enum MouseButtons!");
     }
 }
 
-RInput &RInput::input()
-{
-    static RInput input;
-    return input;
-}
-
-BtnAct RInput::status(Keys key) const
+BtnAct RInput::status(Keys key)
 {
     return toButtonAction(glfwGetKey(RWindow::focusWindow()->getHandle(), static_cast<int>(key)));
 }
 
-BtnAct RInput::status(MouseBtn btn) const
+BtnAct RInput::status(MouseBtn btn)
 {
     return toButtonAction(glfwGetMouseButton(RWindow::focusWindow()->getHandle(), static_cast<int>(btn)));
 }
 
-BtnAct RInput::status(GamepadBtn btn, unsigned player) const
+BtnAct RInput::status(GamepadBtn btn, unsigned player)
 {
     if (gamepad_.size() <= player)
         player = 0;
@@ -310,7 +315,7 @@ BtnAct RInput::status(GamepadBtn btn, unsigned player) const
     return RInput::toButtonAction((gamepad_[player].status.buttons[static_cast<unsigned>(btn)]));
 }
 
-float RInput::status(GamepadAxes axis, unsigned player) const
+float RInput::status(GamepadAxes axis, unsigned player)
 {
     if (gamepad_.size() <= player)
         player = 0;
@@ -318,17 +323,17 @@ float RInput::status(GamepadAxes axis, unsigned player) const
     return gamepad_[player].status.axes[static_cast<unsigned>(axis)];
 }
 
-bool RInput::press(Keys key) const
+bool RInput::press(Keys key)
 {
     return status(key) == BtnAct::PRESS && keyDown_.count(key);
 }
 
-bool RInput::press(MouseBtn btn) const
+bool RInput::press(MouseBtn btn)
 {
     return status(btn) == BtnAct::PRESS && mouseDown_.count(btn);
 }
 
-bool RInput::press(GamepadBtn btn, unsigned player) const
+bool RInput::press(GamepadBtn btn, unsigned player)
 {
     if (gamepad_.size() <= player)
         return false;
@@ -337,17 +342,17 @@ bool RInput::press(GamepadBtn btn, unsigned player) const
     return gamepad_[player].status.buttons[index] && !gamepad_[player].preButtons[index];
 }
 
-bool RInput::release(Keys key) const
+bool RInput::release(Keys key)
 {
     return status(key) == BtnAct::RELEASE && keyUp_.count(key);
 }
 
-bool RInput::release(MouseBtn btn) const
+bool RInput::release(MouseBtn btn)
 {
     return status(btn) == BtnAct::RELEASE && mouseUp_.count(btn);
 }
 
-bool RInput::release(GamepadBtn btn, unsigned player) const
+bool RInput::release(GamepadBtn btn, unsigned player)
 {
     if (gamepad_.size() <= player)
         return false;
@@ -356,12 +361,12 @@ bool RInput::release(GamepadBtn btn, unsigned player) const
     return !gamepad_[player].status.buttons[index] && gamepad_[player].preButtons[index];
 }
 
-bool RInput::cursorMove() const
+bool RInput::cursorMove()
 {
     return move_;
 }
 
-RPoint2 RInput::cursorPos() const
+RPoint2 RInput::cursorPos()
 {
     double x, y;
     glfwGetCursorPos(RWindow::focusWindow()->getHandle(), &x, &y);
@@ -372,28 +377,28 @@ RPoint2 RInput::cursorPos() const
     return pos;
 }
 
-RPoint2 RInput::wheel() const
+RPoint2 RInput::wheel()
 {
     return wheel_;
 }
 
 
-int RInput::gamepadCount() const
+int RInput::gamepadCount()
 {
     return gamepad_.size() - 1;
 }
 
-bool RInput::anyKeyPress() const
+bool RInput::anyKeyPress()
 {
     return !keyDown_.empty();
 }
 
-bool RInput::anyMouseBtnPress() const
+bool RInput::anyMouseBtnPress()
 {
     return !mouseDown_.empty();
 }
 
-bool RInput::updateGamepadMappings(const char *path) const
+bool RInput::updateGamepadMappings(const char *path)
 {
     RFile file = RFile::load(path);
     if (!file.size)
@@ -409,7 +414,7 @@ bool RInput::updateGamepadMappings(const char *path) const
         return true;
 }
 
-bool RInput::updateGamepadMappings() const
+bool RInput::updateGamepadMappings()
 {
     // 加载手柄映射
     std::string mappingCode = std::string() + RInput::gamepadMappingCode0
@@ -422,14 +427,14 @@ void RInput::joystickPresentCallback(int jid, int event)
 {
     if(event == GLFW_CONNECTED && glfwJoystickIsGamepad(jid))
     {
-        RInput::input().gamepad_.emplace_back(jid);
-        RInput::input().joyPresented.emit(JoystickPresent::CONNECTED);
+        RInput::gamepad_.emplace_back(jid);
+        RInput::joyPresented.emit(JoystickPresent::CONNECTED);
     }
     else if(event == GLFW_DISCONNECTED)
     {
-        auto it = std::find_if(RInput::input().gamepad_.begin(), RInput::input().gamepad_.end(), [jid](const Gamepad &g){ return g.jid == jid; });
-        RInput::input().gamepad_.erase(it);
-        RInput::input().joyPresented.emit(JoystickPresent::DISCONNECTED);
+        auto it = std::find_if(RInput::gamepad_.begin(), RInput::gamepad_.end(), [jid](const Gamepad &g){ return g.jid == jid; });
+        RInput::gamepad_.erase(it);
+        RInput::joyPresented.emit(JoystickPresent::DISCONNECTED);
     }
 }
 
@@ -479,7 +484,7 @@ void RInput::setCursorMove()
     move_ = true;
 }
 
-RInput::RInput()
+void RInput::enableGamepad()
 {
     gamepad_.emplace_back(0); // add empty gamepad
 
