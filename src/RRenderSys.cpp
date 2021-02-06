@@ -70,7 +70,7 @@ RRenderSys::RRenderSys(const std::string &name, const RShaders &shaders):
 }
 
 RRenderSys::RRenderSys(const std::string &name, const RShaders &shaders, GLuint pLoc, GLuint vLoc, GLuint mLoc):
-    mainShaders_(name)
+    shadersName_(name)
 {
     initialize();
     addShaders(name, shaders, pLoc, vLoc, mLoc);
@@ -84,22 +84,22 @@ RRenderSys::~RRenderSys()
 
 GLuint RRenderSys::projectLocal() const
 {
-    return renderers_.at(mainShaders_).pLoc_;
+    return renderers_.at(shadersName_).pLoc_;
 }
 
 GLuint RRenderSys::viewLocal() const
 {
-    return renderers_.at(mainShaders_).vLoc_;
+    return renderers_.at(shadersName_).vLoc_;
 }
 
 GLuint RRenderSys::modelLocal() const
 {
-    return renderers_.at(mainShaders_).mLoc_;
+    return renderers_.at(shadersName_).mLoc_;
 }
 
 const RShaders *RRenderSys::shaders() const
 {
-    return &renderers_.at(mainShaders_).shaders_;
+    return &renderers_.at(shadersName_).shaders_;
 }
 
 const RShaders *RRenderSys::queryShaders(const std::string &name) const
@@ -110,10 +110,15 @@ const RShaders *RRenderSys::queryShaders(const std::string &name) const
     return &it->second.shaders_;
 }
 
+const std::string &RRenderSys::currentShadersName() const
+{
+    return shadersName_;
+}
+
 void RRenderSys::setCurrentShaders(const std::string &name)
 {
     assert(renderers_.count(name));
-    mainShaders_ = name;
+    shadersName_ = name;
 }
 
 std::string RRenderSys::addShaders(const std::string &name, const RShaders &shaders)

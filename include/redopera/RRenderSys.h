@@ -50,6 +50,7 @@ public:
 
     const RShaders* shaders() const;
     const RShaders* queryShaders(const std::string &name) const;
+    const std::string& currentShadersName() const;
 
     void setCurrentShaders(const std::string &name);
 
@@ -81,7 +82,7 @@ private:
     std::string availableName(const std::string &name) const;
 
     GLuint vao_, vbo_;
-    std::string mainShaders_;
+    std::string shadersName_;
     RTexture lineColor_;
     std::map<std::string, RenderTools> renderers_;
 };
