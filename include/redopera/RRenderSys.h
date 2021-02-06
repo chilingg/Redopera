@@ -77,6 +77,8 @@ public:
     void renderLine(const glm::mat4 &mat);
     void renderLine(const RRect &rect);
 
+    void clearShaders();
+
 private:
     void initialize();
     std::string availableName(const std::string &name) const;

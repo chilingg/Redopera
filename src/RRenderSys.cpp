@@ -2,49 +2,58 @@
 
 using namespace Redopera;
 
-const GLchar *VERTEX_CODE =
+static const GLchar *VERTEX_CODE =
 R"--(
 #version 330 core
-layout(location = 0) in vec3 aPos;
-layout(location = 1) in vec2 aTexCoor;
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 project;
+
+layout(location = 0) in vec3 POS;
+layout(location = 1) in vec2 TEX_COOR;
+
+uniform mat4 MODEL;
+uniform mat4 VIEW;
+uniform mat4 PROJECT;
+
 out vec2 texCoor;
+
 void main(void)
 {
-    texCoor = aTexCoor;
-    gl_Position = project * view * model* vec4(aPos, 1.0);
+    texCoor = TEX_COOR;
+    gl_Position = PROJECT * VIEW * MODEL* vec4(POS, 1.0);
 }
 )--";
 
-const GLchar *FRAGMENT_CODE =
+static const GLchar *FRAGMENT_CODE =
 R"--(
 #version 330 core
-uniform sampler2D tex;
+
+uniform sampler2D TEX;
+
 in vec2 texCoor;
 out vec4 outColor;
+
 void main(void)
 {
-    outColor = texture(tex, texCoor);
+    outColor = texture(TEX, texCoor);
 }
 )--";
 
-const GLchar *SINGLE_TEXTURE_CODE =
+static const GLchar *SINGLE_TEXTURE_CODE =
 R"--(
 #version 330 core
 
-uniform vec3 color = vec3(1., 1., 1.);
-uniform vec4 background = vec4(0., 0., 0., 0.);
+vec4 COLOR;
+vec4 BACKGROUND;
 
-uniform sampler2D tex;
+uniform sampler2D TEX;
 
 in vec2 texCoor;
 out vec4 outColor;
+
 void main(void)
 {
-    outColor = vec4(color.rgb, texture(tex, texCoor).r);
-    outColor += background * (1 - outColor.a);
+    float colorA = COLOR.a * texture(TEX, texCoor).r;
+    float backA = BACKGROUND.a * (1. - colorA);
+    outColor = vec4(COLOR.rgb * colorA + BACKGROUND.rgb * backA, colorA + backA);
 }
 )--";
 
@@ -64,7 +73,7 @@ RRenderSys::RRenderSys()
 }
 
 RRenderSys::RRenderSys(const std::string &name, const RShaders &shaders):
-    RRenderSys(name, shaders, shaders.getUniformLoc("project"), shaders.getUniformLoc("view"), shaders.getUniformLoc("model"))
+    RRenderSys(name, shaders, shaders.getUniformLoc("PROJECT"), shaders.getUniformLoc("VIEW"), shaders.getUniformLoc("MODEL"))
 {
 
 }
@@ -123,7 +132,7 @@ void RRenderSys::setCurrentShaders(const std::string &name)
 
 std::string RRenderSys::addShaders(const std::string &name, const RShaders &shaders)
 {
-    return addShaders(name, shaders, shaders.getUniformLoc("project"), shaders.getUniformLoc("view"), shaders.getUniformLoc("model"));
+    return addShaders(name, shaders, shaders.getUniformLoc("PROJECT"), shaders.getUniformLoc("VIEW"), shaders.getUniformLoc("MODEL"));
 }
 
 std::string RRenderSys::addShaders(const std::string &name, const RShaders &shaders, GLuint pLoc, GLuint vLoc, GLuint mLoc)
@@ -243,6 +252,11 @@ void RRenderSys::renderLine(const RRect &rect)
     glDrawArrays(GL_LINE_LOOP, 2, 4);
 
     glBindVertexArray(0);
+}
+
+void RRenderSys::clearShaders()
+{
+    renderers_.clear();
 }
 
 void RRenderSys::initialize()
