@@ -440,6 +440,8 @@ void RWindow::keyboardCollback(GLFWwindow *, int key, int , int action, int )
         RInput::keyUp(RInput::toKey(key));
     else if (action == GLFW_PRESS)
         RInput::keyDown(RInput::toKey(key));
+    else if (action == GLFW_REPEAT)
+        RInput::keyRepeat(RInput::toKey(key));
 }
 
 void RWindow::mouseButtonCollback(GLFWwindow *, int btn, int action, int )
@@ -455,6 +457,11 @@ void RWindow::cursorPosCollback(GLFWwindow *, double, double)
     RInput::setCursorMove();
 }
 
+void RWindow::charInputCollback(GLFWwindow *, unsigned code)
+{
+    RInput::charInput(code);
+}
+
 int RWindow::defaultExec()
 {
     // 不在构造函数时设置回调，防止多线程中在未构造完成时被调用
@@ -465,6 +472,7 @@ int RWindow::defaultExec()
     glfwSetKeyCallback(context_.getHandle(), keyboardCollback);
     glfwSetMouseButtonCallback(context_.getHandle(), mouseButtonCollback);
     glfwSetCursorPosCallback(context_.getHandle(), cursorPosCollback);
+    glfwSetCharCallback(context_.getHandle(), charInputCollback);
 
     node.dispatchStartEvent();
 

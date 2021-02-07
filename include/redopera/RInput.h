@@ -231,12 +231,16 @@ public:
     static bool release(MouseBtn btn);
     static bool release(GamepadBtn btn, unsigned player = 1);
 
+    static bool repeat(Keys key);
+
     static bool cursorMove();
     static RPoint2 cursorPos();
     static RPoint2 wheel();
 
     static bool anyKeyPress();
     static bool anyMouseBtnPress();
+
+    static const std::wstring& charInput();
 
     static int gamepadCount();
 
@@ -256,19 +260,23 @@ private:
 
     static void keyUp(Keys key);
     static void keyDown(Keys key);
+    static void keyRepeat(Keys key);
     static void mouseUp(MouseBtn btn);
     static void mouseDown(MouseBtn btn);
     static void mouseWheel(int x, int y);
     static void setCursorMove();
+    static void charInput(wchar_t c);
 
     static bool move_;
     static RPoint2 wheel_;
 
     static std::set<Keys> keyUp_;
     static std::set<Keys> keyDown_;
+    static std::set<Keys> keyRepeat_;
     static std::set<MouseBtn> mouseUp_;
     static std::set<MouseBtn> mouseDown_;
     static std::vector<Gamepad> gamepad_;
+    static std::wstring characters_;
 };
 
 }

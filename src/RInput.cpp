@@ -12,9 +12,11 @@ RPoint2 RInput::wheel_;
 
 std::set<Keys> RInput::keyUp_;
 std::set<Keys> RInput::keyDown_;
+std::set<Keys> RInput::keyRepeat_;
 std::set<MouseBtn> RInput::mouseUp_;
 std::set<MouseBtn> RInput::mouseDown_;
 std::vector<RInput::Gamepad> RInput::gamepad_;
+std::wstring RInput::characters_;
 
 BtnAct RInput::toButtonAction(int action)
 {
@@ -325,12 +327,12 @@ float RInput::status(GamepadAxes axis, unsigned player)
 
 bool RInput::press(Keys key)
 {
-    return status(key) == BtnAct::PRESS && keyDown_.count(key);
+    return keyDown_.count(key);
 }
 
 bool RInput::press(MouseBtn btn)
 {
-    return status(btn) == BtnAct::PRESS && mouseDown_.count(btn);
+    return mouseDown_.count(btn);
 }
 
 bool RInput::press(GamepadBtn btn, unsigned player)
@@ -344,12 +346,12 @@ bool RInput::press(GamepadBtn btn, unsigned player)
 
 bool RInput::release(Keys key)
 {
-    return status(key) == BtnAct::RELEASE && keyUp_.count(key);
+    return keyUp_.count(key);
 }
 
 bool RInput::release(MouseBtn btn)
 {
-    return status(btn) == BtnAct::RELEASE && mouseUp_.count(btn);
+    return mouseUp_.count(btn);
 }
 
 bool RInput::release(GamepadBtn btn, unsigned player)
@@ -359,6 +361,11 @@ bool RInput::release(GamepadBtn btn, unsigned player)
 
     unsigned index = static_cast<unsigned>(btn);
     return !gamepad_[player].status.buttons[index] && gamepad_[player].preButtons[index];
+}
+
+bool RInput::repeat(Keys key)
+{
+    return keyRepeat_.count(key);
 }
 
 bool RInput::cursorMove()
@@ -396,6 +403,11 @@ bool RInput::anyKeyPress()
 bool RInput::anyMouseBtnPress()
 {
     return !mouseDown_.empty();
+}
+
+const std::wstring &RInput::charInput()
+{
+    return characters_;
 }
 
 bool RInput::updateGamepadMappings(const char *path)
@@ -446,6 +458,8 @@ void RInput::updataInput()
     mouseUp_.clear();
     keyDown_.clear();
     mouseDown_.clear();
+    keyRepeat_.clear();
+    characters_.clear();
 
     for(auto &player : gamepad_)
     {
@@ -462,6 +476,11 @@ void RInput::keyUp(Keys key)
 void RInput::keyDown(Keys key)
 {
     keyDown_.insert(key);
+}
+
+void RInput::keyRepeat(Keys key)
+{
+    keyRepeat_.insert(key);
 }
 
 void RInput::mouseUp(MouseBtn btn)
@@ -482,6 +501,11 @@ void RInput::mouseWheel(int x, int y)
 void RInput::setCursorMove()
 {
     move_ = true;
+}
+
+void RInput::charInput(wchar_t c)
+{
+    characters_ += c;
 }
 
 void RInput::enableGamepad()

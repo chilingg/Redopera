@@ -14,6 +14,8 @@ public:
         if(init)
             throw "GLFW has been initialized!";
 
+        setlocale(LC_ALL, "");
+
         glfwSetErrorCallback(errorCallback);
         init = glfwInit() == GLFW_TRUE ? true : false;
     }

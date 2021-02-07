@@ -14,14 +14,12 @@ int main()
     format.debug = false;
 
     RWindow window(640, 480, "Window", format);
-    RPoint2 pos;
 
-    window.node.setStartFunc([&pos]{
+    window.node.setStartFunc([]{
         rDebug << "Start Event";
-        pos = RInput::input().cursorPos();
-        rDebug  << "Gamepad number " << RInput::input().gamepadCount();
+        rDebug  << "Gamepad number " << RInput::gamepadCount();
 
-        RInput::input().joyPresented.connect([](JoystickPresent state){
+        RInput::joyPresented.connect([](JoystickPresent state){
             rDebug << "Joystick " << (state == JoystickPresent::CONNECTED ? "connected" : "disconnected");
             return true;
         });
@@ -31,39 +29,38 @@ int main()
 
     window.node.setTransformFunc([](RNode *, const RRect &info){ rDebug << "Translation Event: " << info; });
 
-    window.node.setProcessFunc([&pos](RNode *, RNode::Instructs *)
+    window.node.setProcessFunc([](RNode *, RNode::Instructs *)
     {
-        if(RInput::input().anyKeyPress())
+        if(RInput::anyKeyPress())
             rDebug << "Any key Press";
-        if(RInput::input().anyMouseBtnPress())
+        if(RInput::anyMouseBtnPress())
             rDebug << "Any mouse button Press";
-        if(!RInput::input().wheel().isOrigin())
-            rDebug << "Mouse whell " << RInput::input().wheel();
-        if(RInput::input().cursorPos() != pos)
-        {
-            pos = RInput::input().cursorPos();
-            rDebug << "Move cursor to " << pos;
-        }
+        if(!RInput::wheel().isOrigin())
+            rDebug << "Mouse whell " << RInput::wheel();
+        if(RInput::cursorMove())
+            rDebug << "Move cursor to " << RInput::cursorPos();
+        if(!RInput::charInput().empty())
+            rDebug << "Character Input: " << RInput::charInput();
 
-        if(RInput::input().gamepadCount())
+        if(RInput::gamepadCount())
         {
             for(size_t i = 0; i <= GLFW_GAMEPAD_BUTTON_LAST; ++i)
             {
-                if(RInput::input().press(static_cast<GamepadBtn>(i)))
+                if(RInput::press(static_cast<GamepadBtn>(i)))
                     rDebug << "Gamepad button " << i << "is pressed";
             }
-            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_X)) > 0.2f)
-                rDebug << "GAMEPAD_AXIS_LEFT_X " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_X);
-            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_Y)) > 0.2f)
-                rDebug << "GAMEPAD_AXIS_LEFT_Y " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_Y);
-            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_X)) > 0.2f)
-                rDebug << "GAMEPAD_AXIS_RIGHT_X " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_X);
-            if(std::abs(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_Y)) > 0.2f)
-                rDebug << "GAMEPAD_AXIS_RIGHT_Y " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_Y);
-            if(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER) > -.8f)
-                rDebug << "GAMEPAD_AXIS_LEFT_TRIGGER " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_LEFT_TRIGGER);
-            if(RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER) > -.8f)
-                rDebug << "GAMEPAD_AXIS_RIGHT_TRIGGER " << RInput::input().status(GamepadAxes::GAMEPAD_AXIS_RIGHT_TRIGGER);
+            if(std::abs(RInput::status(GamepadAxes::LEFT_X)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_LEFT_X " << RInput::status(GamepadAxes::LEFT_X);
+            if(std::abs(RInput::status(GamepadAxes::LEFT_Y)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_LEFT_Y " << RInput::status(GamepadAxes::LEFT_Y);
+            if(std::abs(RInput::status(GamepadAxes::RIGHT_X)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_RIGHT_X " << RInput::status(GamepadAxes::RIGHT_X);
+            if(std::abs(RInput::status(GamepadAxes::RIGHT_Y)) > 0.2f)
+                rDebug << "GAMEPAD_AXIS_RIGHT_Y " << RInput::status(GamepadAxes::RIGHT_Y);
+            if(RInput::status(GamepadAxes::LEFT_TRIGGER) > -.8f)
+                rDebug << "GAMEPAD_AXIS_LEFT_TRIGGER " << RInput::status(GamepadAxes::LEFT_TRIGGER);
+            if(RInput::status(GamepadAxes::RIGHT_TRIGGER) > -.8f)
+                rDebug << "GAMEPAD_AXIS_RIGHT_TRIGGER " << RInput::status(GamepadAxes::RIGHT_TRIGGER);
         }
     });
 

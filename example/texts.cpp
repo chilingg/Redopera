@@ -78,12 +78,12 @@ void inputEvent(RNode *sender, RNode::Instructs*)
     static RPlane *hold;
     static RPoint2 prePos;
 
-    if (RInput::input().press(Keys::KEY_ESCAPE))
+    if (RInput::press(Keys::KEY_ESCAPE))
         sender->breakLooping();
 
-    if (RInput::input().press(MouseBtn::MOUSE_BUTTON_LEFT))
+    if (RInput::press(MouseBtn::LEFT))
     {
-        RPoint2 pos = RInput::input().cursorPos();
+        RPoint2 pos = RInput::cursorPos();
 
         if (label[0].rect().contains(pos))
             hold = &label[0];
@@ -99,15 +99,15 @@ void inputEvent(RNode *sender, RNode::Instructs*)
             prePos = pos;
         }
     }
-    else if (RInput::input().release(MouseBtn::MOUSE_BUTTON_LEFT))
+    else if (RInput::release(MouseBtn::LEFT))
     {
         hold = nullptr;
     }
 
-    if (hold && RInput::input().cursorMove())
+    if (hold && RInput::cursorMove())
     {
-        hold->move(RInput::input().cursorPos() - prePos);
-        prePos = RInput::input().cursorPos();
+        hold->move(RInput::cursorPos() - prePos);
+        prePos = RInput::cursorPos();
     }
 }
 

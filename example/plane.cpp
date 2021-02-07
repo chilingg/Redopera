@@ -82,30 +82,30 @@ public:
         RWindow* window = node.root()->holder<RWindow>();
         if(window->cursorMode() == RWindow::CursorMode::Hidden)
         {
-            if(RInput::input().cursorMove())
+            if(RInput::cursorMove())
                 window->setCursorModel(RWindow::CursorMode::Normal);
         }
         else if(window->cursorMode() == RWindow::CursorMode::Normal)
         {
-            if(RInput::input().cursorMove())
+            if(RInput::cursorMove())
                 timer.start();
             else if(timer.elapsed() > 1500)
                 window->setCursorModel(RWindow::CursorMode::Hidden);
         }
 
         // inputEvent只能监测感兴趣的按键
-        if(RInput::input().press(Keys::KEY_ESCAPE))
+        if(RInput::press(Keys::KEY_ESCAPE))
             node.breakLooping();
 
         RPoint p;
         int step = 5;
-        if(RInput::input().status(Keys::KEY_LEFT) == BtnAct::PRESS)
+        if(RInput::status(Keys::KEY_LEFT) == BtnAct::PRESS)
             p.rx() -= step;
-        if(RInput::input().status(Keys::KEY_RIGHT) == BtnAct::PRESS)
+        if(RInput::status(Keys::KEY_RIGHT) == BtnAct::PRESS)
             p.rx() += step;
-        if(RInput::input().status(Keys::KEY_UP) == BtnAct::PRESS)
+        if(RInput::status(Keys::KEY_UP) == BtnAct::PRESS)
             p.ry() += step;
-        if(RInput::input().status(Keys::KEY_DOWN) == BtnAct::PRESS)
+        if(RInput::status(Keys::KEY_DOWN) == BtnAct::PRESS)
             p.ry() -= step;
 
         if(!p.isOrigin() && viewpro.contains(plane.rect() + p))

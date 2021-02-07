@@ -7,7 +7,7 @@ using namespace Redopera;
 
 void process(RNode *sender, RNode::Instructs*)
 {
-    if(RInput::input().anyKeyPress())
+    if(RInput::anyKeyPress())
         sender->breakLooping();
 }
 

@@ -86,7 +86,7 @@ public:
     void processEvent(RNode *sender, RNode::Instructs*)
     {
         // inputEvent只能监测感兴趣的按键
-        if(RInput::input().anyKeyPress())
+        if(RInput::anyKeyPress())
             sender->breakLooping();
     }
 

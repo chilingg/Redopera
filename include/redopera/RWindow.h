@@ -128,6 +128,8 @@ private:
     static void mouseButtonCollback(GLFWwindow *window, int btn, int action, int mods);
     // 光标移动
     static void cursorPosCollback(GLFWwindow *window, double x, double y);
+    // 字符输入
+    static void charInputCollback(GLFWwindow *window, unsigned code);
 
     int defaultExec();
 
