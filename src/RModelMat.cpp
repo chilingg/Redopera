@@ -232,6 +232,7 @@ void RModelMat::setModel(float x, float y, float z, float width, float height)
 {
     model_[0].x = width;
     model_[1].y = height;
+    model_[2].z = z;
     model_[3] = { x + width / 2.f, y + height / 2.f, z, 1 };
 }
 
