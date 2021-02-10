@@ -14,7 +14,7 @@ public:
     explicit RColor(RGBA rgba = 0xffu) noexcept:
         rgba_(rgba) {}
 
-    RColor(unsigned r, unsigned g, unsigned b, unsigned a = 0xffu) noexcept
+    RColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a = 0xffu) noexcept
     {
         rgba_ = a & 0xffu;
         rgba_ |= (0xffu & b) << 8;
@@ -42,12 +42,20 @@ public:
     RGBA bgr() const { return ((b() << 16) | (g() << 8) | r()); }
     RGBA abgr() const { return ((a() << 24) | (b() << 16) | (g() << 8) | r()); }
 
-    void setR(unsigned r) { rgba_ = (rgba_ & 0xffffff) | r << 24; }
-    void setG(unsigned g) { rgba_ = (rgba_ & 0xff00ffff) | (0xffu & g) << 16; }
-    void setB(unsigned b) { rgba_ = (rgba_ & 0xffff00ff) | (0xffu & b) << 8; }
-    void setA(unsigned a) { rgba_ = (rgba_ & 0xffffff00) | (a & 0xffu); }
+    void setR(uint32_t r) { rgba_ = (rgba_ & 0xffffff) | r << 24; }
+    void setG(uint32_t g) { rgba_ = (rgba_ & 0xff00ffff) | (0xffu & g) << 16; }
+    void setB(uint32_t b) { rgba_ = (rgba_ & 0xffff00ff) | (0xffu & b) << 8; }
+    void setA(uint32_t a) { rgba_ = (rgba_ & 0xffffff00) | (a & 0xffu); }
     void setRGBA(RGBA rgba) { rgba_ = rgba; }
     void setRGB(RGBA rgb) { rgba_ &= 0x000000ff; rgba_ |= (rgb << 8); }
+
+    void setRGBA(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
+        rgba_ = (r << 24) | ((0xffu & g) << 16) | ((0xffu & b) << 8) | (a & 0xffu);
+    }
+
+    void setRGB(uint32_t r, uint32_t g, uint32_t b) {
+        rgba_ = (r << 24) | ((0xffu & g) << 16) | ((0xffu & b) << 8) | (rgba_ & 0xffu);
+    }
 
     std::string toString() const
     {
