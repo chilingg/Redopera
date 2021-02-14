@@ -126,6 +126,18 @@ RSize &RTextsLoader::rSize()
     return size_;
 }
 
+void RTextsLoader::setSize(int width, int height)
+{
+    dirty_ = true;
+    size_.setSize(width, height);
+}
+
+void RTextsLoader::setSize(const RSize &size)
+{
+    dirty_ = true;
+    size_ = size;
+}
+
 void RTextsLoader::setTexts(std::wstring texts)
 {
     texts_ = texts;

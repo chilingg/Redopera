@@ -68,6 +68,8 @@ public:
 
     RSize& rSize();
 
+    void setSize(int width, int height);
+    void setSize(const RSize &size);
     void setTexts(std::wstring texts);
     void setFontSize(unsigned size);
     void setFont(const RFont &font);
