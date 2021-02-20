@@ -1,11 +1,7 @@
 #include <RDebug.h>
-
-#include <locale>
-#include <codecvt>
+#include <RConvt.h>
 
 using namespace Redopera;
-
-std::wstring_convert<std::codecvt_utf8<wchar_t>> strcnv;
 
 RDebug::~RDebug()
 {
@@ -99,25 +95,25 @@ const RDebug &RDebug::operator<<(const std::string &str) const
 
 const RDebug &RDebug::operator<<(wchar_t c) const
 {
-    buf_ += strcnv.to_bytes(c) + ' ';
+    buf_ += RConvt::U8_STR_CVT.to_bytes(c) + ' ';
     return *this;
 }
 
 const RDebug &RDebug::operator<<(const wchar_t *str) const
 {
-    buf_ += strcnv.to_bytes(str);
+    buf_ += RConvt::U8_STR_CVT.to_bytes(str);
     return *this;
 }
 
 const RDebug &RDebug::operator<<(wchar_t *str) const
 {
-    buf_ += strcnv.to_bytes(str);
+    buf_ += RConvt::U8_STR_CVT.to_bytes(str);
     return *this;
 }
 
 const RDebug &RDebug::operator<<(const std::wstring &str) const
 {
-    buf_ += strcnv.to_bytes(str);
+    buf_ += RConvt::U8_STR_CVT.to_bytes(str);
     return *this;
 }
 
