@@ -6,6 +6,8 @@
 #include <RTime.h>
 #include <RMath.h>
 #include <RTransform.h>
+#include <RName.h>
+#include <RText.h>
 
 using namespace Redopera;
 
@@ -50,6 +52,16 @@ int main()
     rDebug << L"\n测试 RDebug wstr 输出";
     const wchar_t *wchars = L" 字符";
     rDebug << std::wstring(L"标准库::wstring ") << L'中' << wchars;
+
+    rDebug << L"\n测试 RDebug RName 输出";
+    RName name = "name";
+    rDebug << name;
+
+    rDebug << L"\n测试 RDebug RText 输出";
+    RText text1 = "文本1";
+    RText text2 = L"文本2";
+    rDebug << "char init: " << text1;
+    rDebug << "wchar_t init: " << text2 << '\n';
 
     rDebug << "Test color input";
     rDebug << EscCtl::bold << EscCtl::yellow << "Yellow" << EscCtl::non;
