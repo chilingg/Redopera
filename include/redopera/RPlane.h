@@ -15,14 +15,12 @@ namespace RValue {
 class RPlaneContainer
 {
 public:
-    RPlaneContainer(const RTexture &tex, bool singleTex = false):
-        singleTex_(singleTex),
+    RPlaneContainer(const RTexture &tex):
         texFunc(&RPlaneContainer::getTexForTexture),
         texData_(tex)
     {}
 
-    RPlaneContainer(const RSprite &sprite, bool singleTex = false):
-        singleTex_(singleTex),
+    RPlaneContainer(const RSprite &sprite):
         texFunc(&RPlaneContainer::getTexForSprite),
         texData_(sprite)
     {}
@@ -32,31 +30,27 @@ public:
     RPlaneContainer& operator=(const RPlaneContainer &plane) = default;
     ~RPlaneContainer() = default;
 
-    bool isSingleTex() const { return singleTex_; }
     const RTexture& texture() const { return (this->*texFunc)(); }
     const RSprite& sprite() const { return std::get<RSprite>(texData_); }
 
     RSprite& rSprite() { return std::get<RSprite>(texData_); }
 
-    void setTexture(const RTexture& tex, bool singleTex = false)
+    void setTexture(const RTexture& tex)
     {
         texData_ = tex;
         texFunc = &RPlaneContainer::getTexForTexture;
-        singleTex_ = singleTex;
     }
 
-    void setTexture(const RSprite &sprite, bool singleTex = false)
+    void setTexture(const RSprite &sprite)
     {
         texData_ = sprite;
         texFunc = &RPlaneContainer::getTexForSprite;
-        singleTex_ = singleTex;
     }
 
 private:
     const RTexture& getTexForTexture() const { return std::get<RTexture>(texData_); }
     const RTexture& getTexForSprite() const { return std::get<RSprite>(texData_).texture(); }
 
-    bool singleTex_ = false;
     const RTexture& (RPlaneContainer::*texFunc)() const;
     std::variant<RTexture, RSprite> texData_;
 };
@@ -69,13 +63,13 @@ public:
     using RModelMat::RModelMat;
     RPlane() = default;
 
-    RPlane(const RModelMat &model, const RTexture &tex, bool singleTex = false):
-        RPlaneContainer(tex, singleTex),
+    RPlane(const RModelMat &model, const RTexture &tex):
+        RPlaneContainer(tex),
         RModelMat(model)
     {}
 
-    RPlane(const RModelMat &model, const RSprite &sprite, bool singleTex = false):
-        RPlaneContainer(sprite, singleTex),
+    RPlane(const RModelMat &model, const RSprite &sprite):
+        RPlaneContainer(sprite),
         RModelMat(model)
     {}
 };
@@ -86,13 +80,13 @@ public:
     using RTransform::RTransform;
     RPlaneT() = default;
 
-    RPlaneT(const RTransform &trans, const RTexture &tex, bool singleTex = false):
-        RPlaneContainer(tex, singleTex),
+    RPlaneT(const RTransform &trans, const RTexture &tex):
+        RPlaneContainer(tex),
         RTransform(trans)
     {}
 
-    RPlaneT(const RTransform &trans, const RSprite &sprite, bool singleTex = false):
-        RPlaneContainer(sprite, singleTex),
+    RPlaneT(const RTransform &trans, const RSprite &sprite):
+        RPlaneContainer(sprite),
         RTransform(trans)
     {}
 };
@@ -103,13 +97,13 @@ public:
     using RTransformF::RTransformF;
     RPlaneTF() = default;
 
-    RPlaneTF(const RTransformF &trans, const RTexture &tex, bool singleTex = false):
-        RPlaneContainer(tex, singleTex),
+    RPlaneTF(const RTransformF &trans, const RTexture &tex):
+        RPlaneContainer(tex),
         RTransformF(trans)
     {}
 
-    RPlaneTF(const RTransformF &trans, const RSprite &sprite, bool singleTex = false):
-        RPlaneContainer(sprite, singleTex),
+    RPlaneTF(const RTransformF &trans, const RSprite &sprite):
+        RPlaneContainer(sprite),
         RTransformF(trans)
     {}
 };

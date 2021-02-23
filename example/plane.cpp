@@ -28,7 +28,7 @@ public:
         arrowLoad.setAlign(RTextsLoader::Align::Mind, RTextsLoader::Align::Mind);
         arrowLoad.setFontSize(36);
 
-        arrow[0].setTexture(arrowLoad.texture(), true);
+        arrow[0].setTexture(arrowLoad.texture());
         arrow[0].setSize(arrowLoad.size());
 
         arrow[1] = arrow[0];
