@@ -42,12 +42,26 @@ public:
 
     RText& operator=(std::wstring &&text) { text_ = std::move(text); return *this; }
 
+    RText& operator+=(const std::string &text) { text_ += RConvt::U8_STR_CVT.from_bytes(text); return *this; }
+    RText& operator+=(const std::wstring &text) { text_ += text; return *this; }
+    RText& operator+=(const char *text) { text_ += RConvt::U8_STR_CVT.from_bytes(text); return *this; }
+    RText& operator+=(const wchar_t *text) { text_ += text; return *this; }
+    RText& operator+=(const char c) { text_ += RConvt::U8_STR_CVT.from_bytes(c); return *this; }
+    RText& operator+=(const wchar_t c) { text_ += c; return *this; }
+
+    wchar_t operator[](const size_t index) const { return text_[index]; }
+
     bool operator==(const RText& other) const { return text_ == other.text_; };
 
     std::string toString() const { return RConvt::U8_STR_CVT.to_bytes(text_); }
 
     std::wstring toWString() { return text_; }
     const std::wstring toWString() const { return text_; }
+
+    bool empty() const { return text_.empty(); }
+    size_t size() const { return text_.size(); }
+
+    void clear() { text_.clear(); }
 
 private:
     std::wstring text_;

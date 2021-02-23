@@ -22,13 +22,13 @@ RTextsLoader::RTextsLoader():
 
 }
 
-RTextsLoader::RTextsLoader(const std::wstring &text, int width, int height, const Format &fmt):
+RTextsLoader::RTextsLoader(const RText &text, int width, int height, const Format &fmt):
     RTextsLoader(text, RSize(width, height), fmt)
 {
 
 }
 
-RTextsLoader::RTextsLoader(const std::wstring &text, const RSize &size, const Format &fmt):
+RTextsLoader::RTextsLoader(const RText &text, const RSize &size, const Format &fmt):
     typesetting(fmt.typeset == Typeset::Vertical ?
                     &RTextsLoader::verticalTextToTexture : &RTextsLoader::horizontalTextToTexture),
     format_(fmt),
@@ -115,7 +115,7 @@ const RTextsLoader::Format &RTextsLoader::textFormat() const
     return format_;
 }
 
-const std::wstring &RTextsLoader::texts() const
+const RText &RTextsLoader::texts() const
 {
     return texts_;
 }
@@ -138,7 +138,7 @@ void RTextsLoader::setSize(const RSize &size)
     size_ = size;
 }
 
-void RTextsLoader::setTexts(std::wstring texts)
+void RTextsLoader::setTexts(RText texts)
 {
     texts_ = texts;
     dirty_ = true;

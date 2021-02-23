@@ -44,7 +44,7 @@ bool RNode::isChild(RNode *child) const
     return it != children_.end();
 }
 
-bool RNode::isChild(const std::string &child) const
+bool RNode::isChild(const RName &child) const
 {
     auto it = findChild(child);
     return it != children_.end();
@@ -75,30 +75,37 @@ RNode *RNode::parent() const
     return parent_;
 }
 
-const std::string& RNode::name() const
+const RName& RNode::name() const
 {
     return name_;
 }
 
-std::string RNode::availableName(const std::string &name) const
+RName RNode::availableName(const RName &name) const
 {
-    std::string an = name;
-    auto it = findChild(an);
-    for (size_t n = 1; it != children_.end(); ++n)
+    auto it = findChild(name);
+
+    if(it != children_.end())
     {
-       an = name + std::to_string(n);
-       it = findChild(an);
+        size_t n = 0;
+        RName rename;
+        do {
+            ++n;
+            rename = name.toString() + std::to_string(n);
+            it = findChild(rename);
+        } while(it != children_.end());
+
+        return rename;
     }
 
-    return an;
+    return name;
 }
 
 std::string RNode::path() const
 {
     if (parent_)
-        return parent_->path() + '/' + name_;
+        return parent_->path() + '/' + name_.toString();
     else
-        return '/' + name_;
+        return '/' + name_.toString();
 }
 
 const RNode *RNode::node(const std::string &path) const
@@ -182,7 +189,7 @@ bool RNode::freeChild(RNode *child)
     return false;
 }
 
-bool RNode::freeChild(const std::string &name)
+bool RNode::freeChild(const RName &name)
 {
     auto it = findChild(name);
     if(it != children_.end())
@@ -205,7 +212,7 @@ void RNode::freeAllChild()
 void RNode::changeParent(RNode *parent)
 {
     if(parent == this)
-        throw std::runtime_error("This parent is self");
+        return;
 
     if(parent_)
         parent_->children_.erase(parent_->findChild(this));
@@ -232,7 +239,7 @@ void RNode::changeParent(RNode *parent)
     }
 }
 
-const std::string &RNode::rename(const std::string &name)
+RName RNode::rename(const RName &name)
 {
     if(parent_)
     {
@@ -356,7 +363,7 @@ std::vector<RNode*>::iterator RNode::findChild(RNode *node)
     return std::find(children_.begin(), children_.end(), node);
 }
 
-std::vector<RNode*>::iterator RNode::findChild(const std::string &name)
+std::vector<RNode*>::iterator RNode::findChild(const RName &name)
 {
     return std::find_if(children_.begin(), children_.end(), [&name](RNode *child) { return child->name_ == name; });
 }
@@ -366,7 +373,7 @@ std::vector<RNode*>::const_iterator RNode::findChild(RNode *node) const
     return std::find(children_.cbegin(), children_.cend(), node);
 }
 
-std::vector<RNode*>::const_iterator RNode::findChild(const std::string &name) const
+std::vector<RNode*>::const_iterator RNode::findChild(const RName &name) const
 {
     return std::find_if(children_.begin(), children_.end(), [&name](RNode *child) { return child->name_ == name; });
 }

@@ -16,7 +16,7 @@ std::set<Keys> RInput::keyRepeat_;
 std::set<MouseBtn> RInput::mouseUp_;
 std::set<MouseBtn> RInput::mouseDown_;
 std::vector<RInput::Gamepad> RInput::gamepad_;
-std::wstring RInput::characters_;
+RText RInput::characters_;
 
 BtnAct RInput::toButtonAction(int action)
 {
@@ -405,7 +405,7 @@ bool RInput::anyMouseBtnPress()
     return !mouseDown_.empty();
 }
 
-const std::wstring &RInput::charInput()
+const RText &RInput::charInput()
 {
     return characters_;
 }

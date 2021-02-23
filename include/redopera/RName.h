@@ -10,8 +10,20 @@ namespace Redopera {
 class RName
 {
 public:
+    RName():
+        length_(0),
+        hash_(0),
+        name_()
+    {}
+
     RName(const std::string &name):
         length_(name.size()),
+        hash_(std::hash<std::string>{}(name)),
+        name_(std::make_shared<const std::string>(name))
+    {}
+
+    RName(const char *name):
+        length_(charCount(name)),
         hash_(std::hash<std::string>{}(name)),
         name_(std::make_shared<const std::string>(name))
     {}
@@ -28,6 +40,15 @@ public:
     const std::string& toString() const { return *name_; }
 
 private:
+    size_t charCount(const char *chars)
+    {
+        size_t size = 0;
+        while(chars[size] != '\0')
+            ++size;
+
+        return size;
+    }
+
     size_t length_;
     size_t hash_;
     std::shared_ptr<const std::string> name_;

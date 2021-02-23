@@ -4,10 +4,10 @@
 #include "ROpenGL.h"
 #include "RSigslot.h"
 #include "RPoint.h"
+#include "RText.h"
 
 #include <vector>
 #include <set>
-#include <atomic>
 
 namespace Redopera {
 
@@ -240,7 +240,7 @@ public:
     static bool anyKeyPress();
     static bool anyMouseBtnPress();
 
-    static const std::wstring& charInput();
+    static const RText& charInput();
 
     static int gamepadCount();
 
@@ -276,7 +276,7 @@ private:
     static std::set<MouseBtn> mouseUp_;
     static std::set<MouseBtn> mouseDown_;
     static std::vector<Gamepad> gamepad_;
-    static std::wstring characters_;
+    static RText characters_;
 };
 
 }

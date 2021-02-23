@@ -2,6 +2,7 @@
 #define RTEXTSLOADER_H
 
 #include "RSize.h"
+#include "RText.h"
 #include "rsc/RImage.h"
 #include "rsc/RFont.h"
 #include "rsc/RTexture.h"
@@ -48,8 +49,8 @@ public:
 
     RTextsLoader();
 
-    RTextsLoader(const std::wstring &text, int width, int height, const Format &fmt = fontFmt);
-    RTextsLoader(const std::wstring &text, const RSize &size, const Format &fmt = fontFmt);
+    RTextsLoader(const RText &text, int width, int height, const Format &fmt = fontFmt);
+    RTextsLoader(const RText &text, const RSize &size, const Format &fmt = fontFmt);
     RTextsLoader(const RTextsLoader &timg);
     RTextsLoader(RTextsLoader &&timg);
 
@@ -64,13 +65,13 @@ public:
     const RImage& image() const;
     const RFont& font() const;
     const Format& textFormat() const;
-    const std::wstring& texts() const;
+    const RText& texts() const;
 
     RSize& rSize();
 
     void setSize(int width, int height);
     void setSize(const RSize &size);
-    void setTexts(std::wstring texts);
+    void setTexts(RText texts);
     void setFontSize(unsigned size);
     void setFont(const RFont &font);
     void setTextsFormat(const Format &format);
@@ -92,7 +93,7 @@ private:
     bool dirty_ = true;
     void (RTextsLoader::*typesetting)();
     Format format_;
-    std::wstring texts_;
+    RText texts_;
     RSize size_;
 
     RTexture tex_;

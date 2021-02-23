@@ -1,13 +1,13 @@
 #ifndef RNODE_H
 #define RNODE_H
 
-#include <string>
 #include <functional>
 #include <map>
 #include <any>
 #include <typeinfo>
 #include <atomic>
 
+#include <RName.h>
 #include <RRect.h>
 
 namespace Redopera {
@@ -29,7 +29,7 @@ public:
     RNode();
 
     template<typename Holder>
-    RNode(const std::string &name, Holder *holder):
+    RNode(const RName &name, Holder *holder):
         RNode()
     {
         name_ = name;
@@ -45,13 +45,13 @@ public:
     bool isNormal() const;
     bool isValid() const;
     bool isChild(RNode *child) const;
-    bool isChild(const std::string &child) const;
+    bool isChild(const RName &child) const;
     bool isAncestor(RNode *node) const; // 祖辈
     Status status() const;
     int childrenNumber() const;
     RNode* parent() const;
-    const std::string& name() const;
-    std::string availableName(const std::string &name) const;
+    const RName& name() const;
+    RName availableName(const RName &name) const;
     std::string path() const;
     const RNode* node(const std::string &path) const;
     RNode* node(const std::string &path);
@@ -69,11 +69,11 @@ public:
 
     void addChild(RNode *child);
     bool freeChild(RNode *child);
-    bool freeChild(const std::string &name);
+    bool freeChild(const RName &name);
     void freeAllChild();
     void changeParent(RNode *parent);
 
-    const std::string& rename(const std::string &name);
+    RName rename(const RName &name);
 
     void setUpdateFunc(std::function<void(RRenderSys *)> func) { updateFunc = func; }
     void setExecFunc(std::function<int()> func) { execFunc = func; }
@@ -109,23 +109,23 @@ private:
     int defaultExecFunc();
 
     std::vector<RNode*>::iterator findChild(RNode *node);
-    std::vector<RNode*>::iterator findChild(const std::string &name);
+    std::vector<RNode*>::iterator findChild(const RName &name);
 
     std::vector<RNode*>::const_iterator findChild(RNode *node) const;
-    std::vector<RNode*>::const_iterator findChild(const std::string &name) const;
+    std::vector<RNode*>::const_iterator findChild(const RName &name) const;
 
     std::function<int()> execFunc;
-    std::function<void(RRenderSys *sys)> updateFunc;
+    std::function<void(RRenderSys *)> updateFunc;
     std::function<void()> finishFunc;
     std::function<void()> startFunc;
 
-    std::function<void(RNode*, const RRect &info)> transformFunc;
+    std::function<void(RNode*, const RRect&)> transformFunc;
     std::function<void(RNode*, Instructs*)> processFunc;
     std::function<bool(std::any*)> customFunc;
 
     std::vector<RNode*> children_;
     Status state_ = Status::Normal;
-    std::string name_ = "Node";
+    RName name_ = "Node";
     RNode *parent_ = nullptr;
     struct {
         void *p = nullptr; size_t hashcode;
@@ -134,28 +134,28 @@ private:
 
 struct RNode::Instructs
 {
-    void addInstruct(const std::string &instruct, int value = 1)
+    void addInstruct(const RName &instruct, int value = 1)
     {
         instructs_[instruct].i = value;
     }
 
-    void addInstruct(const std::string &instruct, float value)
+    void addInstruct(const RName &instruct, float value)
     {
         instructs_[instruct].f = value;
     }
 
 
-    void deleteInstruct(const std::string &instruct)
+    void deleteInstruct(const RName &instruct)
     {
         instructs_.erase(instruct);
     }
 
-    bool instruct(const std::string &instruct)
+    bool instruct(const RName &instruct)
     {
         return instructs_.count(instruct) != 0;
     }
 
-    int instructI(const std::string &instruct)
+    int instructI(const RName &instruct)
     {
         auto it = instructs_.find(instruct);
 
@@ -164,7 +164,7 @@ struct RNode::Instructs
         return it->second.i;
     }
 
-    float instructF(const std::string &instruct)
+    float instructF(const RName &instruct)
     {
         auto it = instructs_.find(instruct);
 
@@ -180,7 +180,7 @@ private:
         int i; float f;
     };
 
-    std::map<std::string, value> instructs_;
+    std::unordered_map<RName, value> instructs_;
 };
 
 } // Redopera
