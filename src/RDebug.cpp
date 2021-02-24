@@ -95,25 +95,19 @@ const RDebug &RDebug::operator<<(const std::string &str) const
 
 const RDebug &RDebug::operator<<(wchar_t c) const
 {
-    buf_ += RConvt::U8_STR_CVT.to_bytes(c) + ' ';
+    buf_ += RConvt::unicodeToANSI(c);
     return *this;
 }
 
 const RDebug &RDebug::operator<<(const wchar_t *str) const
 {
-    buf_ += RConvt::U8_STR_CVT.to_bytes(str);
-    return *this;
-}
-
-const RDebug &RDebug::operator<<(wchar_t *str) const
-{
-    buf_ += RConvt::U8_STR_CVT.to_bytes(str);
+    buf_ += RConvt::unicodeToANSI(str);
     return *this;
 }
 
 const RDebug &RDebug::operator<<(const std::wstring &str) const
 {
-    buf_ += RConvt::U8_STR_CVT.to_bytes(str);
+    buf_ += RConvt::unicodeToANSI(str);
     return *this;
 }
 

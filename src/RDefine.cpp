@@ -93,4 +93,5 @@ template class Redopera::RValue::RTransformValue<int>;
 template class Redopera::RValue::RTransformValue<float>;
 
 // RConvt
-thread_local std::wstring_convert<std::codecvt_utf8<wchar_t>> RConvt::U8_STR_CVT;
+thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> RConvt::U8_STR_CVT;
+thread_local std::mbstate_t RConvt::mbstate;

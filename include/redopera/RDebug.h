@@ -35,7 +35,6 @@ public:
 
     const RDebug& operator<<(wchar_t c) const;
     const RDebug& operator<<(const wchar_t *str) const;
-    const RDebug& operator<<(wchar_t *str) const;
     const RDebug& operator<<(const std::wstring &str) const;
 
     const RDebug& operator<<(void *ptr) const;

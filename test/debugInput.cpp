@@ -28,6 +28,8 @@ const RDebug& operator<<(const RDebug &debug, const Test &test)
 
 int main()
 {
+    std::setlocale(LC_CTYPE, "");
+
     rPrError("\nTest RDebug error output");
     rPrError("Test prErrot()");
     rCheck(true, "Test check(true)");
@@ -45,9 +47,9 @@ int main()
     rDebug << "\nTest RDebug str output";
     unsigned uc = 'u';
     const char chars[] = "chars";
-    rDebug << std::string("std::string ") << 'c' << uc << chars;
+    rDebug << std::string("std::string: ") << 'c' << uc << chars;
     const char chars2[] = u8"中文";
-    rDebug << std::string("中文 ") << chars2;
+    rDebug << std::string("std::string utf-8 ") << RConvt::utf8ToANSI(chars2);
 
     rDebug << L"\n测试 RDebug wstr 输出";
     const wchar_t *wchars = L" 字符";
