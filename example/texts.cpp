@@ -15,14 +15,24 @@ const wchar_t* texts =
 
 const int WIDTH = 480;
 const int HEIGHT = 480;
-const glm::vec3 fcolor(.7f, .7f, .7f);
+const glm::vec3 fcolor(.7f, .3f, .3f);
 
 std::unique_ptr<RPlane[]> label;
 
+template<typename T>
+const RRenderSys& RRenderSys::operator<<(T &obj) const
+{
+    render(obj.texture(), obj.model());
+    return *this;
+}
+
 void update(RRenderSys *sys)
 {
+    RRPI rpi = sys->shaders().use();
+    sys->usingSingleTexOut();
     *sys << label[0] << label[1] << label[2] << label[3];
 
+    sys->usingHueOut();
     sys->renderLine(label[0].model());
     sys->renderLine(label[1].model());
     sys->renderLine(label[2].model());
@@ -67,10 +77,9 @@ void startEvent()
     label[3].setTexture(textsLoader.texture());
     label[3].setModel(rect);
 
-    RWindow::focusWindow()->renderSys()->setCurrentShaders("SingleShaders");
-    RWindow::focusWindow()->renderSys()->setViewprot(0, WIDTH, 0, HEIGHT);
-    RRPI rpi = RWindow::focusWindow()->renderSys()->shaders()->use();
-    rpi.setUniform(RWindow::focusWindow()->renderSys()->shaders()->getUniformLoc("color"), fcolor);
+    RRenderSys *sys = RWindow::focusWindow()->renderSys();
+    sys->setViewport(0, WIDTH, 0, HEIGHT);
+    sys->setHue(fcolor);
 }
 
 void inputEvent(RNode *sender, RNode::Instructs*)

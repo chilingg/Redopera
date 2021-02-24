@@ -4,6 +4,7 @@
 #include "ROpenGL.h"
 
 #include <memory>
+#include <unordered_set>
 
 namespace Redopera {
 
@@ -19,6 +20,8 @@ public:
         Geometry  = GL_GEOMETRY_SHADER,
         Compute   = GL_COMPUTE_SHADER
     };
+
+    static const std::unordered_set<Type> TYPE_LIST;
 
     static const std::string& shaderTypeName(Type type);
 

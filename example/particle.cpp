@@ -18,7 +18,7 @@ void start()
     init->setTexture(RTexture::createWhiteTex());
     init->setModel(RRectF(WIDTH / 2.f, 0.f, 4.f, 4.f));
 
-    RWindow::focusWindow()->renderSys()->setViewprot(0, WIDTH, 0, HEIGHT);
+    RWindow::focusWindow()->renderSys()->setViewport(0, WIDTH, 0, HEIGHT);
 }
 
 void finish()
@@ -42,7 +42,7 @@ void update(RRenderSys *sys)
             it = particles.erase(it);
         else
         {
-            *sys << it->first;
+            sys->render(it->first.texture(), it->first.model());
             ++it;
         }
     }

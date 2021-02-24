@@ -8,7 +8,6 @@ using namespace Redopera;
 thread_local GLuint RRPI::current = 0;
 thread_local int RRPI::count = 0;
 
-
 RRPI::~RRPI()
 {
     --count;
@@ -297,40 +296,52 @@ void RRPI::setUniformMat(GLint loc, GLsizei order, GLdouble *vp, GLsizei count, 
     }
 }
 
-void RRPI::reset(GLuint id)
+void RRPI::setUniformSubroutines(RShader::Type type, GLsizei count, const GLuint *indices)
 {
-    if(count != 1 && id != current)
+    glUniformSubroutinesuiv(static_cast<GLenum>(type), count, indices);
+}
+
+void RRPI::release()
+{
+    if(count != 1)
          throw std::logic_error("The current thread has other <RRPI> is using!");
-    current = id;
+    current = 0;
 }
 
 RRPI::RRPI(GLuint id)
 {
-    if(current && current != id)
-        throw std::logic_error("The current thread has other <RRPI> is using!");
-
-    current = id;
-    ++count;
-    glUseProgram(id);
+    if(current)
+    {
+        if(current != id)
+            throw std::logic_error("The current thread has other <RRPI> is using!");
+        else
+            ++count;
+    }
+    else
+    {
+        current = id;
+        ++count;
+        glUseProgram(id);
+    }
 }
 
 RShaders::RShaders(std::initializer_list<RShader> list)
 {
     for(auto &shader : list)
-        shaders_.emplace(shader.type(), shader);
+        stages_.emplace(shader.type(), shader);
     linkProgram();
 }
 
 RShaders::RShaders(const RShaders &program):
-    progID_(program.progID_),
-    shaders_(program.shaders_)
+    id_(program.id_),
+    stages_(program.stages_)
 {
 
 }
 
 RShaders::RShaders(const RShaders &&program):
-    progID_(std::move(program.progID_)),
-    shaders_(std::move(program.shaders_))
+    id_(std::move(program.id_)),
+    stages_(std::move(program.stages_))
 {
 
 }
@@ -343,60 +354,78 @@ RShaders &RShaders::operator=(RShaders program)
 
 void RShaders::swap(RShaders &program)
 {
-    progID_.swap(program.progID_);
-    shaders_.swap(program.shaders_);
+    id_.swap(program.id_);
+    stages_.swap(program.stages_);
 }
 
 bool RShaders::isValid() const
 {
-    return progID_ != nullptr;
+    return id_ != nullptr;
 }
 
 bool RShaders::isAttachedShader(RShader::Type type) const
 {
-    return shaders_.count(type);
+    return stages_.count(type);
 }
 
 GLuint RShaders::id() const
 {
-    return *progID_;
+    return *id_;
 }
 
 RRPI RShaders::use() const
 {
-    return RRPI(*progID_);
+    return RRPI(*id_);
 }
 
-GLint RShaders::getUniformLoc(const std::string &name) const
+GLint RShaders::getUniformLoc(const RName &name) const
 {
-    GLint loc = glGetUniformLocation(*progID_, name.c_str());
+    GLint loc = glGetUniformLocation(*id_, name.toString().c_str());
 #ifndef NDEBUG
-    rCheck(loc < 0, "Invalid locale <" + name + '>');
+    rCheck(loc < 0, "Invalid locale <" + name.toString() + '>');
 #endif
     return loc;
 }
 
+GLint RShaders::getSubroutineUniformLoc(RShader::Type type, const RName &name) const
+{
+    GLint loc = glGetSubroutineUniformLocation(*id_, static_cast<GLenum>(type), name.toString().c_str());
+#ifndef NDEBUG
+    rCheck(loc < 0, "Invalid subroutine locale <" + name.toString() + '>');
+#endif
+    return loc;
+}
+
+GLuint RShaders::getSubroutineIndex(RShader::Type type, const RName &name) const
+{
+    GLuint i = glGetSubroutineIndex(*id_, static_cast<GLenum>(type), name.toString().c_str());
+#ifndef NDEBUG
+    rCheck(i == GL_INVALID_INDEX, "Invalid subroutine index <" + name.toString() + '>');
+#endif
+    return i;
+}
+
 void RShaders::attachShader(const RShader &shader)
 {
-    shaders_.emplace(shader.type(), shader);
+    stages_.emplace(shader.type(), shader);
 }
 
 void RShaders::attachShader(std::initializer_list<RShader> list)
 {
     for(auto &shader : list)
-        shaders_.emplace(shader.type(), shader);
+        stages_.emplace(shader.type(), shader);
 }
 
 void RShaders::detachShader(RShader::Type type)
 {
-    shaders_.erase(type);
+    stages_.erase(type);
 }
 
 bool RShaders::linkProgram()
 {
     std::shared_ptr<GLuint> id(std::shared_ptr<GLuint>(new GLuint(glCreateProgram()), deleteShaderProgram));
 
-    for(auto& shader: shaders_)
+    for(auto& shader: stages_)
         glAttachShader(*id, shader.second.id());
     glLinkProgram(*id);
 
@@ -410,25 +439,25 @@ bool RShaders::linkProgram()
         return false;
     }
 
-    progID_.swap(id);
+    id_.swap(id);
     releaseShader();
     return true;
 }
 
 void RShaders::reLinkProgram()
 {
-    glLinkProgram(*progID_);
+    glLinkProgram(*id_);
 }
 
 void RShaders::releaseShader()
 {
     std::map<RShader::Type, RShader> temp;
-    shaders_.swap(temp);
+    stages_.swap(temp);
 }
 
 void RShaders::release()
 {
-    progID_.reset();
+    id_.reset();
 }
 
 void RShaders::deleteShaderProgram(GLuint *id)

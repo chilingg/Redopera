@@ -4,6 +4,16 @@
 
 using namespace Redopera;
 
+const std::unordered_set<RShader::Type> RShader::TYPE_LIST
+{
+    RShader::Type::Vertex,
+    RShader::Type::Fragment,
+    RShader::Type::TessContol,
+    RShader::Type::TessEvaluation,
+    RShader::Type::Geometry,
+    RShader::Type::Compute,
+};
+
 const std::string &RShader::shaderTypeName(Type type)
 {
     static const std::string vetex      = "VertexShader";

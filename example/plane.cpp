@@ -10,6 +10,13 @@ using namespace Redopera;
 
 constexpr float SIZE = 480;
 
+template<typename T>
+const RRenderSys& RRenderSys::operator<<(T &obj) const
+{
+    render(obj.texture(), obj.model());
+    return *this;
+}
+
 class TestCtl
 {
 public:
@@ -47,19 +54,19 @@ public:
 
     void update(RRenderSys *sys)
     {
-        sys->setCurrentShaders("SingleShaders");
-        RRPI rpi = sys->shaders()->use();
-        rpi.setUniform(sys->shaders()->getUniformLoc("color"), .1f, .1f, .14f);
+        RRPI rpi = sys->shaders().use();
+        rpi.setUniform(sys->loc(RRenderSys::HUE), .1f, .1f, .14f, 1.f);
+        sys->usingSingleTexOut();
         *sys<< arrow[0] << arrow[1] << arrow[2] << arrow[3];
-        rpi.reset();
 
-        sys->setCurrentShaders("SimpleShaders");
+        rpi.setUniform(sys->loc(RRenderSys::HUE), 1.f, 1.f, 1.f, 1.f);
+        sys->usingTexColorOut();
         *sys << plane;
     }
 
     void translation(RNode *sender, const RRect &info)
     {
-        sender->holder<RWindow>()->renderSys()->setViewprot(0, info.width(), 0, info.height());
+        sender->holder<RWindow>()->renderSys()->setViewport(0, info.width(), 0, info.height());
 
         float xratio = info.width() / viewpro.width();
         float yratio = info.height() / viewpro.height();

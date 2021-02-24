@@ -97,11 +97,7 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
 
     node.setExecFunc([this]{ return defaultExec(); });
 
-    renderSys_ = std::make_unique<RRenderSys>();
-    renderSys_->addShaders("SimpleShaders", RRenderSys::createSimpleShaders());
-    renderSys_->addShaders("SingleShaders", RRenderSys::createSimpleSingleShaders());
-    renderSys_->setCurrentShaders("SimpleShaders");
-    renderSys_->setCamera();
+    renderSys_ = std::make_unique<RRenderSys>(RRenderSys::createSimpleShaders());
 
     if(!focusWindowP)
         focusWindowP = this;

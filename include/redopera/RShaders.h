@@ -3,6 +3,7 @@
 
 #include "rsc/RShader.h"
 #include "RMath.h"
+#include "RName.h"
 
 #include <initializer_list>
 #include <map>
@@ -70,7 +71,9 @@ public:
     void setUniformMat(GLint loc, GLsizei order, GLfloat *vp, GLsizei count = 1, GLboolean transpose = false) const;
     void setUniformMat(GLint loc, GLsizei order, GLdouble *vp, GLsizei count = 1, GLboolean transpose = false) const;
 
-    void reset(GLuint id = 0);
+    void setUniformSubroutines(RShader::Type type, GLsizei count, const GLuint *indices);
+
+    void release();
 
 private:
     RRPI(GLuint id);
@@ -95,7 +98,9 @@ public:
     GLuint id() const;
     RRPI use() const;
 
-    GLint getUniformLoc(const std::string &name) const;
+    GLint getUniformLoc(const RName &name) const;
+    GLint getSubroutineUniformLoc(RShader::Type type, const RName &name) const;
+    GLuint getSubroutineIndex(RShader::Type type, const RName &name) const;
 
     // attachShader() 与 detachShader() 都是只在重新linkProgram时生效
     void attachShader(const RShader &shader);
@@ -109,8 +114,8 @@ public:
 private:
     static void deleteShaderProgram(GLuint *ID);
 
-    std::shared_ptr<GLuint> progID_;
-    std::map<RShader::Type, RShader> shaders_;
+    std::shared_ptr<GLuint> id_;
+    std::map<RShader::Type, RShader> stages_;
 };
 
 } // Redopera
