@@ -6,7 +6,7 @@ using namespace Redopera;
 
 static const GLchar *VERTEX_CODE =
 R"--(
-#version 330 core
+#version 430 core
 
 layout(location = 0) in vec2 POS;
 layout(location = 1) in vec2 TEX_COOR;

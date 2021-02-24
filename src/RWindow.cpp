@@ -97,7 +97,8 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
 
     node.setExecFunc([this]{ return defaultExec(); });
 
-    renderSys_ = std::make_unique<RRenderSys>(RRenderSys::createSimpleShaders());
+    if(format_.versionMajor > 3)
+        renderSys_ = std::make_unique<RRenderSys>(RRenderSys::createSimpleShaders());
 
     if(!focusWindowP)
         focusWindowP = this;

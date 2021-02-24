@@ -21,7 +21,7 @@ public:
         bool vSync          = true;     // 垂直同步
         bool forward        = true;     // 前向兼容(清除当前版本不推荐的特性）
         bool rasterizer     = false;    // 光栅化
-        int versionMajor    = 3;        // OpenGL主版本号
+        int versionMajor    = 4;        // OpenGL主版本号
         int versionMinor    = 3;        // OpenGL副版本号
         GLFWwindow *shared  = nullptr;  // 共享上下文
     };
