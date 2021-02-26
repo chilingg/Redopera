@@ -2,9 +2,7 @@
 #define RNAME_H
 
 #include <functional>
-#include <array>
 #include <string>
-#include <cstring>
 #include <mutex>
 #include <unordered_map>
 
@@ -15,10 +13,6 @@ class RName
     using NameInfo = std::string;
 
 public:
-    RName():
-        index_(0)
-    {}
-
     RName(const std::string &name):
         index_(nameToIndex(name))
     {}

@@ -87,7 +87,7 @@ RName RNode::availableName(const RName &name) const
     if(it != children_.end())
     {
         size_t n = 0;
-        RName rename;
+        std::string rename;
         do {
             ++n;
             rename = name.toString() + std::to_string(n);
