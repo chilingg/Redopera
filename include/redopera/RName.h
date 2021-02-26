@@ -1,31 +1,30 @@
 #ifndef RNAME_H
 #define RNAME_H
 
-#include <memory>
 #include <functional>
+#include <array>
 #include <string>
+#include <cstring>
+#include <mutex>
+#include <unordered_map>
 
 namespace Redopera {
 
 class RName
 {
+    using NameInfo = std::string;
+
 public:
     RName():
-        length_(0),
-        hash_(0),
-        name_()
+        index_(0)
     {}
 
     RName(const std::string &name):
-        length_(name.size()),
-        hash_(std::hash<std::string>{}(name)),
-        name_(std::make_shared<const std::string>(name))
+        index_(nameToIndex(name))
     {}
 
     RName(const char *name):
-        length_(charCount(name)),
-        hash_(std::hash<std::string>{}(name)),
-        name_(std::make_shared<const std::string>(name))
+        index_(nameToIndex(name))
     {}
 
     RName(const RName &) = default;
@@ -33,25 +32,72 @@ public:
     RName& operator=(const RName&) = default;
     RName& operator=(RName&&) = default;
 
-    bool operator==(const RName &other) const { return hash_ == other.hash_ && length_ == other.length_; }
+    bool operator==(const RName &other) const { return index_ == other.index_; }
 
-    size_t hash() const { return hash_; }
-    size_t length() const { return length_; }
-    const std::string& toString() const { return *name_; }
+    size_t hash() const { return index_; }
+    size_t index() const { return index_; }
 
-private:
-    size_t charCount(const char *chars)
+    std::string toString() const
     {
-        size_t size = 0;
-        while(chars[size] != '\0')
-            ++size;
-
-        return size;
+        std::lock_guard lock(gMutex);
+        return gTable[index_];
     }
 
-    size_t length_;
-    size_t hash_;
-    std::shared_ptr<const std::string> name_;
+private:
+    static size_t nameToIndex(const std::string &name)
+    {
+        static const size_t P = 19249, MOD = 10010491;
+
+        NameInfo info(name);
+
+        size_t hash = 0;
+        std::for_each_n(info.data(), info.size(), [&hash](char& c)
+        {
+            size_t value;
+            if('0' <= c && c <= '9')
+            {
+                value = c - 48 + 27;
+            }
+            else if('A' <= c && c <= 'Z')
+            {
+                c += 32;
+                value = c - 96;
+            }
+            else if('a' <= c && c <= 'z')
+            {
+                value = c - 96;
+            }
+            else
+            {
+                c = '_';
+                value = 37;
+            }
+
+            hash = (hash * P + value) % MOD;
+        });
+
+        std::lock_guard lock(gMutex);
+        auto pair = indexTable.equal_range(hash);
+        if(pair.first != indexTable.end())
+        {
+            for(auto it = pair.first; it != pair.second; ++it)
+            {
+                if(gTable[it->second] == info)
+                    return it->second;
+            }
+        }
+
+        gTable.push_back(std::move(info));
+        size_t index = gTable.size() - 1;
+        indexTable.emplace(hash, index);
+        return index;
+    }
+
+    static std::vector<NameInfo> gTable;
+    static std::unordered_multimap<size_t, size_t> indexTable;
+    static std::mutex gMutex;
+
+    size_t index_;
 };
 
 } // ns Redopera

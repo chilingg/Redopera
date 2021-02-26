@@ -29,6 +29,9 @@ target_link_libraries(window redopera)
 add_executable(unitTest unitTest.cpp)
 target_link_libraries(unitTest redopera)
 
+add_executable(name name.cpp)
+target_link_libraries(name redopera)
+
 find_file(RTEST_FILE rtest.cpp .)
 if(RTEST_FILE)
     add_executable(rtest rtest.cpp)
