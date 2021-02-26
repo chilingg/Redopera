@@ -46,7 +46,7 @@ public:
 private:
     static size_t nameToIndex(const std::string &name)
     {
-        static const size_t P = 19249, MOD = 10010491;
+        static const size_t P = 19249, MOD = 3221225473ul;
 
         NameInfo info(name);
 
