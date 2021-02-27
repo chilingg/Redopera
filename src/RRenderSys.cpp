@@ -8,19 +8,19 @@ static const GLchar *VERTEX_CODE =
 R"--(
 #version 430 core
 
-layout(location = 0) in vec2 POS;
-layout(location = 1) in vec2 TEX_COOR;
+layout(location = 0) in vec2 in_pos;
+layout(location = 1) in vec2 in_tex_coor;
 
-uniform mat4 MODEL;
-uniform mat4 VIEW;
-uniform mat4 PROJECT;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 project;
 
-out vec2 texCoor;
+out vec2 tex_coor;
 
 void main(void)
 {
-    texCoor = TEX_COOR;
-    gl_Position = PROJECT * VIEW * MODEL* vec4(POS, 0.0, 1.0);
+    tex_coor = in_tex_coor;
+    gl_Position = project * view * model* vec4(in_pos, 0.0, 1.0);
 }
 )--";
 
@@ -28,46 +28,46 @@ static const GLchar *FRAGMENT_CODE =
 R"--(
 #version 430 core
 
-uniform vec4 HUE = vec4(1, 1, 1, 1);
-uniform sampler2D TEX;
+uniform vec4 hue = vec4(1, 1, 1, 1);
+uniform sampler2D tex;
 
-in vec2 texCoor;
-out vec4 outColor;
+in vec2 tex_coor;
+out vec4 out_color;
 
-subroutine void ColorOutFunc();
+subroutine void color_out();
 
-subroutine(ColorOutFunc) void texOut()
+subroutine(color_out) void tex_out()
 {
-    outColor = texture(TEX, texCoor) * HUE;
+    out_color = texture(tex, tex_coor) * hue;
 }
 
-subroutine(ColorOutFunc) void singleTexOut()
+subroutine(color_out) void single_tex_out()
 {
-    outColor = vec4(HUE.rgb, texture(TEX, texCoor) * HUE.a);
+    out_color = vec4(hue.rgb, texture(tex, tex_coor) * hue.a);
 }
 
-subroutine(ColorOutFunc) void hueOut()
+subroutine(color_out) void hue_out()
 {
-    outColor = HUE;
+    out_color = hue;
 }
 
-subroutine uniform ColorOutFunc colorOutFunc;
+subroutine uniform color_out color_out_func;
 
 void main(void)
 {
-    colorOutFunc();
+    color_out_func();
 }
 )--";
 
-const RName RRenderSys::PROJECT = "PROJECT";
-const RName RRenderSys::VIEW = "VIEW";
-const RName RRenderSys::MODEL = "MODEL";
-const RName RRenderSys::HUE = "HUE";
+const RName RRenderSys::nProject = "project";
+const RName RRenderSys::nView = "view";
+const RName RRenderSys::nModel = "model";
+const RName RRenderSys::nHue = "hue";
 
-const RName RRenderSys::COLOR_OUT_FUNC = "colorOutFunc";
-const RName RRenderSys::TEX_OUT = "texOut";
-const RName RRenderSys::SINGLE_OUT = "singleTexOut";
-const RName RRenderSys::HUE_OUT = "hueOut";
+const RName RRenderSys::nColorOutFunc = "color_out_func";
+const RName RRenderSys::nTexOut = "tex_out";
+const RName RRenderSys::nSingleOut = "single_tex_out";
+const RName RRenderSys::nHueOut = "hue_out";
 
 RShaders RRenderSys::createSimpleShaders()
 {
@@ -181,8 +181,8 @@ void RRenderSys::setShaders(const RShaders &shaders)
             data_.stage_.emplace(type, SubroutineData{ std::vector<GLuint>(n, 0), {} });
     }
 
-    registerUniform({ PROJECT, VIEW, MODEL, HUE });
-    registerSubroutine(RShader::Type::Fragment, COLOR_OUT_FUNC, { TEX_OUT, SINGLE_OUT, HUE_OUT });
+    registerUniform({ nProject, nView, nModel, nHue });
+    registerSubroutine(RShader::Type::Fragment, nColorOutFunc, { nTexOut, nSingleOut, nHueOut });
     setViewMove();
 }
 
@@ -198,19 +198,19 @@ void RRenderSys::setSubroutine(RShader::Type type, const RName &func, const RNam
 void RRenderSys::setViewport(float left, float right, float bottom, float top, float near, float far)
 {
     RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(PROJECT), glm::ortho(left, right, bottom, top, near, far));
+    rpi.setUniformMat(loc(nProject), glm::ortho(left, right, bottom, top, near, far));
 }
 
 void RRenderSys::setPerspective(float left, float right, float bottom, float top, float near, float far)
 {
     RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(PROJECT), glm::perspective(left, right, bottom, top, near, far));
+    rpi.setUniformMat(loc(nProject), glm::perspective(left, right, bottom, top, near, far));
 }
 
 void RRenderSys::setProjectMat(const glm::mat4 &mat)
 {
     RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(PROJECT), mat);
+    rpi.setUniformMat(loc(nProject), mat);
 }
 
 void RRenderSys::setViewMove()
@@ -221,13 +221,13 @@ void RRenderSys::setViewMove()
 void RRenderSys::setViewMove(float x, float y, float z)
 {
     RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(VIEW), glm::translate(glm::mat4(1), { -x, -y, -z }));
+    rpi.setUniformMat(loc(nView), glm::translate(glm::mat4(1), { -x, -y, -z }));
 }
 
 void RRenderSys::setViewMat(const glm::mat4 &mat)
 {
     RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(VIEW), mat);
+    rpi.setUniformMat(loc(nView), mat);
 }
 
 void RRenderSys::setHue(unsigned r, unsigned g, unsigned b, unsigned a)
@@ -238,7 +238,7 @@ void RRenderSys::setHue(unsigned r, unsigned g, unsigned b, unsigned a)
 void RRenderSys::setHue(const glm::vec4 &color)
 {
     RRPI rpi = data_.shaders.use();
-    rpi.setUniform(loc(HUE), color);
+    rpi.setUniform(loc(nHue), color);
 }
 
 void RRenderSys::setHue(const glm::vec3 &color)
@@ -248,17 +248,17 @@ void RRenderSys::setHue(const glm::vec3 &color)
 
 void RRenderSys::usingTexColorOut()
 {
-    setSubroutine(RShader::Type::Fragment, COLOR_OUT_FUNC, TEX_OUT);
+    setSubroutine(RShader::Type::Fragment, nColorOutFunc, nTexOut);
 }
 
 void RRenderSys::usingSingleTexOut()
 {
-    setSubroutine(RShader::Type::Fragment, COLOR_OUT_FUNC, SINGLE_OUT);
+    setSubroutine(RShader::Type::Fragment, nColorOutFunc, nSingleOut);
 }
 
 void RRenderSys::usingHueOut()
 {
-    setSubroutine(RShader::Type::Fragment, COLOR_OUT_FUNC, HUE_OUT);
+    setSubroutine(RShader::Type::Fragment, nColorOutFunc, nHueOut);
 }
 
 void RRenderSys::setHue(RColor color)
@@ -270,7 +270,7 @@ void RRenderSys::render(const RTexture &tex, const glm::mat4 &model) const
 {
     bindVAO();
     RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(MODEL), model);
+    rpi.setUniformMat(loc(nModel), model);
     tex.bind();
     drawPlane();
 }
@@ -279,7 +279,7 @@ void RRenderSys::renderLine(const glm::mat4 &mat)
 {
     bindVAO();
     RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(MODEL), mat);
+    rpi.setUniformMat(loc(nModel), mat);
     drawLine();
 }
 

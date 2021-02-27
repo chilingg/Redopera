@@ -36,15 +36,15 @@ class RRenderSys
 public:
     static RShaders createSimpleShaders();
 
-    static const RName PROJECT;
-    static const RName VIEW;
-    static const RName MODEL;
-    static const RName HUE;
+    static const RName nProject;
+    static const RName nView;
+    static const RName nModel;
+    static const RName nHue;
 
-    static const RName COLOR_OUT_FUNC;
-    static const RName TEX_OUT;
-    static const RName SINGLE_OUT;
-    static const RName HUE_OUT;
+    static const RName nColorOutFunc;
+    static const RName nTexOut;
+    static const RName nSingleOut;
+    static const RName nHueOut;
 
     RRenderSys();
     RRenderSys(const RShaders &shaders);
@@ -53,7 +53,11 @@ public:
 
     // 自定义
     template<typename T>
-    const Redopera::RRenderSys& operator<<(T &obj) const;
+    const Redopera::RRenderSys& operator<<(T &obj) const
+    {
+        render(obj.texture(), obj.model());
+        return *this;
+    }
 
     RRenderSys(const RRenderSys&) = delete;
     RRenderSys& operator=(const RRenderSys&) = delete;
