@@ -297,7 +297,12 @@ void RNode::transformEventToChild(RNode *sender, const RRect &info)
 
 void RNode::processEventToChild(RNode *sender, RNode::Instructs *instructs)
 {
-    std::for_each(children_.begin(), children_.end(), [sender, &instructs](RNode *c) { c->processFunc(sender, instructs); });
+    static thread_local std::vector<RNode*> children;
+
+    // 因为process event可能会改变children，所以复制一份后再发布event
+    children = children_;
+    std::for_each(children.begin(), children.end(), [sender, &instructs](RNode *c) { c->processFunc(sender, instructs); });
+    children.clear();
 }
 
 void RNode::updateThis(RRenderSys *sys)
