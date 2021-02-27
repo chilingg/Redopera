@@ -98,6 +98,4 @@ thread_local std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> RConvt::U8_S
 thread_local std::mbstate_t RConvt::mbstate;
 
 // RName
-std::vector<RName::NameInfo> RName::gTable;
-std::unordered_multimap<size_t, size_t> RName::indexTable;
 std::mutex RName::gMutex;

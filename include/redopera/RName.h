@@ -34,10 +34,22 @@ public:
     std::string toString() const
     {
         std::lock_guard lock(gMutex);
-        return gTable[index_];
+        return gTable()[index_];
     }
 
 private:
+    static std::vector<NameInfo>& gTable()
+    {
+        static std::vector<NameInfo> table;
+        return table;
+    }
+
+    static std::unordered_multimap<size_t, size_t>& indexTable()
+    {
+        static std::unordered_multimap<size_t, size_t> table;
+        return table;
+    }
+
     static size_t nameToIndex(const std::string &name)
     {
         static const size_t P = 19249, MOD = 3221225473ul;
@@ -71,24 +83,22 @@ private:
         });
 
         std::lock_guard lock(gMutex);
-        auto pair = indexTable.equal_range(hash);
-        if(pair.first != indexTable.end())
+        auto pair = indexTable().equal_range(hash);
+        if(pair.first != indexTable().end())
         {
             for(auto it = pair.first; it != pair.second; ++it)
             {
-                if(gTable[it->second] == info)
+                if(gTable()[it->second] == info)
                     return it->second;
             }
         }
 
-        gTable.push_back(std::move(info));
-        size_t index = gTable.size() - 1;
-        indexTable.emplace(hash, index);
+        gTable().push_back(std::move(info));
+        size_t index = gTable().size() - 1;
+        indexTable().emplace(hash, index);
         return index;
     }
 
-    static std::vector<NameInfo> gTable;
-    static std::unordered_multimap<size_t, size_t> indexTable;
     static std::mutex gMutex;
 
     size_t index_;
