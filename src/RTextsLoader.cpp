@@ -232,7 +232,6 @@ void RTextsLoader::verticalTextToTexture()
     {
         // 计算每行的行宽
         std::vector<int> lines;
-        lines.reserve(8);
         lines.push_back(0);
         for (size_t i = 0; i < texts_.size();)
         {
@@ -313,9 +312,12 @@ void RTextsLoader::verticalTextToTexture()
                     int startx = linepos - (fsize + glyph->width - glyph->xoff) / 2;
                     int starty = wordpos + fsize + glyph->yoff;
 
-                    for(int y = 0; y < glyph->height; ++y)
+                    int endx = std::min(glyph->width, size_.width() - startx);
+                    int endy = std::min(glyph->height, size_.height() - starty);
+
+                    for(int y = 0; y < endy; ++y)
                     {
-                        for(int x = 0; x < glyph->width; ++x)
+                        for(int x = 0; x < endx; ++x)
                         {
                             img_.data()[(starty + y) * size_.width() + (startx + x)] = glyph->data.get()[y * glyph->width + x];
                         }
@@ -363,7 +365,6 @@ void RTextsLoader::horizontalTextToTexture()
     {
         // 计算每行的行宽
         std::vector<int> lines;
-        lines.reserve(8);
         lines.push_back(0);
         for (size_t i = 0; i < texts_.size();)
         {
@@ -431,11 +432,14 @@ void RTextsLoader::horizontalTextToTexture()
                     int startx = wordpos + glyph->xoff;
                     int starty = linepos + fsize + glyph->yoff;
 
-                    for(int y = 0; y < glyph->height; ++y)
+                    int endx = std::min(glyph->width + startx, size_.width());
+                    int endy = std::min(glyph->height + starty, size_.height());
+
+                    for(int y = starty, i = 0; y < endy; ++y, ++i)
                     {
-                        for(int x = 0; x < glyph->width; ++x)
+                        for(int x = startx, j = 0; x < endx; ++x, ++j)
                         {
-                            img_.data()[(starty + y) * size_.width() + (startx + x)] = glyph->data.get()[y * glyph->width + x];
+                            img_.data()[y * size_.width() + x] = glyph->data.get()[i * glyph->width + j];
                         }
                     }
                     wordpos += glyph->advence * format_.wSpacing;
