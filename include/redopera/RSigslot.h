@@ -91,6 +91,22 @@ public:
         slots_.emplace(sloter, func);
     }
 
+    template<typename Sloter>
+    void connect(Sloter *sloter, std::function<void(Args ...)> slot)
+    {
+        auto weakptr = sloter->__RSLOT__.clone();
+        auto func = std::function<bool(Args ... args)>([weakptr, slot](Args ... args){
+            auto sp = weakptr.lock();
+            if(!sp) return false; // 若槽函数所属对象已析构或已主动disableSlot
+
+            slot(std::forward<Args>(args)...);
+            return true;
+        });
+
+        std::lock_guard<std::mutex> guard(mutex_);
+        slots_.emplace(nullptr, func);
+    }
+
     void connect(std::function<bool(Args ...)> func)
     {
         std::lock_guard<std::mutex> guard(mutex_);
