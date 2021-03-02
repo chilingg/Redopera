@@ -27,6 +27,7 @@ public:
     RName& operator=(RName&&) = default;
 
     bool operator==(const RName &other) const { return index_ == other.index_; }
+    bool operator!=(const RName &other) const { return index_ != other.index_; }
 
     size_t hash() const { return index_; }
     size_t index() const { return index_; }
