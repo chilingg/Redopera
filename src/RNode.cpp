@@ -163,6 +163,21 @@ RNode *RNode::root()
         return this;
 }
 
+RNode *RNode::child(RName node)
+{
+    auto it = std::find_if(children_.begin(), children_.end(), [node](RNode *child){ return child->name() == node; });
+
+    if(it == children_.end())
+        return nullptr;
+    else
+        return *it;
+}
+
+const std::vector<RNode *> &RNode::children() const
+{
+    return children_;
+}
+
 const RNode *RNode::root() const
 {
     if (parent_)

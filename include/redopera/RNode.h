@@ -57,6 +57,8 @@ public:
     RNode* node(const std::string &path);
     const RNode* root() const;
     RNode* root();
+    RNode *child(RName node);
+    const std::vector<RNode*>& children() const;
 
     template<typename Holder>
     Holder* holder() const
