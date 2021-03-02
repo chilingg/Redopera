@@ -10,13 +10,6 @@ using namespace Redopera;
 
 constexpr float SIZE = 480;
 
-template<typename T>
-const RRenderSys& RRenderSys::operator<<(T &obj) const
-{
-    render(obj.texture(), obj.model());
-    return *this;
-}
-
 class TestCtl
 {
 public:
@@ -55,11 +48,11 @@ public:
     void update(RRenderSys *sys)
     {
         RRPI rpi = sys->shaders().use();
-        rpi.setUniform(sys->loc(RRenderSys::HUE), .1f, .1f, .14f, 1.f);
+        rpi.setUniform(sys->loc(RRenderSys::nHue), .1f, .1f, .14f, 1.f);
         sys->usingSingleTexOut();
         *sys<< arrow[0] << arrow[1] << arrow[2] << arrow[3];
 
-        rpi.setUniform(sys->loc(RRenderSys::HUE), 1.f, 1.f, 1.f, 1.f);
+        rpi.setUniform(sys->loc(RRenderSys::nHue), 1.f, 1.f, 1.f, 1.f);
         sys->usingTexColorOut();
         *sys << plane;
     }

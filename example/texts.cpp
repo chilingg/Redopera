@@ -19,13 +19,6 @@ const glm::vec3 fcolor(.7f, .3f, .3f);
 
 std::unique_ptr<RPlane[]> label;
 
-template<typename T>
-const RRenderSys& RRenderSys::operator<<(T &obj) const
-{
-    render(obj.texture(), obj.model());
-    return *this;
-}
-
 void update(RRenderSys *sys)
 {
     RRPI rpi = sys->shaders().use();
