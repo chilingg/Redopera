@@ -66,7 +66,7 @@ public:
         return *std::any_cast<std::shared_ptr<RSignal<Args ...>>&>(signals_.at(name));
     }
 
-    const REntity& entity(const RName &name)
+    REntity& entity(const RName &name)
     {
         return *entitys_.at(name);
     }
@@ -104,10 +104,12 @@ public:
         assert(it.second);
     }
 
-    void addEntity(const RName &name)
+    REntity& addEntity(const RName &name)
     {
         auto it = entitys_.emplace(name, std::make_unique<REntity>(name));
         assert(it.second);
+
+        return *it.first->second;
     }
 
     void removeComponent(const RName &name)
@@ -141,6 +143,8 @@ private:
     FuncList funcs_;
     SignalList signals_;
     EntityList entitys_;
+
+    _RSLOT_DECLARE_
 };
 
 } // ns Redopera
