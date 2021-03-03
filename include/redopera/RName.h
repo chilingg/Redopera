@@ -58,7 +58,7 @@ private:
         NameInfo info(name);
 
         size_t hash = 0;
-        std::for_each_n(info.data(), info.size(), [&hash](char& c)
+        std::for_each(info.begin(), info.end(), [&hash](char& c)
         {
             size_t value;
             if('0' <= c && c <= '9')

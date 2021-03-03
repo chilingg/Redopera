@@ -18,7 +18,7 @@ int main()
     timer.start();
     while(table3.size() < num)
     {
-        size_t n = std::rand();
+        size_t n = std::rand() * static_cast<size_t>(std::rand());
 
         if(!table3.count(n))
         {
