@@ -71,6 +71,7 @@ public:
     void setModel(const glm::mat4 &model);
 
     std::string toString() const;
+    std::string info() const;
 
 private:
     glm::mat4 model_;

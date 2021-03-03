@@ -261,9 +261,10 @@ void RModelMat::setModel(const glm::mat4 &model)
     model_ = model;
 }
 
+static thread_local char buf[256];
+
 std::string RModelMat::toString() const
 {
-    char buf[256];
     std::snprintf(buf, sizeof(buf),
                   "mat:(%10.3f, %10.3f, %10.3f, %10.3f)\n"
                   "    (%10.3f, %10.3f, %10.3f, %10.3f)\n"
@@ -273,6 +274,13 @@ std::string RModelMat::toString() const
                   model_[0][1], model_[1][1], model_[2][1], model_[3][1],
                   model_[0][2], model_[1][2], model_[2][2], model_[3][2],
                   model_[0][3], model_[1][3], model_[2][3], model_[3][3]);
+
+    return buf;
+}
+
+std::string RModelMat::info() const
+{
+    std::snprintf(buf, sizeof(buf), "(%.1f, %.1f, %.1f | w:%.1f, h:%.1f)", x(), y(), depth(), width(), height());
 
     return buf;
 }
