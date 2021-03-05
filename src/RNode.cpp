@@ -65,7 +65,7 @@ RNode::Status RNode::status() const
     return state_;
 }
 
-int RNode::childrenNumber() const
+size_t RNode::childrenNumber() const
 {
     return children_.size();
 }

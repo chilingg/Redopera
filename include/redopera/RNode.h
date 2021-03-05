@@ -48,7 +48,7 @@ public:
     bool isChild(const RName &child) const;
     bool isAncestor(RNode *node) const; // 祖辈
     Status status() const;
-    int childrenNumber() const;
+    size_t childrenNumber() const;
     RNode* parent() const;
     const RName& name() const;
     RName availableName(const RName &name) const;
