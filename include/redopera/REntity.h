@@ -2,6 +2,7 @@
 #define RENTITY_H
 
 #include <RNode.h>
+#include <RMath.h>
 #include <RSigslot.h>
 
 #include <any>
@@ -69,6 +70,12 @@ public:
     REntity& entity(const RName &name)
     {
         return *entitys_.at(name);
+    }
+
+    void addNumber(const RName &name, RNumber comp)
+    {
+        auto it = comps_.emplace(name, comp);
+        assert(it.second);
     }
 
     template<typename T>

@@ -23,6 +23,8 @@ namespace Redopera {
 
 class RDebug;
 
+using RNumber = double;
+
 } // ns Redopera
 
 const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec3 &vec);
