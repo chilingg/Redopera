@@ -43,7 +43,7 @@ subroutine(color_out) void tex_out()
 
 subroutine(color_out) void single_tex_out()
 {
-    out_color = vec4(hue.rgb, texture(tex, tex_coor) * hue.a);
+    out_color = vec4(hue.rgb, texture(tex, tex_coor).r * hue.a);
 }
 
 subroutine(color_out) void hue_out()
