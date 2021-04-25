@@ -4,7 +4,6 @@ using namespace Redopera;
 
 RSprite::RSprite(const RSprite &sprite):
     frames_(sprite.frames_),
-    sequence_(sprite.sequence_),
     interval_(sprite.interval_)
 {
 
@@ -12,7 +11,6 @@ RSprite::RSprite(const RSprite &sprite):
 
 RSprite::RSprite(const RSprite &&sprite):
     frames_(std::move(sprite.frames_)),
-    sequence_(std::move(sprite.sequence_)),
     interval_(sprite.interval_)
 {
 
@@ -21,7 +19,6 @@ RSprite::RSprite(const RSprite &&sprite):
 RSprite &RSprite::operator=(const RSprite &sprite)
 {
     frames_ = sprite.frames_;
-    sequence_ = sprite.sequence_;
     interval_ = sprite.interval_;
 
     return *this;
@@ -30,7 +27,6 @@ RSprite &RSprite::operator=(const RSprite &sprite)
 RSprite& RSprite::operator=(const RSprite &&sprite)
 {
     frames_ = std::move(sprite.frames_);
-    sequence_ = std::move(sprite.sequence_);
     interval_ = sprite.interval_;
 
     return *this;
@@ -43,10 +39,10 @@ const RTexture &RSprite::texture() const
     else
     {
         delta_ = 0;
-        index_ = (index_ + 1) % sequence_.size();
+        index_ = (index_ + 1) % frames_.size();
     }
 
-    return frames_[sequence_[index_]];
+    return frames_[index_];
 }
 
 int RSprite::delta() const
@@ -74,11 +70,6 @@ void RSprite::setInterval(int interval)
     interval_ = interval;
 }
 
-void RSprite::setFrameSequence(const std::vector<size_t> &seque)
-{
-    sequence_ = seque;
-}
-
 void RSprite::add(const RTexture &frame)
 {
     frames_.push_back(frame);
@@ -92,9 +83,11 @@ void RSprite::add(const std::vector<RTexture> &texs)
 void RSprite::remove(size_t index)
 {
     frames_.erase(frames_.begin() + index);
+    index_ = 0;
 }
 
 void RSprite::clear()
 {
     frames_.clear();
+    index_ = 0;
 }

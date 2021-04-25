@@ -27,7 +27,6 @@ public:
     const RTexture& frame(size_t index) const;
 
     void setInterval(int interval);
-    void setFrameSequence(const std::vector<size_t> &seque);
 
     void add(const RTexture &frame);
     void add(const std::vector<RTexture> &texs);
@@ -37,7 +36,6 @@ public:
 
 private:
     std::vector<RTexture> frames_;
-    std::vector<size_t> sequence_;
     int interval_ = 20;
     mutable int delta_ = 0;
     mutable size_t index_ = 0;
