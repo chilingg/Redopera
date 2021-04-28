@@ -99,3 +99,15 @@ thread_local std::mbstate_t RConvt::mbstate;
 
 // RName
 std::mutex RName::gMutex;
+
+const RName Name::rect = "rect";
+const RName Name::size = "size";
+const RName Name::pos = "pos";
+const RName Name::min_size = "min_size";
+
+const RName Name::layout = "layout";
+const RName Name::horizontal = "horizontal";
+const RName Name::vertical = "vertical";
+const RName Name::center = "center";
+
+const RName Name::planes = "planes";

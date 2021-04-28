@@ -105,6 +105,23 @@ private:
     size_t index_;
 };
 
+namespace Name
+{
+
+extern const RName rect;
+extern const RName size;
+extern const RName pos;
+extern const RName min_size;
+
+extern const RName layout;
+extern const RName horizontal;
+extern const RName vertical;
+extern const RName center;
+
+extern const RName planes;
+
+} // ns Name
+
 } // ns Redopera
 
 namespace std
