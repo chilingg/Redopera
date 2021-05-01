@@ -30,6 +30,15 @@ public:
     RPlaneContainer& operator=(const RPlaneContainer &plane) = default;
     ~RPlaneContainer() = default;
 
+    bool isSprite() const { return texFunc == &RPlaneContainer::getTexForSprite; }
+    int channel() const
+    {
+        if(isSprite())
+            return sprite().frame().format().inChannel;
+        else
+            return texture().format().inChannel;
+    }
+
     const RTexture& texture() const { return (this->*texFunc)(); }
     const RSprite& sprite() const { return std::get<RSprite>(texData_); }
 
