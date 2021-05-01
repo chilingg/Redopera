@@ -24,6 +24,7 @@ public:
     int delta() const;
     size_t frameCount() const;
     size_t currentIndex() const;
+    const RTexture& frame() const;
     const RTexture& frame(size_t index) const;
 
     void setInterval(int interval);

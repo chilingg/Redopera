@@ -60,6 +60,11 @@ size_t RSprite::currentIndex() const
     return index_;
 }
 
+const RTexture &RSprite::frame() const
+{
+    return frame(index_);
+}
+
 const RTexture &RSprite::frame(size_t index) const
 {
     return frames_.at(index);
