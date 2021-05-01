@@ -4,44 +4,24 @@
 #include <REntity.h>
 #include <RRect.h>
 #include <RPlane.h>
+#include <RRenderSys.h>
+#include <RTextsLoader.h>
 
 namespace Redopera {
+
+using Planes = std::vector<std::pair<RName, RPlane>>;
 
 class RWidget
 {
 public:
     RWidget() = delete;
 
-    static void horizontalLayout(RNode *sender, const RRect &info)
-    {
-        ;
-    }
+    static REntity& addAttribute(REntity &entity);
 
-    static void verticalLayout(RNode *sender, const RRect &info)
-    {
-        ;
-    }
-
-    static void centerLayout(RNode *sender, const RRect &info)
-    {
-        ;
-    }
-
-    static REntity& addAttribute(REntity &entity)
-    {
-        entity.addComponent(Name::size, RSize(256, 256));
-        entity.addComponent(Name::min_size, RSize(0, 0));
-        entity.addComponent(Name::pos, RPoint2(0, 0));
-        entity.addFunc(Name::rect, [&entity]{ return RRect(
-                        entity.get<RPoint2>(Name::pos),
-                        entity.get<RSize>(Name::size)); });
-
-        entity.addComponent(Name::planes, std::vector<RPlane>());
-
-        entity.addComponent(Name::layout, Name::vertical);
-
-        return entity;
-    }
+    static REntity& getLabel(REntity &entity);
+    static REntity& getVerticalLayout(REntity &entity);
+    static REntity& getHrizontalLayout(REntity &entity);
+    static REntity& getCenterLayout(REntity &entity);
 };
 
 } // ns Redopera
