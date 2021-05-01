@@ -108,18 +108,32 @@ private:
 namespace Name
 {
 
+extern const RName type;
+
+extern const RName widget;
+extern const RName layout;
+extern const RName label;
+
 extern const RName rect;
 extern const RName size;
 extern const RName pos;
 extern const RName min_size;
+extern const RName max_size;
 
-extern const RName layout;
 extern const RName horizontal;
 extern const RName vertical;
 extern const RName center;
 
-extern const RName planes;
+extern const RName top;
+extern const RName bottom;
+extern const RName left;
+extern const RName right;
+extern const RName main;
 
+extern const RName loader;
+extern const RName content;
+
+extern const RName font_color;
 } // ns Name
 
 } // ns Redopera

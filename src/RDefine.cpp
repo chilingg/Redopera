@@ -100,14 +100,29 @@ thread_local std::mbstate_t RConvt::mbstate;
 // RName
 std::mutex RName::gMutex;
 
+const RName Name::type = "type";
+
+const RName Name::widget = "widget";
+const RName Name::layout = "layout";
+const RName Name::label = "label";
+
 const RName Name::rect = "rect";
 const RName Name::size = "size";
 const RName Name::pos = "pos";
 const RName Name::min_size = "min_size";
+const RName Name::max_size = "max_size";
 
-const RName Name::layout = "layout";
 const RName Name::horizontal = "horizontal";
 const RName Name::vertical = "vertical";
 const RName Name::center = "center";
 
-const RName Name::planes = "planes";
+const RName Name::top = "top";
+const RName Name::bottom = "bottom";
+const RName Name::left = "left";
+const RName Name::right = "right";
+const RName Name::main = "main";
+
+const RName Name::loader = "loader";
+const RName Name::content = "content";
+
+const RName Name::font_color = "font_color";
