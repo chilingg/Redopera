@@ -173,6 +173,11 @@ RNode *RNode::child(RName node)
         return *it;
 }
 
+std::vector<RNode *> &RNode::children()
+{
+    return children_;
+}
+
 const std::vector<RNode *> &RNode::children() const
 {
     return children_;
