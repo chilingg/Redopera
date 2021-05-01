@@ -102,6 +102,7 @@ public:
     bool isOrigin() const { return RPointValue2<Value>::isOrigin() && z_ == 0; }
 
     void setZ(Value z) { z_ = z; }
+    using RPointValue2<Value>::setPos;
     void setPos(Value x, Value y, Value z) { RPointValue2<Value>::x_ = x, RPointValue2<Value>::y_ = y; z_ = z; }
     void setPos(const RPointValue2<Value> &pos, Value z) { RPointValue2<Value>::x_ = pos.x(), RPointValue2<Value>::y_ = pos.y(); z_ = z; }
 
