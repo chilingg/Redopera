@@ -82,7 +82,7 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
     // 绑定上下文与this指针
     glfwSetWindowUserPointer(context_.getHandle(), this);
 
-    // 设置混合（未开启）
+    // 设置混合
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     // 默认背景色
@@ -90,6 +90,8 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
     glClearColor(color.r()/255.0f, color.g()/255.0f, color.b()/255.0f, 1.0f);
     // 禁用字节对齐限制（字体图片1位缓存）
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
     RImage img = RImage::redoperaIcon();
     GLFWimage icon{ img.width(), img.height(), img.data() };
@@ -235,16 +237,18 @@ void RWindow::setViewportPattern(RWindow::Viewport pattern)
     resizeCallback(context_.getHandle(), windowWidth(), windowHeight());
 }
 
-void RWindow::enableDepthTest()
+void RWindow::setDepthTest(bool b)
 {
-    glEnable(GL_DEPTH_TEST);
-    clearMask_ |= static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
-}
-
-void RWindow::disableDepthTest()
-{
-    glDisable(GL_DEPTH_TEST);
-    clearMask_ |= !static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
+    if(b)
+    {
+        glEnable(GL_DEPTH_TEST);
+        clearMask_ |= static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
+    }
+    else
+    {
+        glDisable(GL_DEPTH_TEST);
+        clearMask_ |= !static_cast<GLbitfield>(GL_DEPTH_BUFFER_BIT);
+    }
 }
 
 void RWindow::enableCapability(GLenum cap)

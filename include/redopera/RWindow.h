@@ -84,8 +84,7 @@ public:
     void setViewportRatio(double ratio);
     void setViewportPattern(Viewport pattern);
 
-    void enableDepthTest();
-    void disableDepthTest();
+    void setDepthTest(bool b);
     void enableCapability(GLenum cap);
     void disableCapability(GLenum cap);
 
