@@ -41,7 +41,7 @@ public:
         } align { Align::Top, Align::Left};
         struct {
             int t, b, l, r;
-        } padding { 5, 5, 5, 5 };
+        } padding { 0, 0, 0, 0 };
     };
 
     static void setDefaultFontFmt(const Format &fmt);

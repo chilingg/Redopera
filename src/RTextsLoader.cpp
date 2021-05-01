@@ -2,6 +2,8 @@
 #include <RRect.h>
 #include <vector>
 
+#include <RDebug.h>
+
 using namespace Redopera;
 
 RTextsLoader::Format RTextsLoader::fontFmt;
@@ -223,6 +225,10 @@ void RTextsLoader::verticalTextToTexture()
     RRect area(format_.padding.l, format_.padding.t,
                size_.width() - format_.padding.l - format_.padding.r,
                size_.height() - format_.padding.t - format_.padding.b);
+
+    if(rCheck(area.isInvalid(), "Invalid size of Texts loader: " + area.toString()))
+        return;
+
     const int advanceL = font_.size() * format_.lSpacing; // 行步进
     int linepos = format_.padding.r;
     int fsize = static_cast<int>(font_.size());
@@ -356,6 +362,10 @@ void RTextsLoader::horizontalTextToTexture()
     RRect area(format_.padding.l, format_.padding.t,
                size_.width() - format_.padding.l - format_.padding.r,
                size_.height() - format_.padding.t - format_.padding.b);
+
+    if(rCheck(area.isInvalid(), "Invalid size of Texts loader: " + area.toString()))
+        return;
+
     const int advanceL = font_.size() * format_.lSpacing; // 行步进
     int linepos = area.bottom();
     int fsize = static_cast<int>(font_.size());
