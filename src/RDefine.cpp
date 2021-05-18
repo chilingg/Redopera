@@ -126,3 +126,27 @@ const RName Name::loader = "loader";
 const RName Name::content = "content";
 
 const RName Name::font_color = "font_color";
+const RName Name::font_size = "font_size";
+
+const RName Name::viewport = "viewport";
+const RName Name::color = "color";
+const RName Name::scale = "scale";
+const RName Name::move = "move";
+const RName Name::background = "background";
+const RName Name::title = "title";
+const RName Name::focus = "focus";
+const RName Name::current = "current";
+const RName Name::item = "item";
+const RName Name::entity = "entity";
+const RName Name::unknow = "unknow";
+const RName Name::component = "component";
+const RName Name::func = "func";
+const RName Name::signal = "signal";
+const RName Name::track = "track";
+const RName Name::wheel = "wheel";
+const RName Name::offset = "offset";
+
+const RName Name::up = "up";
+const RName Name::down = "down";
+const RName Name::ok = "ok";
+const RName Name::cancel = "cancel";

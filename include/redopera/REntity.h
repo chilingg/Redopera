@@ -115,6 +115,7 @@ public:
     {
         auto it = entitys_.emplace(name, std::make_unique<REntity>(name));
         assert(it.second);
+        it.first->second->node.changeParent(&node);
 
         return *it.first->second;
     }

@@ -134,6 +134,31 @@ extern const RName loader;
 extern const RName content;
 
 extern const RName font_color;
+extern const RName font_size;
+
+extern const RName viewport;
+extern const RName color;
+extern const RName scale;
+extern const RName move;
+extern const RName background;
+extern const RName title;
+extern const RName focus;
+extern const RName current;
+extern const RName item;
+extern const RName entity;
+extern const RName unknow;
+extern const RName component;
+extern const RName func;
+extern const RName signal;
+extern const RName track;
+extern const RName wheel;
+extern const RName offset;
+
+extern const RName up;
+extern const RName down;
+extern const RName ok;
+extern const RName cancel;
+
 } // ns Name
 
 } // ns Redopera

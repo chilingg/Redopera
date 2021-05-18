@@ -307,10 +307,11 @@ REntity &RWidget::getCenterLayout(REntity &entity)
     addAttribute(entity);
     entity.getR<std::vector<RName>>(Name::type).push_back(Name::layout);
 
-    getVerticalLayout(entity.addEntity(Name::left)).node.changeParent(&entity.node);
-    getVerticalLayout(entity.addEntity(Name::right)).node.changeParent(&entity.node);
-    getHrizontalLayout(entity.addEntity(Name::bottom)).node.changeParent(&entity.node);
-    getHrizontalLayout(entity.addEntity(Name::top)).node.changeParent(&entity.node);
+    entity.addEntity(Name::main);
+    getVerticalLayout(entity.addEntity(Name::left));
+    getVerticalLayout(entity.addEntity(Name::right));
+    getHrizontalLayout(entity.addEntity(Name::bottom));
+    getHrizontalLayout(entity.addEntity(Name::top));
 
     entity.node.setTransformFunc([&entity](RNode *sender, const RRect &info)
     {

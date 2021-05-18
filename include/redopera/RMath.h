@@ -24,6 +24,7 @@ namespace Redopera {
 class RDebug;
 
 using RNumber = double;
+using RIndex = size_t;
 
 } // ns Redopera
 
