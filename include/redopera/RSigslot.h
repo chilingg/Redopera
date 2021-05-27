@@ -2,41 +2,55 @@
 #define RSIGSLOT_H
 
 #include <memory>
-#include <mutex>
 #include <unordered_map>
 #include <functional>
-#include <thread>
 
 namespace Redopera {
 
-/*  目前在多线程中，并没有办法自动阻止在槽函数所在对象析构但未析构到__RSLOT__成员时收到信号，
-    所以若不确定槽函数是否在析构时被调用，请手动释放槽 */
+/* 不支持多线程 */
+
 class RSlot
 {
 public:
     template<typename Sloter>
     static void disableSlot(Sloter *sloter)
     {
-        while(!sloter->__RSLOT__.flag.unique())
-            std::this_thread::yield();
         sloter->__RSLOT__.flag.reset();
+    }
+
+    template<typename Sloter>
+    static void resetSlot(Sloter *sloter)
+    {
+        sloter->__RSLOT__.flag = std::make_shared<bool>(true);
     }
 
     RSlot():
         flag(std::make_shared<bool>(true))
     {}
 
-    RSlot(RSlot &slot) = delete;
-    RSlot& operator=(RSlot &) = delete;
+    RSlot(const RSlot &):RSlot() {};
+    RSlot& operator=(const RSlot &) { return *this; };
+
+    RSlot(RSlot &&slot):
+        flag(std::move(slot.flag))
+    {
+        slot.flag = nullptr;
+    }
+
+    RSlot& operator=(RSlot &&slot)
+    {
+        flag = std::move(slot.flag);
+        slot.flag = nullptr;
+        return *this;
+    }
 
     ~RSlot()
     {
-        while(!flag.unique())
-            std::this_thread::yield(); // 等待所有槽函数执行完毕才会销毁RSlot，若一直有槽函数执行则死循
         flag.reset();
     }
 
     std::weak_ptr<bool> clone() const { return std::weak_ptr<bool>(flag); }
+    void* flagAddr() const { return flag.get(); }
 
 private:
     std::shared_ptr<bool> flag; // 存活标志
@@ -52,13 +66,28 @@ class RSignal
 public:
     RSignal() = default;
 
-    RSignal(const RSignal &)  = delete;
-    RSignal& operator=(const RSignal &) = delete;
+    RSignal(const RSignal &)
+    {}
+    RSignal& operator=(const RSignal &)
+    {}
+
+    RSignal(const RSignal &&slot):
+        slots_(std::move(slot.slots_))
+    {}
+    RSignal& operator=(RSignal &&slot)
+    {
+        slots_ = std::move(slot.slots_);
+        return *this;
+    }
 
     void operator()(Args ... args)
     {
-        std::lock_guard<std::mutex> lock(mutex_);
-        for (auto it = slots_.begin(); it != slots_.end();)
+        emit(std::forward<Args>(args)...);
+    }
+
+    void emit(Args ... args)
+    {
+        for(auto it = slots_.begin(); it != slots_.end();)
         {
             bool b = it->second(std::forward<Args>(args)...);
             if (!b)
@@ -70,31 +99,10 @@ public:
         }
     }
 
-    void emit(Args ... args)
-    {
-        operator()(std::forward<Args>(args)...);
-    }
-
-    template<typename Sloter, typename Sloter2>
-    void connect(Sloter *sloter, void (Sloter2::*slot)(Args ... args))
-    {
-        auto weakptr = sloter->__RSLOT__.clone();
-        auto func = std::function<bool(Args ... args)>([weakptr, sloter, slot](Args ... args){
-            auto sp = weakptr.lock();
-            if(!sp) return false; // 若槽函数所属对象已析构或已主动disableSlot
-
-            (sloter->*slot)(std::forward<Args>(args)...);
-            return true;
-        });
-
-        std::lock_guard<std::mutex> guard(mutex_);
-        slots_.emplace(sloter, func);
-    }
-
     template<typename Sloter>
-    void connect(Sloter *sloter, std::function<void(Args ...)> slot)
+    void connect(const Sloter &sloter, const std::function<void(Args ...)> &slot)
     {
-        auto weakptr = sloter->__RSLOT__.clone();
+        auto weakptr = sloter.__RSLOT__.clone();
         auto func = std::function<bool(Args ... args)>([weakptr, slot](Args ... args){
             auto sp = weakptr.lock();
             if(!sp) return false; // 若槽函数所属对象已析构或已主动disableSlot
@@ -103,36 +111,45 @@ public:
             return true;
         });
 
-        std::lock_guard<std::mutex> guard(mutex_);
-        slots_.emplace(nullptr, func);
+        slots_.emplace(sloter.__RSLOT__.flagAddr(), func);
     }
 
-    void connect(std::function<bool(Args ...)> func)
+    void connect(const RSlot& slot, const std::function<void(Args ...)> &sfunc)
     {
-        std::lock_guard<std::mutex> guard(mutex_);
-        slots_.emplace(nullptr, func);
+        auto weakptr = slot.clone();
+        auto func = std::function<bool(Args ... args)>([weakptr, sfunc](Args ... args){
+            auto sp = weakptr.lock();
+            if(!sp) return false; // 若槽函数所属对象已析构或已主动disableSlot
+
+            sfunc(std::forward<Args>(args)...);
+            return true;
+        });
+
+        slots_.emplace(slot.flagAddr(), func);
     }
 
-    void disconnect(void *sloter)
+    void disconnect(RSlot *sloter)
     {
-        std::lock_guard<std::mutex> guard(mutex_);
-        auto b = slots_.erase(sloter);
+        slots_.erase(sloter->flagAddr());
+    }
+
+    template<typename Sloter>
+    void disconnect(Sloter *sloter)
+    {
+        slots_.erase(sloter->__RSLOT__.flagAddr());
     }
 
     void disconnectAll()
     {
-        std::lock_guard<std::mutex> guard(mutex_);
         slots_.clear();
     }
 
     size_t count()
     {
-        std::lock_guard<std::mutex> guard(mutex_);
         return slots_.size();
     }
 
 private:
-    std::mutex mutex_;
     std::unordered_multimap<void*, std::function<bool(Args ... args)>> slots_;
 };
 
