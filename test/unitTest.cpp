@@ -213,11 +213,11 @@ int main()
     assert(model.center() == RRectF(2.f, 3.f, 12.f, 16.f).center());
 
     // REntity ====================
-    REntity entity("Test");
-    entity.addComponent("Rect", rect1);
-    entity.addComponent("Size", size1);
-    entity.getR<RRect>("Rect").setRect(2, 2, 4, 4);
-    assert(entity.get<RRect>("Rect") == RRect(2, 2, 4, 4) && entity.get<RRect>("Rect") != rect1);
+    REntity entity("test", nullptr);
+    entity.addComponent("rect", rect1);
+    entity.addComponent("size", size1);
+    entity.getR<RRect>("rect").setRect(2, 2, 4, 4);
+    assert(entity.get<RRect>("rect") == RRect(2, 2, 4, 4) && entity.get<RRect>("rect") != rect1);
 
     entity.addFunc("add1", std::function<int(int)>([](int n){ return ++n; }));
     entity.addFunc<int, int>("add2", [](int n, int m){ return n + m; });
@@ -228,19 +228,20 @@ int main()
     entity.func<void>("add3", n, 2);
     assert(n == 5);
 
-    entity.addSignal<int&, int>("Signal");
-    entity.sigal<int&, int>("Signal").connect([](int &n1, int n2){ n1 += n2; return true; });
-    entity.sigal<int&, int>("Signal").emit(n, 5);
+    entity.addSignal<int&, int>("signal");
+    entity.sigal<int&, int>("signal").connect(entity.addComponent<RSlot>("slot", {}), [](int &n1, int n2){ n1 += n2; return true; });
+    entity.sigal<int&, int>("signal").emit(n, 5);
     assert(n == 10);
-    entity.removeSignal("Signal");
+    entity.removeSignal("signal");
+    entity.removeComponent("slot");
 
-    entity.addEntity("Test2");
-    assert(entity.entity("Test2").node.name() == "Test2");
+    entity.addChild("test2");
+    assert(entity.child("test2").name() == "test2");
 
-    assert(entity.isComponent("Rect") && entity.compenentSize() == 2);
+    assert(entity.isComponent("rect") && entity.compenentSize() == 2);
     assert(entity.funcSize() == 3 && entity.isFunc("add3") && !entity.isComponent("add3"));
     assert(entity.signalSize() == 0);
-    assert(entity.entitySize() == 1);
+    assert(entity.childrenSize() == 1);
 
     rDebug << "End of test, No error occurred.";
 

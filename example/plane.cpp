@@ -5,6 +5,7 @@
 #include <RInput.h>
 #include <RTimer.h>
 #include <RTextsLoader.h>
+#include <RRenderSys.h>
 
 using namespace Redopera;
 
@@ -14,9 +15,9 @@ class TestCtl
 {
 public:
     TestCtl():
-        node("TestCtrl", this),
         plane({ RPoint(), RSize(36, 36) }, RTexture(RImage::redoperaIcon())),
-        viewpro(0, 0, SIZE, SIZE)
+        viewpro(0, 0, SIZE, SIZE),
+        renderer(RRenderSys::createSimpleShaders())
     {
         RRectF rect = plane.rect();
         rect.setCenter(viewpro.center());
@@ -39,27 +40,25 @@ public:
 
         arrow[3] = arrow[0];
         arrow[3].setRotate(0, 0, glm::radians(270.0f));
-
-        node.setUpdateFunc([this](RRenderSys *sys){ update(sys); });
-        node.setTransformFunc([this](RNode *sender, const RRect &info){ translation(sender, info); });
-        node.setProcessFunc([this](RNode *sender, RNode::Instructs *ins) { processEvent(sender, ins); });
     }
 
-    void update(RRenderSys *sys)
+    void update()
     {
-        RRPI rpi = sys->shaders().use();
-        rpi.setUniform(sys->loc(RRenderSys::nHue), .1f, .1f, .14f, 1.f);
-        sys->usingSingleTexOut();
-        *sys<< arrow[0] << arrow[1] << arrow[2] << arrow[3];
+        RRPI rpi = renderer.shaders().use();
+        rpi.setUniform(renderer.loc(RRenderSys::nHue), .1f, .1f, .14f, 1.f);
+        renderer.usingSingleTexOut();
+        renderer << arrow[0] << arrow[1] << arrow[2] << arrow[3];
 
-        rpi.setUniform(sys->loc(RRenderSys::nHue), 1.f, 1.f, 1.f, 1.f);
-        sys->usingTexColorOut();
-        *sys << plane;
+        rpi.setUniform(renderer.loc(RRenderSys::nHue), 1.f, 1.f, 1.f, 1.f);
+        renderer.usingTexColorOut();
+        renderer << plane;
     }
 
-    void translation(RNode *sender, const RRect &info)
+    void translation(int w, int h)
     {
-        sender->holder<RWindow>()->renderSys()->setViewport(0, info.width(), 0, info.height());
+        RRect info(0, 0, w, h);
+
+        renderer.setViewport(0, info.width(), 0, info.height());
 
         float xratio = info.width() / viewpro.width();
         float yratio = info.height() / viewpro.height();
@@ -77,9 +76,9 @@ public:
         arrow[3].rRect().move(60, 0);
     }
 
-    void processEvent(RNode *, RNode::Instructs *)
+    void processEvent()
     {
-        RWindow* window = node.root()->holder<RWindow>();
+        RWindow* window = RWindow::focusWindow();
         if(window->cursorMode() == RWindow::CursorMode::Hidden)
         {
             if(RInput::cursorMove())
@@ -95,7 +94,7 @@ public:
 
         // inputEvent只能监测感兴趣的按键
         if(RInput::press(Keys::KEY_ESCAPE))
-            node.breakLooping();
+            window->closeWindow();
 
         RPoint p;
         int step = 5;
@@ -112,13 +111,14 @@ public:
             plane.move(p);
     }
 
-    RNode node;
-
 private:
     RPlane plane;
     RPlaneT arrow[4];
     RRectF viewpro;
     RTimer timer;
+    RRenderSys renderer;
+
+    _RSLOT_DECLARE_
 };
 
 int main()
@@ -130,8 +130,14 @@ int main()
     RWindow window(SIZE, SIZE, "Plane", format);
 
     TestCtl t;
-    t.node.changeParent(&window.node);
+    window.resized.connect(t, [&t](int w, int h){ t.translation(w, h); });
 
     window.show();
-    return window.node.exec();
+    return window.exec([&t]
+    {
+        t.processEvent();
+        t.update();
+
+        return 0;
+    });
 }

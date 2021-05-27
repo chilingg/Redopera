@@ -3,6 +3,7 @@
 #include <RInput.h>
 #include <RTransform.h>
 #include <RDebug.h>
+#include <REntity.h>
 
 using namespace Redopera;
 
@@ -14,22 +15,24 @@ int main()
     format.debug = false;
 
     RWindow window(640, 480, "Window", format);
+    REntity entity("entity", nullptr);
 
-    window.node.setStartFunc([]{
+    entity.addFunc<REntity&>("_start_event", [](REntity &e)
+    {
         rDebug << "Start Event";
         rDebug  << "Gamepad number " << RInput::gamepadCount();
 
-        RInput::joyPresented.connect([](JoystickPresent state){
+        RInput::joyPresented.connect(e.get<RSlot>("slot"), [](JoystickPresent state)
+        {
             rDebug << "Joystick " << (state == JoystickPresent::CONNECTED ? "connected" : "disconnected");
-            return true;
         });
     });
 
-    window.node.setFinishFunc([]{ rDebug << "Finish Event"; });
+    entity.addFunc<REntity&>("_finish_event", [](REntity &){ rDebug << "Finish Event"; });
 
-    window.node.setTransformFunc([](RNode *, const RRect &info){ rDebug << "Translation Event: " << info; });
+    window.resized.connect(entity.addComponent<RSlot>("slot", {}), [](int w, int h){ rDebug << "Window resized: " << RSize(w, h); });
 
-    window.node.setProcessFunc([](RNode *, RNode::Instructs *)
+    entity.addFunc<REntity&>("_process_event", [](REntity &)
     {
         if(RInput::anyKeyPress())
             rDebug << "Any key Press";
@@ -64,6 +67,18 @@ int main()
         }
     });
 
+    auto exec = [&entity]()
+    {
+        entity.callFuncToAllFromThis<void>("_process_event");
+        return 0;
+    };
+
+    entity.callFuncToAllFromThis<void>("_start_event");
+
     window.show();
-    return window.node.exec();
+    int status = window.exec(exec);
+
+    entity.callFuncToAllFromThis<void>("_finish_event");
+
+    return status;
 }

@@ -4,6 +4,7 @@
 #include <RRect.h>
 #include <RInput.h>
 #include <RTextsLoader.h>
+#include <RRenderSys.h>
 
 using namespace Redopera;
 
@@ -32,7 +33,7 @@ void update(RRenderSys *sys)
     sys->renderLine(label[3].model());
 }
 
-void startEvent()
+void start()
 {
     label = std::make_unique<RPlane[]>(4);
 
@@ -69,19 +70,15 @@ void startEvent()
     rect.setTop(label[0].rect().top());
     label[3].setTexture(textsLoader.texture());
     label[3].setModel(rect);
-
-    RRenderSys *sys = RWindow::focusWindow()->renderSys();
-    sys->setViewport(0, WIDTH, 0, HEIGHT);
-    sys->setHue(fcolor);
 }
 
-void inputEvent(RNode *sender, RNode::Instructs*)
+void process()
 {
     static RPlane *hold;
     static RPoint2 prePos;
 
     if (RInput::press(Keys::KEY_ESCAPE))
-        sender->breakLooping();
+        RWindow::focusWindow()->closeWindow();
 
     if (RInput::press(MouseBtn::LEFT))
     {
@@ -113,7 +110,7 @@ void inputEvent(RNode *sender, RNode::Instructs*)
     }
 }
 
-void finishEvent()
+void finish()
 {
     label.reset();
 }
@@ -132,13 +129,23 @@ int main()
     font.setSize(12);
     RFont::setDefaultFont(font);
 
-    RNode node;
-    node.setProcessFunc(inputEvent);
-    node.setStartFunc(startEvent);
-    node.setUpdateFunc(update);
-    node.setFinishFunc(finishEvent);
-    textWin.node.addChild(&node);
+    RRenderSys sys = RRenderSys::createSimpleShaders();
+    sys.setViewport(0, WIDTH, 0, HEIGHT);
+    sys.setHue(fcolor);
 
     textWin.show();
-    return textWin.node.exec();
+
+    start();
+
+    int status = textWin.exec([&sys]
+    {
+        process();
+        update(&sys);
+
+        return 0;
+    });
+
+    finish();
+
+    return status;
 }

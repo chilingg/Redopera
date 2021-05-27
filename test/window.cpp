@@ -5,13 +5,13 @@
 
 using namespace Redopera;
 
-void process(RNode *sender, RNode::Instructs*)
+void process()
 {
     if(RInput::anyKeyPress())
-        sender->breakLooping();
+        RWindow::focusWindow()->closeWindow();
 }
 
-void control(RRenderSys *)
+void update()
 {
     glClearColor(0, std::sin(glfwGetTime()) * .7f, 0, 1.0f);
 }
@@ -28,9 +28,11 @@ int main()
 
     RWindow window(250, 250, "Window", format);
 
-    window.node.setUpdateFunc(control);
-    window.node.setProcessFunc(process);
-
     window.show();
-    return window.node.exec();
+    return window.exec([]{
+        process();
+        update();
+
+        return 0;
+    });
 }

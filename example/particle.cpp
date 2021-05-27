@@ -1,6 +1,7 @@
 #include <RGame.h>
 #include <RPlane.h>
 #include <RWindow.h>
+#include <RRenderSys.h>
 #include <deque>
 #include <cstdlib>
 
@@ -8,6 +9,7 @@ using namespace Redopera;
 
 std::deque<std::pair<RPlane, RPoint2F>> particles;
 std::unique_ptr<RPlane> init;
+std::unique_ptr<RRenderSys> renderer;
 
 int WIDTH = 480, HEIGHT = 480;
 float gravity = 1.f;
@@ -18,16 +20,18 @@ void start()
     init->setTexture(RTexture::createWhiteTex());
     init->setModel(RRectF(WIDTH / 2.f, 0.f, 4.f, 4.f));
 
-    RWindow::focusWindow()->renderSys()->setViewport(0, WIDTH, 0, HEIGHT);
+    renderer = std::make_unique<RRenderSys>(RRenderSys::createSimpleShaders());
+    renderer->setViewport(0, WIDTH, 0, HEIGHT);
 }
 
 void finish()
 {
     particles.clear();
     init.reset();
+    renderer.reset();
 }
 
-void update(RRenderSys *sys)
+void update()
 {
     float RANGE = static_cast<float>(RAND_MAX) / 8.f;
     if(rand() % 2 == 0)
@@ -42,7 +46,7 @@ void update(RRenderSys *sys)
             it = particles.erase(it);
         else
         {
-            sys->render(it->first.texture(), it->first.model());
+            renderer->render(it->first.texture(), it->first.model());
             ++it;
         }
     }
@@ -55,10 +59,13 @@ int main()
     format.debug = false;
     RWindow window(WIDTH, HEIGHT, "Particle", format);
 
-    window.node.setStartFunc(start);
-    window.node.setFinishFunc(finish);
-    window.node.setUpdateFunc(update);
-
     window.show();
-    return window.node.exec();
+    start();
+    window.exec([]{
+        update();
+        return 0;
+    });
+    finish();
+
+    return 0;
 }

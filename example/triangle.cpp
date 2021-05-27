@@ -2,6 +2,7 @@
 #include <RWindow.h>
 #include <RInput.h>
 #include <RKeeper.h>
+#include <RShaders.h>
 
 using namespace Redopera;
 
@@ -34,16 +35,11 @@ class TestCtl
 {
 public:
     TestCtl():
-        node("TestCtl", this),
         shaders({RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}),
         model(glm::mat4(1))
-    {
-        node.setUpdateFunc([this](RRenderSys *sys){ update(sys); });
-        node.setStartFunc([this]{ startEvent(); });
-        node.setProcessFunc([this](RNode *sender, RNode::Instructs*ins){ processEvent(sender, ins); });
-    }
+    {}
 
-    void update(RRenderSys *)
+    void update()
     {
         model = glm::rotate(model, 0.05f, { 0.0f, 1.0f, 0.0f });
         auto itfc = shaders.use();
@@ -52,7 +48,7 @@ public:
         glDrawArrays(GL_TRIANGLES, 0, 3);
     }
 
-    void startEvent()
+    void start()
     {
         // start事件在调用exce()时发起
         GLuint vao, vbo;
@@ -83,14 +79,12 @@ public:
         intf.setUniformMat(projection, glm::perspective(-30.0f, 30.0f, 0.0f, 60.0f, 0.0f, 1500.0f));
     }
 
-    void processEvent(RNode *sender, RNode::Instructs*)
+    void process()
     {
         // inputEvent只能监测感兴趣的按键
         if(RInput::anyKeyPress())
-            sender->breakLooping();
+            RWindow::focusWindow()->closeWindow();
     }
-
-    RNode node;
 
 private:
     RKeeper<GLuint> VAO, VBO;
@@ -108,12 +102,15 @@ int main()
     format.decorate = false;
     format.background = 0x101018ff;
     RWindow window(500, 500, "Triangle", format);
-    // Rwindow默认的transformFunc会对RRenderSys设置Viewport和向下传递Transform，在此两者都不需要
-    window.node.setTransformFunc([](RNode*, const RRect&){});
 
     TestCtl t;
-    t.node.changeParent(&window.node);
 
     window.show();
-    return window.node.exec();
+    t.start();
+    return window.exec([&t]
+    {
+        t.process();
+        t.update();
+        return 0;
+    });
 }
