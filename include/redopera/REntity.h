@@ -1,47 +1,58 @@
 #ifndef RENTITY_H
 #define RENTITY_H
 
-#include <RNode.h>
-#include <RMath.h>
+#include <RName.h>
 #include <RSigslot.h>
+#include <RDict.h>
+#include <RMath.h>
 
 #include <any>
-#include <unordered_map>
 #include <cassert>
-#include <variant>
 
 namespace Redopera {
 
 class REntity
 {
+    enum class Status
+    {
+        Normal,
+        Action,
+        Stop,
+        Error,
+    };
+
 public:
-    using ComponentList = std::unordered_map<RName, std::any>;
+    using ComponentList = RDict<>;
     using FuncList = ComponentList;
-    using SignalList = std::unordered_map<RName, std::any>;
-    using EntityList = std::unordered_map<RName, std::unique_ptr<REntity>>;
+    using SignalList = ComponentList;
+    using ChildrenList = std::vector<REntity>;
 
-    explicit REntity(const RName &name):
-        node(name, this)
-    {}
+    REntity(const RName &name, REntity *parent);
+    REntity(const REntity& entity);
+    REntity(REntity&& entity);
 
-    REntity(const REntity&) = delete;
+    REntity& operator=(const REntity& entity);
+    REntity& operator=(REntity&& entity);
 
     const std::type_info& compenentType(const RName &name) const { return comps_.at(name).type(); }
 
     bool isComponent(const RName &name) const { return comps_.count(name); }
     bool isFunc(const RName &name) const { return funcs_.count(name); }
     bool isSignal(const RName &name) const { return signals_.count(name); }
-    bool isEntity(const RName &name) const { return entitys_.count(name); }
+    bool isChildren(const RName &name) const;
+
+    RName name() const { return name_; }
+    REntity* parent() const { return parent_; }
 
     const ComponentList& compenentList() const { return comps_; }
     const FuncList& funcList() const { return funcs_; }
     const SignalList& signalList() const { return signals_; }
-    const EntityList& entityList() const { return entitys_; }
+    const ChildrenList& childrenList() const { return children_; }
 
     size_t compenentSize() const { return comps_.size(); }
     size_t funcSize() const { return funcs_.size(); }
     size_t signalSize() const { return signals_.size(); }
-    size_t entitySize() const { return entitys_.size(); }
+    size_t childrenSize() const { return children_.size(); }
 
     template<typename T>
     const T& get(const RName &name) const
@@ -64,25 +75,32 @@ public:
     template<typename ... Args>
     RSignal<Args ...>& sigal(const RName &name)
     {
-        return *std::any_cast<std::shared_ptr<RSignal<Args ...>>&>(signals_.at(name));
+        return std::any_cast<RSignal<Args ...>&>(signals_.at(name));
     }
 
-    REntity& entity(const RName &name)
+    REntity& child(const RName &name)
     {
-        return *entitys_.at(name);
+        auto it = std::find_if(children_.begin(), children_.end(), [name](const REntity &e){ return e.name_ == name; });
+        assert(it != children_.end());
+
+        return *it;
     }
 
-    void addNumber(const RName &name, RNumber comp)
+    RNumber& addNumber(const RName &name, RNumber comp)
     {
         auto it = comps_.emplace(name, comp);
         assert(it.second);
+
+        return std::any_cast<RNumber&>(it.first->second);
     }
 
     template<typename T>
-    void addComponent(const RName &name, T&& comp)
+    T& addComponent(const RName &name, T&& comp)
     {
         auto it = comps_.emplace(name, std::forward<T>(comp));
         assert(it.second);
+
+        return std::any_cast<T&>(it.first->second);
     }
 
     template<typename Result, typename ... Args>
@@ -107,17 +125,16 @@ public:
     template<typename ... Args>
     void addSignal(const RName &name)
     {
-        auto it = signals_.emplace(name, std::make_shared<RSignal<Args ...>>());
+        auto it = signals_.emplace(name, RSignal<Args ...>());
         assert(it.second);
     }
 
-    REntity& addEntity(const RName &name)
+    REntity& addChild(const RName &name)
     {
-        auto it = entitys_.emplace(name, std::make_unique<REntity>(name));
-        assert(it.second);
-        it.first->second->node.changeParent(&node);
+        children_.emplace_back(name, this);
+        children_.back().status_ = status_;
 
-        return *it.first->second;
+        return children_.back();
     }
 
     void removeComponent(const RName &name)
@@ -138,21 +155,47 @@ public:
         assert(s);
     }
 
-    void removeEntity(const RName &name)
+    void removeChild(const RName &name)
     {
-        size_t s = entitys_.erase(name);
-        assert(s);
+        auto it = std::find_if(children_.begin(), children_.end(), [name](const REntity &e){ return e.name_ == name; });
+        assert(it != children_.end());
+
+        children_.erase(it);
     }
 
-    RNode node;
+    template<typename Result, typename ... Args>
+    void callFuncToAll(RName name, Args&& ... args)
+    {
+        if(isFunc(name) && funcs_[name].type() == typeid(std::function<Result(Args ...)>))
+            func<Result, Args ...>(name, std::forward<Args>(args) ...);
+
+        for(REntity &e : children_)
+            e.callFuncToAll<Result, Args ...>(name, std::forward<Args>(args) ...);
+    }
+
+    template<typename Result, typename ... Args>
+    void callFuncToAllFromThis(RName name, Args&& ... args)
+    {
+        if(isFunc(name) && funcs_[name].type() == typeid(std::function<Result(REntity&, Args ...)>))
+            func<Result, REntity&, Args ...>(name, *this, std::forward<Args>(args) ...);
+
+        for(REntity &e : children_)
+            e.callFuncToAll<Result, Args ...>(name, std::forward<Args>(args) ...);
+    }
+
+    void rename(RName name) { name_ = name; }
+    void setStatus(Status status) { status_ = status; }
+    void moveAttrTo(REntity &entity);
 
 private:
+    RName name_;
+    Status status_ = Status::Normal;
+    REntity *parent_ = nullptr;
+
     ComponentList comps_;
     FuncList funcs_;
     SignalList signals_;
-    EntityList entitys_;
-
-    _RSLOT_DECLARE_
+    ChildrenList children_;
 };
 
 } // ns Redopera
