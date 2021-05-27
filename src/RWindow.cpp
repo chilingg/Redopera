@@ -7,8 +7,7 @@
 
 using namespace Redopera;
 
-RWindow::Format RWindow::defaultFormat;
-std::atomic<RWindow*> RWindow::focusWindowP;
+RWindow* RWindow::focusWindowP;
 
 RWindow *RWindow::focusWindow()
 {
@@ -20,16 +19,6 @@ RWindow *RWindow::getWindowUserCtrl(GLFWwindow *window)
     return static_cast<RWindow*>(glfwGetWindowUserPointer(window));
 }
 
-const RWindow::Format &RWindow::defaultWindowFormat()
-{
-    return defaultFormat;
-}
-
-void RWindow::setDefaultWindowFormat(RWindow::Format fmt)
-{
-    defaultFormat = fmt;
-}
-
 RWindow::RWindow():
     RWindow(800, 540, "Redopera")
 {
@@ -37,7 +26,6 @@ RWindow::RWindow():
 }
 
 RWindow::RWindow(int width, int height, const std::string &title, const RWindow::Format &format):
-    node("Window", this),
     format_(format),
     context_(nullptr),
     vOffset_(0, 0),
@@ -97,15 +85,18 @@ RWindow::RWindow(int width, int height, const std::string &title, const RWindow:
     GLFWimage icon{ img.width(), img.height(), img.data() };
     glfwSetWindowIcon(context_.getHandle(), 1, &icon);
 
-    node.setExecFunc([this]{ return defaultExec(); });
-
-    if(format_.versionMajor > 3)
-        renderSys_ = std::make_unique<RRenderSys>(RRenderSys::createSimpleShaders());
-
-    if(!focusWindowP)
-        focusWindowP = this;
+    focusWindowP = this;
 
     RInput::enableGamepad();
+    // 不在构造函数时设置回调，防止多线程中在未构造完成时被调用
+    glfwSetWindowFocusCallback(context_.getHandle(), windowFocusCallback);
+    glfwSetFramebufferSizeCallback(context_.getHandle(), resizeCallback);
+    glfwSetScrollCallback(context_.getHandle(), mouseScrollCallback);
+    glfwSetWindowCloseCallback(context_.getHandle(), windowCloseCallback);
+    glfwSetKeyCallback(context_.getHandle(), keyboardCollback);
+    glfwSetMouseButtonCallback(context_.getHandle(), mouseButtonCollback);
+    glfwSetCursorPosCallback(context_.getHandle(), cursorPosCollback);
+    glfwSetCharCallback(context_.getHandle(), charInputCollback);
 }
 
 void RWindow::setWindowSize(int width, int height)
@@ -261,11 +252,6 @@ void RWindow::disableCapability(GLenum cap)
     glDisable(cap);
 }
 
-RRenderSys *RWindow::renderSys() const
-{
-    return renderSys_.get();
-}
-
 GLFWwindow *RWindow::getHandle() const
 {
     return context_.getHandle();
@@ -357,6 +343,32 @@ void RWindow::hide()
     glfwHideWindow(context_.getHandle());
 }
 
+int RWindow::exec(std::function<int()> execFunc)
+{
+    RSize size = windowSize();
+    resizeCallback(context_.getHandle(), size.width(), size.height());
+
+    int status = 0;
+    while(!glfwWindowShouldClose(context_.getHandle()))
+    {
+        // 清屏 清除颜色缓冲[深度缓冲、模板缓冲]
+        glClear(clearMask_);
+
+        // 清空输入
+        RInput::updataInput();
+        // GLFW event process
+        glfwPollEvents();
+        // 发起处理event
+        status = execFunc();
+        if(status)
+            break;
+
+        glfwSwapBuffers(context_.getHandle());
+    }
+
+    return status;
+}
+
 void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
 {
     RWindow *wctrl = getWindowUserCtrl(window);
@@ -405,8 +417,7 @@ void RWindow::resizeCallback(GLFWwindow *window, int width, int height)
     }
     }
 
-    // 传递Translation info
-    wctrl->node.transform(&wctrl->node, RRect(RPoint(), wctrl->size_));
+    wctrl->resized.emit(wctrl->width(), wctrl->height());
 }
 
 void RWindow::mouseScrollCallback(GLFWwindow *, double x, double y)
@@ -431,8 +442,6 @@ void RWindow::windowCloseCallback(GLFWwindow *window)
 
     if(stop)
         glfwSetWindowShouldClose(window, GLFW_FALSE);
-    else
-        wctrl->node.breakLooping();
 }
 
 void RWindow::keyboardCollback(GLFWwindow *, int key, int , int action, int )
@@ -461,51 +470,4 @@ void RWindow::cursorPosCollback(GLFWwindow *, double, double)
 void RWindow::charInputCollback(GLFWwindow *, unsigned code)
 {
     RInput::charInput(code);
-}
-
-int RWindow::defaultExec()
-{
-    // 不在构造函数时设置回调，防止多线程中在未构造完成时被调用
-    glfwSetWindowFocusCallback(context_.getHandle(), windowFocusCallback);
-    glfwSetFramebufferSizeCallback(context_.getHandle(), resizeCallback);
-    glfwSetScrollCallback(context_.getHandle(), mouseScrollCallback);
-    glfwSetWindowCloseCallback(context_.getHandle(), windowCloseCallback);
-    glfwSetKeyCallback(context_.getHandle(), keyboardCollback);
-    glfwSetMouseButtonCallback(context_.getHandle(), mouseButtonCollback);
-    glfwSetCursorPosCallback(context_.getHandle(), cursorPosCollback);
-    glfwSetCharCallback(context_.getHandle(), charInputCollback);
-
-    node.dispatchStartEvent();
-
-    RSize size = windowSize();
-    resizeCallback(context_.getHandle(), size.width(), size.height());
-
-    RNode::Instructs instructs;
-    while(node.isLooping())
-    {
-        // 清理指令
-        instructs.clear();
-        // 清空输入
-        RInput::updataInput();
-        // 清屏 清除颜色缓冲[深度缓冲、模板缓冲]
-        glClear(clearMask_);
-
-        if(isFocus())
-        {
-            // GLFW event process
-            glfwPollEvents();
-            // 发起处理event
-            node.process(&node, &instructs);
-        }
-        // 发起更新
-        node.update(renderSys_.get());
-
-        glfwSwapBuffers(context_.getHandle());
-    }
-
-    node.dispatchFinishEvent();
-
-    if(!node.isNormal())
-        return EXIT_FAILURE;
-    return EXIT_SUCCESS;
 }

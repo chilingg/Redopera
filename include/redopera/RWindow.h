@@ -5,14 +5,14 @@
 #include "RSize.h"
 #include "RColor.h"
 #include "RPoint.h"
-#include "RNode.h"
 #include "RSigslot.h"
-#include "RRenderSys.h"
 
 namespace Redopera {
 
 class RCursor;
 class RImage;
+
+// 仅支持单窗口
 
 class RWindow
 {
@@ -48,11 +48,9 @@ public:
     static RWindow* focusWindow();
     static RWindow* getWindowUserCtrl(GLFWwindow *window);
 
-    static const Format& defaultWindowFormat();
-    static void setDefaultWindowFormat(Format fmt);
-
     explicit RWindow();
-    explicit RWindow(int width, int height, const std::string &title = "Redopera", const Format &format = defaultFormat);
+    explicit RWindow(int width, int height, const std::string &title):RWindow(width, height, title, Format{}){}
+    explicit RWindow(int width, int height, const std::string &title, const Format &format);
     ~RWindow() = default;
 
     RWindow(RWindow &) = delete;
@@ -88,7 +86,6 @@ public:
     void enableCapability(GLenum cap);
     void disableCapability(GLenum cap);
 
-    RRenderSys* renderSys() const;
     GLFWwindow* getHandle() const;
     const Format& format() const;
     int width() const;
@@ -108,7 +105,9 @@ public:
     void show();
     void hide();
 
-    RNode node;
+    int exec(std::function<int()> execFunc);
+
+    RSignal<int, int> resized;
     RSignal<bool&> closed;
 
 private:
@@ -130,10 +129,7 @@ private:
     // 字符输入
     static void charInputCollback(GLFWwindow *window, unsigned code);
 
-    int defaultExec();
-
-    static Format defaultFormat;
-    static std::atomic<RWindow*> focusWindowP;
+    static RWindow* focusWindowP;
 
     Format format_;
     RContext context_;
@@ -141,7 +137,6 @@ private:
     RSize size_;
 
     GLbitfield clearMask_ = GL_COLOR_BUFFER_BIT;
-    std::unique_ptr<RRenderSys> renderSys_;
 };
 
 } // Redopera
