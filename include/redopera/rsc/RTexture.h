@@ -61,6 +61,7 @@ public:
         } wrap { Wrap::ClampToBorder, Wrap::ClampToBorder };
 
         std::array<GLuint, 4> edgeColor { 0, 0, 0, 0 };
+        std::array<GLuint, 4> swizzle { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
     };
 
     static const Format Linear4;
@@ -69,6 +70,7 @@ public:
     static const Format Nearest3;
     static const Format SingleL;
     static const Format SingleN;
+    static const Format FontLinear4;
 
     static RTexture createWhiteTex();
     static RTexture createBlackTex();

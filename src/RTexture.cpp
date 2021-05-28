@@ -13,6 +13,11 @@ const RTexture::Format RTexture::Nearest4 { { Filter::Nearest, Filter::Nearest }
 const RTexture::Format RTexture::Nearest3 { { Filter::Nearest, Filter::Nearest }, 3 };
 const RTexture::Format RTexture::SingleL { { Filter::Linear, Filter::Linear }, 1 };
 const RTexture::Format RTexture::SingleN { { Filter::Nearest, Filter::Nearest }, 1 };
+const RTexture::Format RTexture::FontLinear4 { { Filter::Linear, Filter::Linear },
+                                               4,
+                                               { Wrap::ClampToBorder, Wrap::ClampToBorder },
+                                               { 0, 0, 0, 0 },
+                                               { GL_ONE, GL_ONE, GL_ONE, GL_RED }};
 
 RTexture::Format RTexture::textureFormat;
 
@@ -212,6 +217,8 @@ bool RTexture::load(const RData *data, int width, int height, int echannel, cons
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<GLint>(format.filter.min));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, static_cast<GLint>(format.filter.max));
 
+    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+
     glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(inFormat(format.inChannel)),
                  width, height, 0, static_cast<GLenum>(extFormat(echannel)), GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -282,10 +289,19 @@ void RTexture::deleteTexture(GLuint *id)
 
 void RTexture::copyOnWrite()
 {
-    std::unique_ptr<RData[]> data = std::make_unique<RData[]>(width_ * height_ * format_.inChannel);
-    bind();
-    glGetTexImage(GL_TEXTURE_2D, 0, static_cast<GLint>(extFormat(format_.inChannel)), GL_UNSIGNED_BYTE, data.get());
-    load(data.get(), width_, height_, format_.inChannel, format_);
+    GLuint pbo;
+    glGenBuffers(1, &pbo);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, pbo);
+    glBufferData(GL_PIXEL_PACK_BUFFER, width_ * height_ * format_.inChannel, nullptr, GL_DYNAMIC_COPY);
+    glBindTexture(GL_TEXTURE_2D, *textureID_);
+    glGetTexImage(GL_TEXTURE_2D, 0, static_cast<GLint>(extFormat(format_.inChannel)), GL_UNSIGNED_BYTE, nullptr);
+    glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
+
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pbo);
+    load(nullptr, width_, height_, format_.inChannel, format_);
+    glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+
+    glDeleteBuffers(1, &pbo);
 }
 
 void swap(RTexture &tex, RTexture &tex2)
