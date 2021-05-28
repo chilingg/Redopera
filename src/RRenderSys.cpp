@@ -74,9 +74,34 @@ RShaders RRenderSys::createSimpleShaders()
     return { RShader(VERTEX_CODE, RShader::Type::Vertex), RShader(FRAGMENT_CODE, RShader::Type::Fragment) };
 }
 
+void RRenderSys::createPlaneVAO(GLuint &vao, GLuint &vbo)
+{
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vbo);
+
+    GLfloat plane[]{
+            0.5f,-0.5f, 1.0f, 0.0f,//右下
+            0.5f, 0.5f, 1.0f, 1.0f,//右上
+           -0.5f,-0.5f, 0.0f, 0.0f,//左下
+           -0.5f, 0.5f, 0.0f, 1.0f,//左上
+
+            0.5f, 0.5f, 1.0f, 1.0f,//右上 不知为和1.0采集不到纹素
+            0.5f,-0.5f, 1.0f, 0.0f,//右下
+    };
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(plane), plane, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), nullptr);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), R_BUFF_OFF(2*sizeof(GLfloat)));
+    glBindVertexArray(0);
+}
+
 RRenderSys::RRenderSys()
 {
-    createVAO();
+    createPlaneVAO(vao_, vbo_);
 }
 
 RRenderSys::RRenderSys(const RShaders &shaders):
@@ -287,29 +312,4 @@ void RRenderSys::renderLine(const RRect &rect)
 {
     RModelMat mat(rect);
     renderLine(mat.model());
-}
-
-void RRenderSys::createVAO()
-{
-    glGenVertexArrays(1, &vao_);
-    glGenBuffers(1, &vbo_);
-
-    GLfloat plane[]{
-            0.5f,-0.5f, 1.0f, 0.0f,//右下
-            0.5f, 0.5f, 1.0f, 1.0f,//右上
-           -0.5f,-0.5f, 0.0f, 0.0f,//左下
-           -0.5f, 0.5f, 0.0f, 1.0f,//左上
-
-            0.5f, 0.5f, 1.0f, 1.0f,//右上 不知为和1.0采集不到纹素
-            0.5f,-0.5f, 1.0f, 0.0f,//右下
-    };
-
-    glBindVertexArray(vao_);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(plane), plane, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), nullptr);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4*sizeof(GLfloat), R_BUFF_OFF(2*sizeof(GLfloat)));
-    glBindVertexArray(0);
 }

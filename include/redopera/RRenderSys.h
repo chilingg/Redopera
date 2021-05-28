@@ -35,6 +35,7 @@ class RRenderSys
 
 public:
     static RShaders createSimpleShaders();
+    static void createPlaneVAO(GLuint &vao, GLuint &vbo);
 
     static const RName nProject;
     static const RName nView;
@@ -104,8 +105,6 @@ public:
     void renderLine(const RRect &rect);
 
 private:
-    void createVAO();
-
     GLuint vao_ = 0, vbo_ = 0;
     ShadersData data_;
 };
