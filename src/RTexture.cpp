@@ -13,7 +13,7 @@ const RTexture::Format RTexture::Nearest4 { { Filter::Nearest, Filter::Nearest }
 const RTexture::Format RTexture::Nearest3 { { Filter::Nearest, Filter::Nearest }, 3 };
 const RTexture::Format RTexture::SingleL { { Filter::Linear, Filter::Linear }, 1 };
 const RTexture::Format RTexture::SingleN { { Filter::Nearest, Filter::Nearest }, 1 };
-const RTexture::Format RTexture::FontLinear4 { { Filter::Linear, Filter::Linear },
+const RTexture::Format RTexture::SingleToLinear4 { { Filter::Linear, Filter::Linear },
                                                4,
                                                { Wrap::ClampToBorder, Wrap::ClampToBorder },
                                                { 0, 0, 0, 0 },

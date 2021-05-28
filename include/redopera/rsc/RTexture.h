@@ -70,7 +70,7 @@ public:
     static const Format Nearest3;
     static const Format SingleL;
     static const Format SingleN;
-    static const Format FontLinear4;
+    static const Format SingleToLinear4;
 
     static RTexture createWhiteTex();
     static RTexture createBlackTex();
