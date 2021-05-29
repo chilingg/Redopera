@@ -2,27 +2,14 @@
 #define RWIDGET_H
 
 #include <REntity.h>
-#include <RRect.h>
-#include <RPlane.h>
-#include <RRenderSys.h>
-#include <RTextsLoader.h>
 
 namespace Redopera {
 
-using Planes = std::vector<std::pair<RName, RPlane>>;
+namespace RWidget {
 
-class RWidget
-{
-public:
-    RWidget() = delete;
+static REntity& genWidget(REntity &entity);
 
-    static REntity& addAttribute(REntity &entity);
-
-    static REntity& getLabel(REntity &entity);
-    static REntity& getVerticalLayout(REntity &entity);
-    static REntity& getHrizontalLayout(REntity &entity);
-    static REntity& getCenterLayout(REntity &entity);
-};
+} // ns RWidget
 
 } // ns Redopera
 
