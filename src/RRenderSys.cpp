@@ -28,46 +28,22 @@ static const GLchar *FRAGMENT_CODE =
 R"--(
 #version 430 core
 
-uniform vec4 hue = vec4(1, 1, 1, 1);
 uniform sampler2D tex;
+uniform vec4 hue = vec4(1, 1, 1, 1);
 
 in vec2 tex_coor;
 out vec4 out_color;
 
-subroutine void color_out();
-
-subroutine(color_out) void tex_out()
+void main(void)
 {
     out_color = texture(tex, tex_coor) * hue;
 }
-
-subroutine(color_out) void single_tex_out()
-{
-    out_color = vec4(hue.rgb, texture(tex, tex_coor).r * hue.a);
-}
-
-subroutine(color_out) void hue_out()
-{
-    out_color = hue;
-}
-
-subroutine uniform color_out color_out_func;
-
-void main(void)
-{
-    color_out_func();
-}
 )--";
 
-const RName RRenderSys::nProject = "project";
-const RName RRenderSys::nView = "view";
-const RName RRenderSys::nModel = "model";
-const RName RRenderSys::nHue = "hue";
-
-const RName RRenderSys::nColorOutFunc = "color_out_func";
-const RName RRenderSys::nTexOut = "tex_out";
-const RName RRenderSys::nSingleOut = "single_tex_out";
-const RName RRenderSys::nHueOut = "hue_out";
+const RName RRenderSys::project = "project";
+const RName RRenderSys::view = "view";
+const RName RRenderSys::model = "model";
+const RName RRenderSys::hue = "hue";
 
 RShaders RRenderSys::createSimpleShaders()
 {
@@ -85,7 +61,7 @@ void RRenderSys::createPlaneVAO(GLuint &vao, GLuint &vbo)
            -0.5f,-0.5f, 0.0f, 0.0f,//左下
            -0.5f, 0.5f, 0.0f, 1.0f,//左上
 
-            0.5f, 0.5f, 1.0f, 1.0f,//右上 不知为和1.0采集不到纹素
+            0.5f, 0.5f, 0.999f, 0.999f,//右上 不知为和1.0采集不到纹素
             0.5f,-0.5f, 1.0f, 0.0f,//右下
     };
 
@@ -99,14 +75,16 @@ void RRenderSys::createPlaneVAO(GLuint &vao, GLuint &vbo)
     glBindVertexArray(0);
 }
 
-RRenderSys::RRenderSys()
+RRenderSys::RRenderSys():
+    RRenderSys(createSimpleShaders())
 {
-    createPlaneVAO(vao_, vbo_);
+    registerUniform({ project, view, model, hue });
 }
 
 RRenderSys::RRenderSys(const RShaders &shaders):
-    RRenderSys()
+    white_(RTexture::createWhiteTex())
 {
+    createPlaneVAO(vao_, vbo_);
     setShaders(shaders);
 }
 
@@ -116,29 +94,24 @@ RRenderSys::~RRenderSys()
     glDeleteBuffers(1, &vbo_);
 }
 
-bool RRenderSys::isUniform(const RName &name)
+bool RRenderSys::isUniform(RName name)
 {
-    return data_.uniform.count(name);
+    return uniform_.count(name);
 }
 
-GLint RRenderSys::loc(const RName &name) const
+GLint RRenderSys::loc(RName name) const
 {
-    return data_.uniform.at(name);
+    return uniform_.at(name);
 }
 
-const std::unordered_map<RName, GLuint> &RRenderSys::locList() const
+const RDict<GLuint> &RRenderSys::locList() const
 {
-    return data_.uniform;
-}
-
-const std::unordered_map<RShader::Type, RRenderSys::SubroutineData> &RRenderSys::stageData() const
-{
-    return data_.stage_;
+    return uniform_;
 }
 
 const RShaders &RRenderSys::shaders() const
 {
-    return data_.shaders;
+    return shaders_;
 }
 
 GLuint RRenderSys::vao() const
@@ -170,72 +143,43 @@ void RRenderSys::registerUniform(std::initializer_list<RName> list)
 {
     for(const RName &name : list)
     {
-        GLint loc = data_.shaders.getUniformLoc(name);
+        GLint loc = shaders_.getUniformLoc(name.toString());
         if(loc < 0)
             return;
-        data_.uniform[name] = loc;
+        uniform_[name] = loc;
     }
 }
 
-bool RRenderSys::registerSubroutine(RShader::Type type, const RName &func, std::initializer_list<RName> list)
+void RRenderSys::registerUniform(const std::string &uniform, RName name)
 {
-    GLint loc = data_.shaders.getSubroutineUniformLoc(type, func);
+    GLint loc = shaders_.getUniformLoc(uniform);
     if(loc < 0)
-        return false;
-    data_.stage_[type].data[func].uniform = loc;
-
-    for(const RName& name : list)
-    {
-        GLuint i = data_.shaders.getSubroutineIndex(type, name);
-        if(i != GL_INVALID_INDEX)
-            data_.stage_[type].data[func].index[name] = i;
-    }
-
-    return true;
+        return;
+    uniform_[name] = loc;
 }
 
 void RRenderSys::setShaders(const RShaders &shaders)
 {
-    data_ = { shaders, {}, {} };
-
-    GLint n;
-    for(RShader::Type type : RShader::TYPE_LIST)
-    {
-        glGetProgramStageiv(data_.shaders.id(), static_cast<GLenum>(type), GL_ACTIVE_SUBROUTINES, &n);
-        if(n > 0)
-            data_.stage_.emplace(type, SubroutineData{ std::vector<GLuint>(n, 0), {} });
-    }
-
-    registerUniform({ nProject, nView, nModel, nHue });
-    registerSubroutine(RShader::Type::Fragment, nColorOutFunc, { nTexOut, nSingleOut, nHueOut });
-    setViewMove();
-}
-
-void RRenderSys::setSubroutine(RShader::Type type, const RName &func, const RName &opt)
-{
-    GLuint loc = data_.stage_.at(type).data.at(func).uniform;
-    std::vector<GLuint> &table = data_.stage_.at(type).table;
-    table[loc] = data_.stage_.at(type).data.at(func).index.at(opt);
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformSubroutines(type, loc+1, table.data());
+    uniform_.clear();
+    shaders_ = shaders;
 }
 
 void RRenderSys::setViewport(float left, float right, float bottom, float top, float near, float far)
 {
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(nProject), glm::ortho(left, right, bottom, top, near, far));
+    RRPI rpi = shaders_.use();
+    rpi.setUniformMat(loc(project), glm::ortho(left, right, bottom, top, near, far));
 }
 
 void RRenderSys::setPerspective(float left, float right, float bottom, float top, float near, float far)
 {
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(nProject), glm::perspective(left, right, bottom, top, near, far));
+    RRPI rpi = shaders_.use();
+    rpi.setUniformMat(loc(project), glm::perspective(left, right, bottom, top, near, far));
 }
 
 void RRenderSys::setProjectMat(const glm::mat4 &mat)
 {
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(nProject), mat);
+    RRPI rpi = shaders_.use();
+    rpi.setUniformMat(loc(project), mat);
 }
 
 void RRenderSys::setViewMove()
@@ -245,14 +189,14 @@ void RRenderSys::setViewMove()
 
 void RRenderSys::setViewMove(float x, float y, float z)
 {
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(nView), glm::translate(glm::mat4(1), { -x, -y, -z }));
+    RRPI rpi = shaders_.use();
+    rpi.setUniformMat(loc(view), glm::translate(glm::mat4(1), { -x, -y, -z }));
 }
 
 void RRenderSys::setViewMat(const glm::mat4 &mat)
 {
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(nView), mat);
+    RRPI rpi = shaders_.use();
+    rpi.setUniformMat(loc(view), mat);
 }
 
 void RRenderSys::setHue(unsigned r, unsigned g, unsigned b, unsigned a)
@@ -262,28 +206,13 @@ void RRenderSys::setHue(unsigned r, unsigned g, unsigned b, unsigned a)
 
 void RRenderSys::setHue(const glm::vec4 &color)
 {
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniform(loc(nHue), color);
+    RRPI rpi = shaders_.use();
+    rpi.setUniform(loc(hue), color);
 }
 
 void RRenderSys::setHue(const glm::vec3 &color)
 {
     setHue(glm::vec4(color, 1.f));
-}
-
-void RRenderSys::usingTexColorOut()
-{
-    setSubroutine(RShader::Type::Fragment, nColorOutFunc, nTexOut);
-}
-
-void RRenderSys::usingSingleTexOut()
-{
-    setSubroutine(RShader::Type::Fragment, nColorOutFunc, nSingleOut);
-}
-
-void RRenderSys::usingHueOut()
-{
-    setSubroutine(RShader::Type::Fragment, nColorOutFunc, nHueOut);
 }
 
 void RRenderSys::setHue(RColor color)
@@ -294,8 +223,8 @@ void RRenderSys::setHue(RColor color)
 void RRenderSys::render(const RTexture &tex, const glm::mat4 &model) const
 {
     bindVAO();
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(nModel), model);
+    RRPI rpi = shaders_.use();
+    rpi.setUniformMat(loc(RRenderSys::model), model);
     tex.bind();
     drawPlane();
 }
@@ -303,8 +232,9 @@ void RRenderSys::render(const RTexture &tex, const glm::mat4 &model) const
 void RRenderSys::renderLine(const glm::mat4 &mat)
 {
     bindVAO();
-    RRPI rpi = data_.shaders.use();
-    rpi.setUniformMat(loc(nModel), mat);
+    RRPI rpi = shaders_.use();
+    rpi.setUniformMat(loc(model), mat);
+    white_.bind();
     drawLine();
 }
 

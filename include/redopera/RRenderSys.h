@@ -2,11 +2,10 @@
 #define RRENDERSYS_H
 
 #include "RShaders.h"
-#include "RName.h"
 #include "RColor.h"
 #include "RRect.h"
-
-#include <unordered_map>
+#include "RDict.h"
+#include "rsc/RTexture.h"
 
 namespace Redopera {
 
@@ -14,38 +13,14 @@ class RTexture;
 
 class RRenderSys
 {
-    struct Subroutine
-    {
-        GLuint uniform;
-        std::unordered_map<RName, GLuint> index;
-    };
-
-    struct SubroutineData
-    {
-        std::vector<GLuint> table;
-        std::unordered_map<RName, Subroutine> data;
-    };
-
-    struct ShadersData
-    {
-        RShaders shaders;
-        std::unordered_map<RName, GLuint> uniform;
-        std::unordered_map<RShader::Type, SubroutineData> stage_;
-    };
-
 public:
     static RShaders createSimpleShaders();
     static void createPlaneVAO(GLuint &vao, GLuint &vbo);
 
-    static const RName nProject;
-    static const RName nView;
-    static const RName nModel;
-    static const RName nHue;
-
-    static const RName nColorOutFunc;
-    static const RName nTexOut;
-    static const RName nSingleOut;
-    static const RName nHueOut;
+    static const RName project;
+    static const RName view;
+    static const RName model;
+    static const RName hue;
 
     RRenderSys();
     RRenderSys(const RShaders &shaders);
@@ -63,10 +38,9 @@ public:
     RRenderSys(const RRenderSys&) = delete;
     RRenderSys& operator=(const RRenderSys&) = delete;
 
-    bool isUniform(const RName &name);
-    GLint loc(const RName &name) const;
-    const std::unordered_map<RName, GLuint>& locList() const;
-    const std::unordered_map<RShader::Type, SubroutineData>& stageData() const;
+    bool isUniform(RName name);
+    GLint loc(RName name) const;
+    const RDict<GLuint>& locList() const;
     const RShaders& shaders() const;
     GLuint vao() const;
 
@@ -77,10 +51,9 @@ public:
     void drawLine() const;
 
     void registerUniform(std::initializer_list<RName> list);
-    bool registerSubroutine(RShader::Type type, const RName &func, std::initializer_list<RName> list);
+    void registerUniform(const std::string &uniform, RName name);
 
     void setShaders(const RShaders &shaders);
-    void setSubroutine(RShader::Type type, const RName &func, const RName &opt);
 
     void setViewport(float left, float right, float bottom, float top, float near = -127.0f, float far = 128.0f);
     void setPerspective(float left, float right, float bottom, float top, float near, float far);
@@ -95,10 +68,6 @@ public:
     void setHue(const glm::vec4 &color);
     void setHue(const glm::vec3 &color);
 
-    void usingTexColorOut();
-    void usingSingleTexOut();
-    void usingHueOut();
-
     void render(const RTexture &tex, const glm::mat4 &model) const;
 
     void renderLine(const glm::mat4 &mat);
@@ -106,7 +75,9 @@ public:
 
 private:
     GLuint vao_ = 0, vbo_ = 0;
-    ShadersData data_;
+    RShaders shaders_;
+    RTexture white_;
+    RDict<GLuint> uniform_;
 };
 
 } // ns Redopera
