@@ -23,10 +23,8 @@ std::unique_ptr<RPlane[]> label;
 void update(RRenderSys *sys)
 {
     RRPI rpi = sys->shaders().use();
-    sys->usingSingleTexOut();
     *sys << label[0] << label[1] << label[2] << label[3];
 
-    sys->usingHueOut();
     sys->renderLine(label[0].model());
     sys->renderLine(label[1].model());
     sys->renderLine(label[2].model());
@@ -129,7 +127,8 @@ int main()
     font.setSize(12);
     RFont::setDefaultFont(font);
 
-    RRenderSys sys = RRenderSys::createSimpleShaders();
+    RRenderSys sys;
+    sys.setViewMove();
     sys.setViewport(0, WIDTH, 0, HEIGHT);
     sys.setHue(fcolor);
 

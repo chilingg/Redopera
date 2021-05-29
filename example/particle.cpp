@@ -20,7 +20,8 @@ void start()
     init->setTexture(RTexture::createWhiteTex());
     init->setModel(RRectF(WIDTH / 2.f, 0.f, 4.f, 4.f));
 
-    renderer = std::make_unique<RRenderSys>(RRenderSys::createSimpleShaders());
+    renderer = std::make_unique<RRenderSys>();
+    renderer->setViewMove();
     renderer->setViewport(0, WIDTH, 0, HEIGHT);
 }
 

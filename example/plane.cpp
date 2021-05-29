@@ -17,8 +17,10 @@ public:
     TestCtl():
         plane({ RPoint(), RSize(36, 36) }, RTexture(RImage::redoperaIcon())),
         viewpro(0, 0, SIZE, SIZE),
-        renderer(RRenderSys::createSimpleShaders())
+        renderer()
     {
+        renderer.setViewMove();
+
         RRectF rect = plane.rect();
         rect.setCenter(viewpro.center());
         plane.setPos(rect.pos());
@@ -45,12 +47,10 @@ public:
     void update()
     {
         RRPI rpi = renderer.shaders().use();
-        rpi.setUniform(renderer.loc(RRenderSys::nHue), .1f, .1f, .14f, 1.f);
-        renderer.usingSingleTexOut();
+        rpi.setUniform(renderer.loc(RRenderSys::hue), .1f, .1f, .14f, 1.f);
         renderer << arrow[0] << arrow[1] << arrow[2] << arrow[3];
 
-        rpi.setUniform(renderer.loc(RRenderSys::nHue), 1.f, 1.f, 1.f, 1.f);
-        renderer.usingTexColorOut();
+        rpi.setUniform(renderer.loc(RRenderSys::hue), 1.f, 1.f, 1.f, 1.f);
         renderer << plane;
     }
 
