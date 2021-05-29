@@ -352,9 +352,9 @@ void RTextsLoader::verticalTextToTexture()
 
     img_.flipV();
     if (size_ == tex_.size())
-        tex_.reload(img_.data());
+        tex_.reload(img_.data(), 1);
     else
-        tex_.load(img_.data(), size_.width(), size_.height(), 1, RTexture::SingleL);
+        tex_.load(img_.data(), size_.width(), size_.height(), 1, RTexture::SingleToLinear4);
 }
 
 void RTextsLoader::horizontalTextToTexture()
@@ -476,7 +476,7 @@ void RTextsLoader::horizontalTextToTexture()
 
     img_.flipV();
     if (size_ == tex_.size())
-        tex_.reload(img_.data());
+        tex_.reload(img_.data(), 1);
     else
-        tex_.load(img_.data(), size_.width(), size_.height(), 1, RTexture::SingleL);
+        tex_.load(img_.data(), size_.width(), size_.height(), 1, RTexture::SingleToLinear4);
 }
