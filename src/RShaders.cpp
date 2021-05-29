@@ -378,29 +378,29 @@ RRPI RShaders::use() const
     return RRPI(*id_);
 }
 
-GLint RShaders::getUniformLoc(const RName &name) const
+GLint RShaders::getUniformLoc(const std::string &name) const
 {
-    GLint loc = glGetUniformLocation(*id_, name.toString().c_str());
+    GLint loc = glGetUniformLocation(*id_, name.c_str());
 #ifndef NDEBUG
-    rCheck(loc < 0, "Invalid locale <" + name.toString() + '>');
+    rCheck(loc < 0, "Invalid locale <" + name + '>');
 #endif
     return loc;
 }
 
-GLint RShaders::getSubroutineUniformLoc(RShader::Type type, const RName &name) const
+GLint RShaders::getSubroutineUniformLoc(RShader::Type type, const std::string &name) const
 {
-    GLint loc = glGetSubroutineUniformLocation(*id_, static_cast<GLenum>(type), name.toString().c_str());
+    GLint loc = glGetSubroutineUniformLocation(*id_, static_cast<GLenum>(type), name.c_str());
 #ifndef NDEBUG
-    rCheck(loc < 0, "Invalid subroutine locale <" + name.toString() + '>');
+    rCheck(loc < 0, "Invalid subroutine locale <" + name + '>');
 #endif
     return loc;
 }
 
-GLuint RShaders::getSubroutineIndex(RShader::Type type, const RName &name) const
+GLuint RShaders::getSubroutineIndex(RShader::Type type, const std::string &name) const
 {
-    GLuint i = glGetSubroutineIndex(*id_, static_cast<GLenum>(type), name.toString().c_str());
+    GLuint i = glGetSubroutineIndex(*id_, static_cast<GLenum>(type), name.c_str());
 #ifndef NDEBUG
-    rCheck(i == GL_INVALID_INDEX, "Invalid subroutine index <" + name.toString() + '>');
+    rCheck(i == GL_INVALID_INDEX, "Invalid subroutine index <" + name + '>');
 #endif
     return i;
 }

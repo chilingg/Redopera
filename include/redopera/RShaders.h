@@ -3,7 +3,6 @@
 
 #include "rsc/RShader.h"
 #include "RMath.h"
-#include "RName.h"
 
 #include <initializer_list>
 #include <map>
@@ -98,9 +97,9 @@ public:
     GLuint id() const;
     RRPI use() const;
 
-    GLint getUniformLoc(const RName &name) const;
-    GLint getSubroutineUniformLoc(RShader::Type type, const RName &name) const;
-    GLuint getSubroutineIndex(RShader::Type type, const RName &name) const;
+    GLint getUniformLoc(const std::string &name) const;
+    GLint getSubroutineUniformLoc(RShader::Type type, const std::string &name) const;
+    GLuint getSubroutineIndex(RShader::Type type, const std::string &name) const;
 
     // attachShader() 与 detachShader() 都是只在重新linkProgram时生效
     void attachShader(const RShader &shader);
