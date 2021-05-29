@@ -61,7 +61,7 @@ public:
         } wrap { Wrap::ClampToBorder, Wrap::ClampToBorder };
 
         std::array<GLuint, 4> edgeColor { 0, 0, 0, 0 };
-        std::array<GLuint, 4> swizzle { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
+        std::array<GLint, 4> swizzle { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
     };
 
     static const Format Linear4;
@@ -110,10 +110,10 @@ public:
     bool load(const RData *data, const RSize &size, int echannel, const Format &format = textureFormat);
     bool load(const RImage &img, const Format &format = textureFormat);
     bool load(const std::string &path, const Format &format = textureFormat);
-    void reload(const RData* data);
-    void setSubTexture(const RRect &rect, const RData* data);
-    void setSubTexture(const RPoint2 &pos, const RSize &size, const RData* data);
-    void setSubTexture(int x, int y, int width, int height, const RData* data);
+    void reload(const RData* data, int echannel);
+    void setSubTexture(const RRect &rect, const RData* data, int echannel);
+    void setSubTexture(const RPoint2 &pos, const RSize &size, const RData* data, int echannel);
+    void setSubTexture(int x, int y, int width, int height, const RData* data, int echannel);
     void release();
 
 private:

@@ -217,6 +217,7 @@ bool RTexture::load(const RData *data, int width, int height, int echannel, cons
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, static_cast<GLint>(format.filter.min));
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, static_cast<GLint>(format.filter.max));
 
+    const GLint *swizzle = format.swizzle.data();
     glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
 
     glTexImage2D(GL_TEXTURE_2D, 0, static_cast<GLint>(inFormat(format.inChannel)),
@@ -244,35 +245,35 @@ bool RTexture::load(const std::string &path, const RTexture::Format &format)
     return load(RImage(path, true), format);
 }
 
-void RTexture::reload(const RData *data)
+void RTexture::reload(const RData *data, int echannel)
 {
     if(textureID_.unique())
     {
         glBindTexture(GL_TEXTURE_2D, *textureID_);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width_, height_, static_cast<GLint>(extFormat(format_.inChannel)), GL_UNSIGNED_BYTE, data);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width_, height_, static_cast<GLint>(extFormat(echannel)), GL_UNSIGNED_BYTE, data);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
     else
-        load(data, width_, height_, format_.inChannel, format_);
+        load(data, width_, height_, echannel, format_);
 }
 
-void RTexture::setSubTexture(const RRect &rect, const RData *data)
+void RTexture::setSubTexture(const RRect &rect, const RData *data, int echannel)
 {
-    setSubTexture(rect.width(), rect.height(), rect.left(), rect.bottom(), data);
+    setSubTexture(rect.width(), rect.height(), rect.left(), rect.bottom(), data, echannel);
 }
 
-void RTexture::setSubTexture(const RPoint2 &pos, const RSize &size, const RData *data)
+void RTexture::setSubTexture(const RPoint2 &pos, const RSize &size, const RData *data, int echannel)
 {
-    setSubTexture(size.width(), size.height(), pos.x(), pos.y(), data);
+    setSubTexture(size.width(), size.height(), pos.x(), pos.y(), data, echannel);
 }
 
-void RTexture::setSubTexture(int x, int y, int width, int height, const RData *data)
+void RTexture::setSubTexture(int x, int y, int width, int height, const RData *data, int echannel)
 {
     if(!textureID_.unique())
         copyOnWrite();
 
     glBindTexture(GL_TEXTURE_2D, *textureID_);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, static_cast<GLint>(extFormat(format_.inChannel)), GL_UNSIGNED_BYTE, data);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, width, height, static_cast<GLint>(extFormat(echannel)), GL_UNSIGNED_BYTE, data);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
