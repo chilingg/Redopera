@@ -15,7 +15,7 @@ public:
         time_(std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count())
     {}
 
-    int64_t elapsed()
+    int64_t elapsed() const
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now().time_since_epoch()).count() - time_;
     }
@@ -48,7 +48,7 @@ public:
         time_(std::chrono::duration_cast<std::chrono::microseconds>(Clock::now().time_since_epoch()).count())
     {}
 
-    int64_t elapsed()
+    int64_t elapsed() const
     {
         return std::chrono::duration_cast<std::chrono::microseconds>(Clock::now().time_since_epoch()).count() - time_;
     }
