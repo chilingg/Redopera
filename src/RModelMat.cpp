@@ -8,6 +8,17 @@ RModelMat::RModelMat():
     model_[2].z = 0;
 }
 
+RModelMat::RModelMat(RModelMat &&model):
+    model_(std::move(model.model_))
+{
+}
+
+RModelMat &RModelMat::operator=(RModelMat &&model)
+{
+    model_ = std::move(model.model_);
+    return *this;
+}
+
 RModelMat::RModelMat(float x, float y, float z, float width, float height):
     model_(1)
 {

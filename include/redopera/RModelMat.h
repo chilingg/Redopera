@@ -15,6 +15,12 @@ public:
     RModelMat(const RPointF &pos, const RSizeF &size);
     RModelMat(const RRectF &rect, float depth = 0);
 
+    RModelMat(const RModelMat&) = default;
+    RModelMat& operator=(const RModelMat&) = default;
+
+    RModelMat(RModelMat&& model);
+    RModelMat& operator=(RModelMat&& model);
+
     const glm::mat4& model() const;
 
     float top() const;
