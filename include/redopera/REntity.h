@@ -22,9 +22,9 @@ class REntity
     };
 
 public:
-    using ComponentList = RDict<>;
-    using FuncList = ComponentList;
-    using SignalList = ComponentList;
+    using CompList = RDict<>;
+    using FuncList = CompList;
+    using SignalList = CompList;
     using ChildrenList = std::vector<REntity>;
 
     REntity(const RName &name, REntity *parent);
@@ -34,9 +34,11 @@ public:
     REntity& operator=(const REntity& entity);
     REntity& operator=(REntity&& entity);
 
-    const std::type_info& compenentType(const RName &name) const { return comps_.at(name).type(); }
+    const std::type_info& compType(const RName &name) const { return comps_.at(name).type(); }
+    const std::type_info& funcType(const RName &name) const { return funcs_.at(name).type(); }
+    const std::type_info& signalType(const RName &name) const { return signals_.at(name).type(); }
 
-    bool isComponent(const RName &name) const { return comps_.count(name); }
+    bool isComp(const RName &name) const { return comps_.count(name); }
     bool isFunc(const RName &name) const { return funcs_.count(name); }
     bool isSignal(const RName &name) const { return signals_.count(name); }
     bool isChildren(const RName &name) const;
@@ -44,12 +46,13 @@ public:
     RName name() const { return name_; }
     REntity* parent() const { return parent_; }
 
-    const ComponentList& compenentList() const { return comps_; }
+    const CompList& compList() const { return comps_; }
     const FuncList& funcList() const { return funcs_; }
     const SignalList& signalList() const { return signals_; }
     const ChildrenList& childrenList() const { return children_; }
+    ChildrenList& childrenList() { return children_; }
 
-    size_t compenentSize() const { return comps_.size(); }
+    size_t compSize() const { return comps_.size(); }
     size_t funcSize() const { return funcs_.size(); }
     size_t signalSize() const { return signals_.size(); }
     size_t childrenSize() const { return children_.size(); }
@@ -69,7 +72,7 @@ public:
     template<typename Result, typename ... Args>
     Result func(const RName &name, Args&& ... args)
     {
-        return std::any_cast<std::function<Result(Args ...)>>(funcs_.at(name))(std::forward<Args>(args)...);
+        return std::any_cast<std::function<Result(REntity&, Args ...)>>(funcs_.at(name))(*this, std::forward<Args>(args)...);
     }
 
     template<typename ... Args>
@@ -95,7 +98,7 @@ public:
     }
 
     template<typename T>
-    T& addComponent(const RName &name, T&& comp)
+    T& addComp(const RName &name, T&& comp)
     {
         auto it = comps_.emplace(name, std::forward<T>(comp));
         assert(it.second);
@@ -104,22 +107,22 @@ public:
     }
 
     template<typename Result, typename ... Args>
-    void addFunc(const RName &name, const std::function<Result(Args ...)> &func)
+    void addFunc(const RName &name, const std::function<Result(REntity&, Args ...)> &func)
     {
         auto it = funcs_.emplace(name, func);
         assert(it.second);
     }
 
     template<typename Result, typename ... Args>
-    void addFunc(const RName &name, Result(*func)(Args ...))
+    void addFunc(const RName &name, Result(*func)(REntity&, Args ...))
     {
-        addFunc(name, std::function<Result(Args ...)>(func));
+        addFunc(name, std::function<Result(REntity&, Args ...)>(func));
     }
 
     template<typename ... Args, typename FuncType>
     void addFunc(const RName &name, FuncType func)
     {
-        addFunc(name, std::function<typename std::result_of<FuncType(Args ...)>::type(Args ...)>(func));
+        addFunc(name, std::function<typename std::result_of<FuncType(REntity&, Args ...)>::type(REntity&, Args ...)>(func));
     }
 
     template<typename ... Args>
@@ -137,7 +140,7 @@ public:
         return children_.back();
     }
 
-    void removeComponent(const RName &name)
+    void removeComp(const RName &name)
     {
         size_t s = comps_.erase(name);
         assert(s);
@@ -163,21 +166,11 @@ public:
         children_.erase(it);
     }
 
-    template<typename Result, typename ... Args>
+    template<typename Result = void, typename ... Args>
     void callFuncToAll(RName name, Args&& ... args)
     {
-        if(isFunc(name) && funcs_[name].type() == typeid(std::function<Result(Args ...)>))
-            func<Result, Args ...>(name, std::forward<Args>(args) ...);
-
-        for(REntity &e : children_)
-            e.callFuncToAll<Result, Args ...>(name, std::forward<Args>(args) ...);
-    }
-
-    template<typename Result, typename ... Args>
-    void callFuncToAllFromThis(RName name, Args&& ... args)
-    {
         if(isFunc(name) && funcs_[name].type() == typeid(std::function<Result(REntity&, Args ...)>))
-            func<Result, REntity&, Args ...>(name, *this, std::forward<Args>(args) ...);
+            func<Result, Args ...>(name, std::forward<Args>(args) ...);
 
         for(REntity &e : children_)
             e.callFuncToAll<Result, Args ...>(name, std::forward<Args>(args) ...);
@@ -192,7 +185,7 @@ private:
     Status status_ = Status::Normal;
     REntity *parent_ = nullptr;
 
-    ComponentList comps_;
+    CompList comps_;
     FuncList funcs_;
     SignalList signals_;
     ChildrenList children_;
