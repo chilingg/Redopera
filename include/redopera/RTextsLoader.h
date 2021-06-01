@@ -78,6 +78,7 @@ public:
     void setAlign(Align v, Align h);
     void setLineSpacing(float value);
     void setWordSpacing(float value);
+    void setPadding(int t, int b, int l, int r);
 
     void vertical();
     void horizontal();

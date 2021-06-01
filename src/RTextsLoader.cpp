@@ -184,6 +184,12 @@ void RTextsLoader::setWordSpacing(float value)
     dirty_ = true;
 }
 
+void RTextsLoader::setPadding(int t, int b, int l, int r)
+{
+    format_.padding = { t, b, l, r };
+    dirty_ = true;
+}
+
 void RTextsLoader::vertical()
 {
     typesetting = &RTextsLoader::verticalTextToTexture;
