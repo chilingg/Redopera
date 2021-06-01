@@ -23,7 +23,7 @@ namespace Redopera {
 
 class RDebug;
 
-using RNumber = double;
+using RNumber = float;
 using RIndex = size_t;
 
 } // ns Redopera
