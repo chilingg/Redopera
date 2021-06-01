@@ -29,7 +29,7 @@ public:
 
     // 自定义
     template<typename T>
-    const Redopera::RRenderSys& operator<<(T &obj) const
+    Redopera::RRenderSys& operator<<(T &obj)
     {
         render(obj.texture(), obj.model());
         return *this;
