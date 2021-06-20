@@ -214,14 +214,14 @@ int main()
 
     // REntity ====================
     REntity entity("test", nullptr);
-    entity.addComponent("rect", rect1);
-    entity.addComponent("size", size1);
+    entity.addComp("rect", rect1);
+    entity.addComp("size", size1);
     entity.getR<RRect>("rect").setRect(2, 2, 4, 4);
     assert(entity.get<RRect>("rect") == RRect(2, 2, 4, 4) && entity.get<RRect>("rect") != rect1);
 
-    entity.addFunc("add1", std::function<int(int)>([](int n){ return ++n; }));
-    entity.addFunc<int, int>("add2", [](int n, int m){ return n + m; });
-    entity.addFunc<int&, int>("add3", [](int& n, int m){ n += m; });
+    entity.addFunc("add1", std::function<int(REntity&, int)>([](REntity&, int n){ return ++n; }));
+    entity.addFunc<int, int>("add2", [](REntity&, int n, int m){ return n + m; });
+    entity.addFunc<int&, int>("add3", [](REntity&, int& n, int m){ n += m; });
 
     assert(entity.func<int>("add1", 5) ==  entity.func<int>("add2", 3, 3));
     n = 3;
@@ -229,17 +229,17 @@ int main()
     assert(n == 5);
 
     entity.addSignal<int&, int>("signal");
-    entity.sigal<int&, int>("signal").connect(entity.addComponent<RSlot>("slot", {}), [](int &n1, int n2){ n1 += n2; return true; });
+    entity.sigal<int&, int>("signal").connect(entity.addComp<RSlot>("slot", {}), [](int &n1, int n2){ n1 += n2; return true; });
     entity.sigal<int&, int>("signal").emit(n, 5);
     assert(n == 10);
     entity.removeSignal("signal");
-    entity.removeComponent("slot");
+    entity.removeComp("slot");
 
     entity.addChild("test2");
     assert(entity.child("test2").name() == "test2");
 
-    assert(entity.isComponent("rect") && entity.compenentSize() == 2);
-    assert(entity.funcSize() == 3 && entity.isFunc("add3") && !entity.isComponent("add3"));
+    assert(entity.isComp("rect") && entity.compSize() == 2);
+    assert(entity.funcSize() == 3 && entity.isFunc("add3") && !entity.isComp("add3"));
     assert(entity.signalSize() == 0);
     assert(entity.childrenSize() == 1);
 

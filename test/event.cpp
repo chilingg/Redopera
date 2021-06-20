@@ -17,7 +17,7 @@ int main()
     RWindow window(640, 480, "Window", format);
     REntity entity("entity", nullptr);
 
-    entity.addFunc<REntity&>("_start_event", [](REntity &e)
+    entity.addFunc("_start_event", [](REntity &e)
     {
         rDebug << "Start Event";
         rDebug  << "Gamepad number " << RInput::gamepadCount();
@@ -28,11 +28,11 @@ int main()
         });
     });
 
-    entity.addFunc<REntity&>("_finish_event", [](REntity &){ rDebug << "Finish Event"; });
+    entity.addFunc("_finish_event", [](REntity &){ rDebug << "Finish Event"; });
 
-    window.resized.connect(entity.addComponent<RSlot>("slot", {}), [](int w, int h){ rDebug << "Window resized: " << RSize(w, h); });
+    window.resized.connect(entity.addComp<RSlot>("slot", {}), [](int w, int h){ rDebug << "Window resized: " << RSize(w, h); });
 
-    entity.addFunc<REntity&>("_process_event", [](REntity &)
+    entity.addFunc("_process_event", [](REntity &)
     {
         if(RInput::anyKeyPress())
             rDebug << "Any key Press";
@@ -69,16 +69,16 @@ int main()
 
     auto exec = [&entity]()
     {
-        entity.callFuncToAllFromThis<void>("_process_event");
+        entity.callFuncToAll<void>("_process_event");
         return 0;
     };
 
-    entity.callFuncToAllFromThis<void>("_start_event");
+    entity.callFuncToAll<void>("_start_event");
 
     window.show();
     int status = window.exec(exec);
 
-    entity.callFuncToAllFromThis<void>("_finish_event");
+    entity.callFuncToAll<void>("_finish_event");
 
     return status;
 }
