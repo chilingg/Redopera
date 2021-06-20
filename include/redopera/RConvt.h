@@ -1,5 +1,5 @@
-#ifndef RENCODE_H
-#define RENCODE_H
+#ifndef RCONVT_H
+#define RCONVT_H
 
 #include <locale>
 #include <codecvt>
@@ -65,4 +65,4 @@ private:
 
 } // ns Redopera
 
-#endif // RENCODE_H
+#endif // RCONVT_H
