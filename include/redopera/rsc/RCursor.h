@@ -16,12 +16,16 @@ class RCursor
 public:
     enum class Shape
     {
-        Arrow        = GLFW_ARROW_CURSOR,
-        Ibeam        = GLFW_IBEAM_CURSOR,
-        Crosshair    = GLFW_CROSSHAIR_CURSOR,
-        Hand         = GLFW_HAND_CURSOR,
-        Hresize      = GLFW_HRESIZE_CURSOR,
-        Vresize      = GLFW_VRESIZE_CURSOR,
+        Arrow       = GLFW_ARROW_CURSOR,
+        Ibeam       = GLFW_IBEAM_CURSOR,
+        Crosshair   = GLFW_CROSSHAIR_CURSOR,
+        Hand        = GLFW_POINTING_HAND_CURSOR,
+        ResizeH     = GLFW_RESIZE_EW_CURSOR,
+        ResizeV     = GLFW_RESIZE_NS_CURSOR,
+        ResizeNWSE  = GLFW_RESIZE_NWSE_CURSOR,
+        ResizeNESW  = GLFW_RESIZE_NESW_CURSOR,
+        ResizeAll   = GLFW_RESIZE_ALL_CURSOR,
+        NotAllowed  = GLFW_NOT_ALLOWED_CURSOR,
         Custom
     };
 
