@@ -15,6 +15,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     target_link_libraries(redopera dl glfw pthread lua rtaudio)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     target_link_libraries(redopera glfw3 lua rtaudio ksuser mfplat mfuuid wmcodecdspuuid)
+    target_link_libraries(redopera -Wl,-Bstatic -lstdc++ -lgcc_eh -lpthread -Wl,-Bdynamic)
 endif()
 
 if (NOT CMAKE_CONFIGURATION_TYPES AND NOT CMAKE_BUILD_TYPE)
