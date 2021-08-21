@@ -11,6 +11,8 @@ using namespace Redopera;
 
 unsigned RFont::cacheMaxSize_ = 1000;
 RFont RFont::defaultFont(SOURCE_FONT_DATA, SOURCE_FONT_SIZE);
+const unsigned RFont::SOURCE_CODE_PRO_FILE_SIZE = SOURCE_FONT_SIZE;
+const unsigned char* RFont::SOURCE_CODE_PRO_FILE_DATA = SOURCE_FONT_DATA;
 
 RFont RFont::sourceCodePro()
 {

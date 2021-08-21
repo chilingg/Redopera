@@ -26,6 +26,9 @@ public:
         std::unique_ptr<const RData[]> data = nullptr;
     };
 
+    static const unsigned SOURCE_CODE_PRO_FILE_SIZE;
+    static const unsigned char* SOURCE_CODE_PRO_FILE_DATA;
+
     // sourceCodePro()定义在字体资源文件中 (SourceCodePro.cpp)
     static RFont sourceCodePro();
 
