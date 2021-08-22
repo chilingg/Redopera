@@ -211,6 +211,8 @@ public:
     static Keys toKey(int key);
     static MouseBtn toMouseButtons(int button);
 
+    static void updataInput();
+
     RInput() = delete;
     RInput(RInput &) = delete;
     RInput& operator=(const RInput &) = delete;
@@ -255,8 +257,6 @@ private:
     static const char *gamepadMappingCode0;
     static const char *gamepadMappingCode1;
     static const char *gamepadMappingCode2;
-
-    static void updataInput();
 
     static void keyUp(Keys key);
     static void keyDown(Keys key);
