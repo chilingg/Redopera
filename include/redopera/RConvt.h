@@ -30,7 +30,7 @@ public:
             return {};
 
         std::string str(len, 'a');
-        std::wcsrtombs(str.data(), &data, len, &mbstate);
+        std::wcsrtombs(&str[0], &data, len, &mbstate);
         return str;
     }
 
@@ -49,7 +49,7 @@ public:
             return {};
 
         std::wstring wstr(len, 'a');
-        std::mbsrtowcs(wstr.data(), &data, len, &mbstate);
+        std::mbsrtowcs(&wstr[0], &data, len, &mbstate);
         return wstr;
     }
 
