@@ -42,6 +42,9 @@ public:
     void setSize(Value width, Value height) { width_ = width; height_ = height; }
     void setSize(const RSizeValue<Value> &size) { setSize(size.width(), size.height()); }
 
+    Value& rWidth() { return width_; }
+    Value& rHeight() { return height_; }
+
     void expand(Value width, Value height) { width_ += width; height_ += height; }
 
     std::string toString() const
