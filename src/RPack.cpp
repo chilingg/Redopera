@@ -1,7 +1,6 @@
 #include <rsc/RPack.h>
-#include <RResource.h>
-#include <RDebug.h>
-#include <RThread.h>
+#include <thread/RThread.h>
+#include <RFormat.h>
 
 #include <fstream>
 #include <vector>
@@ -47,9 +46,8 @@ const RPack::FInfo *RPack::getFileInfo(const std::string &file)
 
 bool RPack::load(const std::string &path)
 {
-    auto rpath = RResource::rscPath(path);
-    std::ifstream file(rpath, std::ios::binary);
-    if(rCheck(!file, "Failed to load pack in " + rpath))
+    std::ifstream file(path, std::ios::binary);
+    if(rCheck(!file, "Failed to load pack in {}!\n", path))
         return false;
 
     Head head;
@@ -76,13 +74,13 @@ bool RPack::load(const std::string &path)
         }
         else
         {
-            rPrError("Invali pack file: " + rpath);
+            rError("Invali pack file: {}\n", path);
             return false;
         }
     }
     catch(std::ifstream::failure &e)
     {
-        rPrError("Wrong access pack file: " + rpath + '\n' + e.what());
+        rError("Wrong access pack file {}: {}\n", path, e.what());
         return false;
     }
 
@@ -108,7 +106,7 @@ bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::str
         {
             fileInfo_[hash] = FInfo{ size, check, buffer };
 #ifndef NDEBUG
-            rDebug << EscCtl::green << "RPack: Update file <" + name + '>' <<  EscCtl::non;
+            rMessage("RPack: Update file <{}>.\n", name);
 #endif
             return true;
         }
@@ -117,7 +115,7 @@ bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::str
     {
         fileInfo_.emplace(hash, FInfo{ size, check, buffer });
 #ifndef NDEBUG
-        rDebug << EscCtl::green << "RPack: Insert file <" + name + '>' <<  EscCtl::non;
+        rMessage("RPack: Insert file <{}>.\n", name);
 #endif
         return true;
     }
@@ -127,9 +125,8 @@ bool RPack::packing(std::shared_ptr<RData[]> buffer, size_t size, const std::str
 
 bool RPack::packing(const std::string &path, const std::string &name)
 {
-    auto rpath = RResource::rscPath(path);
-    std::ifstream file(rpath, std::ios::binary | std::ios::ate);
-    if(rCheck(!file, "Failed to packing <" + name + "> in " + rpath))
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if(rCheck(!file, "Failed to packing <{}> in {}!\n", name, path))
         return false;
 
     size_t size = file.tellg();
@@ -143,7 +140,7 @@ bool RPack::packing(const std::string &path, const std::string &name)
     }
     catch(std::ifstream::failure &f)
     {
-        rPrError("Wrong access file: " + rpath + f.what());
+        rError("Wrong access file {}: {}\n", path, f.what());
         return false;
     }
 
@@ -152,10 +149,8 @@ bool RPack::packing(const std::string &path, const std::string &name)
 
 bool RPack::save(const std::string &path)
 {
-    auto rpath = RResource::rscPath(path);
-
-    std::ofstream file(rpath, std::ios::binary);
-    if(rCheck(!file, "Failure save pack file as <" + rpath + '>'))
+    std::ofstream file(path, std::ios::binary);
+    if(rCheck(!file, "Failure save pack file as {}\n", path))
         return false;
 
     file.exceptions(std::ofstream::failbit | std::ofstream::badbit);
@@ -186,11 +181,11 @@ bool RPack::save(const std::string &path)
     }
     catch(std::ofstream::failure &f)
     {
-        rPrError("Failure save pack file as <" + rpath + '>');
+        rError("Failure save pack file as {}!\n", path);
         return false;
     }
 #ifndef NDEBUG
-    rDebug << EscCtl::green << "RPack: Save pack as <" + path + '>' <<  EscCtl::non;
+    rMessage("RRPack: Save pack as {}.\n", path);
 #endif
     return true;
 }

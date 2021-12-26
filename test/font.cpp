@@ -1,4 +1,4 @@
-#include <RDebug.h>
+#include <RFormat.h>
 #include <rsc/RFont.h>
 
 using namespace Redopera;
@@ -8,22 +8,22 @@ int main()
     RFont font;
     font.setSize(22);
 
-    rDebug << "========Font Glyph Load Test========\n"
-              "Defualt font: SourceCodePro, Font size :" << font.size();
+    fmt::print("========Font Glyph Load Test========\n"
+               "Defualt font: SourceCodePro, Font size: {}\n", font.size());
 
     char c;
     do {
-        rDebug << "\nEntry a character ('q' quit): ";
+        fmt::print("\nEntry a character ('q' quit): \n");
         std::scanf("%c", &c);
         std::getchar();
-        const RFont::Glyph *glyph = font.getFontGlyph(c);
-        rDebug << "\ncharacter:" << c << " width:" << glyph->width << " height:" << glyph->height
-               << " xoff:" << glyph->xoff << " yoff:" << glyph->yoff << '\n';
+        RFont::Glyph glyph = font.getGlyph(c);
+        fmt::print("character: {}, width: {}, height: {}, xoff: {}, yoff: {}\n",
+                   c, glyph.width, glyph.height, glyph.xoff, glyph.yoff);
 
-        for (int j = 0; j < glyph->height; ++j)
+        for (int j = 0; j < glyph.height; ++j)
         {
-           for (int i = 0; i < glyph->width; ++i)
-               printf("%c ", " ':0IM%@"[glyph->data[j*glyph->width+i] >> 5]);
+           for (int i = 0; i < glyph.width; ++i)
+               printf("%c ", " ':0IM%@"[glyph.data[j*glyph.width+i] >> 5]);
            printf("\n");
         }
         printf("\n");

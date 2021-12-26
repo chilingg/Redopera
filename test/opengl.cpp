@@ -1,7 +1,10 @@
 #include <RGame.h>
-#include <RContext.h>
-#include <RShaders.h>
-#include <RDebug.h>
+#include <render/RContext.h>
+#include <render/RShader.h>
+#include <render/RProgram.h>
+
+#include <SDL2/SDL.h>
+#include <fmt/core.h>
 
 using namespace Redopera;
 
@@ -18,22 +21,20 @@ const char *vCode =
 
 int main()
 {
-    RGame game;
+    RGame game(SDL_INIT_VIDEO);
+    RWindow window(1, 1, "OpenGL Feedback Test", SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
 
-    rDebug << "======== Using OpenGL Transform feedback to sqrt calculat ========\n";
-
-    RContext::Format format;
-    format.versionMajor = 3;
-    format.versionMinor = 3;
-    RContext context(format);
-
-    if(rCheck(!context, "Failure initialization OpenGL context!"))
-        exit(EXIT_FAILURE);
-    else
-        rDebug << "OpenGl Context " << GLVersion.major << '.' << GLVersion.minor << " created\n";
+    RContext::Format fmt;
+    fmt.debug = true;
+    fmt.forward = true;
+    fmt.rasterizer = false;
+    fmt.vSync = false;
+    fmt.versionMajor = 4;
+    fmt.versionMinor = 3;
+    RContext context(window, fmt);
 
     RShader vertex(vCode, RShader::Type::Vertex);
-    RShaders renderProg({vertex});
+    RProgram renderProg({vertex});
 
     const char * varyings[] = { "outValue" };
     glTransformFeedbackVaryings(renderProg.id(), 1, varyings, GL_INTERLEAVED_ATTRIBS);
@@ -42,7 +43,7 @@ int main()
     // Interface实例存在期间，对应程序都处于using状态
     RRPI interface = renderProg.use();
     GLuint program = renderProg.id();
-    rDebug << "Number: \t1 \t 2 \t 3 \t 4 \t 5";
+    fmt::print("Number: \t1 \t 2 \t 3 \t 4 \t 5\n");
 
     // ================ OpenGL ================
     // Reference: https://open.gl/feedback
@@ -86,8 +87,7 @@ int main()
     GLfloat feedback[5];
     glGetBufferSubData(GL_TRANSFORM_FEEDBACK_BUFFER, 0, sizeof(feedback), feedback);
 
-    rDebug << "Result:\t" << feedback[0] << '\t' << feedback[1] << '\t'
-           << feedback[2] << '\t' << feedback[3] << '\t' << feedback[4];
+    fmt::print("Result:\t{}\t{}\t{}\t{}\t{}\n", feedback[0], feedback[1], feedback[2], feedback[3], feedback[4]);
 
     glDeleteBuffers(1, &tbo);
     glDeleteBuffers(1, &vbo);

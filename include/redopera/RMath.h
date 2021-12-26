@@ -1,9 +1,9 @@
 #ifndef RMATHS_H
 #define RMATHS_H
 
-#include "dependent/glm/mat4x4.hpp"
-#include "dependent/glm/gtc/matrix_transform.hpp"
-#include "dependent/glm/gtc/type_ptr.hpp"
+#include "glm/mat4x4.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
 
 /* GLM算法和功能
  * min(genType x, genType y)   //返回最小值
@@ -13,23 +13,33 @@
  * trunc(genType x)            //返回截断整数部分
  */
 
-namespace glm {
-
-mat4 perspective(float left, float right, float bottom, float top, float near, float far);
-
-} // ns glm
+#include <RRect.h>
 
 namespace Redopera {
 
-class RDebug;
+namespace math
+{
 
-using RNumber = float;
-using RIndex = size_t;
+glm::mat4 perspective(const RRectF &rect, float near, float far, float accuracy = 0.95); // accuracy 投影之后far平面拥有的最大z轴标量
+void setPerspectiveAs(glm::mat4 &mat, const RRectF &rect, float near, float far, float accuracy);
 
-} // ns Redopera
+glm::mat4 viewport(const RRectF &rect);
+void setViewportAs(glm::mat4 &mat, const RRectF &rect);
 
-const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec3 &vec);
-const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::vec4 &vec);
-const Redopera::RDebug& operator<<(const Redopera::RDebug &d, const glm::mat4 &mat);
+glm::mat4 &unitize(glm::mat4 &mat);
+
+glm::mat4 scale(const RSizeF &size);
+void setScale(glm::mat4 &mat, const RSizeF &size);
+
+glm::mat4 move(const RPointF &pos);
+void setMove(glm::mat4 &mat, const RPointF &pos);
+
+glm::mat4 rect(const RRectF &rect, float depth = 0);
+void setRect(glm::mat4 &mat, const RRectF &rect, float depth = 0);
+void setRectAs(glm::mat4 &mat, const RRectF &rect, float depth = 0);
+
+} // ns math
+
+} // ns glm
 
 #endif // RMATHS_H

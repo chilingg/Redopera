@@ -1,20 +1,15 @@
 #ifndef RFONT_H
 #define RFONT_H
 
-#include <map>
-#include <string>
-#include <memory>
+#include "RResource.h"
+#include "../RDefine.h"
 
 class stbtt_fontinfo;
 
 namespace Redopera {
 
-using RData = uint8_t;
-
 class RFont
 {
-    using RChar = int;
-
 public:
     struct Glyph
     {
@@ -23,18 +18,12 @@ public:
         int xoff = 0;
         int yoff = 0;
         int advence = 0;
-        std::unique_ptr<const RData[]> data = nullptr;
+        std::unique_ptr<const RData[]> data;
     };
-
-    static const unsigned SOURCE_CODE_PRO_FILE_SIZE;
-    static const unsigned char* SOURCE_CODE_PRO_FILE_DATA;
 
     // sourceCodePro()定义在字体资源文件中 (SourceCodePro.cpp)
     static RFont sourceCodePro();
-
-    static void setCasheSize(unsigned size);
-    static void setDefaultFont(const RFont &font);
-    static const RFont& getDefaulteFont();
+    static RFont& defaultFont();
 
     RFont();
     explicit RFont(const std::string &path, unsigned fsize = 14);
@@ -47,27 +36,17 @@ public:
 
     bool isValid() const;
     unsigned size() const;
-    const Glyph *getFontGlyph(RChar c) const;
+    Glyph getGlyph(RChar c) const;
 
     void setSize(unsigned size);
     bool load(const std::string &path);
     bool load(const RData *data, size_t size);
-    void release();
-    void clearCache() const;
+    void free();
 
 private:
-    static RFont defaultFont;
-    static unsigned cacheMaxSize_;
-
-    struct {
-        std::shared_ptr<RData[]> file;
-        std::shared_ptr<stbtt_fontinfo> info;
-    } data_;
-
-    struct {
-        std::shared_ptr<std::map<RChar, Glyph>> caches;
-        unsigned fsize = 14;
-    } cache_;
+    unsigned fsize_ = 14;
+    std::shared_ptr<stbtt_fontinfo> info_;
+    std::shared_ptr<RData[]> file_;
 };
 
 } // Redopera

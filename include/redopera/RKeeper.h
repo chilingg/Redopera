@@ -5,55 +5,68 @@
 
 namespace Redopera {
 
-template <typename T>
+template <typename T, typename Deleter>
 class RKeeper
 {
+    static_assert(std::is_arithmetic<T>::value or std::is_pointer<T>::value, "T is not a arithmetic or pointer type!");
+    static_assert(std::is_invocable<Deleter, T>::value, "Bad deleter");
+
 public:
-    RKeeper(T value, std::function<void(T)> func):
-        free_(func),
-        value_(std::forward<T>(value)) {}
+    RKeeper(): valid_(false) {}
+
+    RKeeper(T&& value, Deleter&& func):
+        valid_(true),
+        free_(std::forward<Deleter>(func)),
+        value_(value)
+    {}
 
     RKeeper(const RKeeper &keeper) = delete;
     RKeeper& operator=(const RKeeper &keeper) = delete;
 
     RKeeper(RKeeper &&keeper):
+        valid_(keeper.valid_),
         free_(std::move(keeper.free_)),
-        value_(std::move(keeper.value_))
-    { keeper.free_ = std::function<void(T)>(); }
+        value_(keeper.value_)
+    { keeper.valid_ = false; }
 
     RKeeper& operator=(RKeeper &&keeper)
     {
+        valid_ = keeper.valid_;
         free_ = std::move(keeper.free_);
-        value_ = std::move(keeper.value_);
-        keeper.free_ = std::function<void(T)>();
+        value_ = keeper.value_;
+
+        keeper.valid_ = false;
         return *this;
     }
 
-    RKeeper() {};
-
-    operator T& () const { return value_; }
+    operator T& () { return value_; }
     operator const T& () const { return value_; }
 
-    ~RKeeper() { if(free_) free_(value_); }
+    ~RKeeper() { if(valid_) free_(value_); }
 
+    bool isValid() const { return valid_; }
     T& get() { return value_; }
 
-    void reset(const T &value, const std::function<void(T)> &func)
+    void reset(T value, std::function<void(T)> func)
     {
-        if(free_) free_(value_);
-        free_ = func;
+        if(valid_) free_(value_);
+
+        valid_ = true;
+        free_ = std::move(func);
         value_ = value;
     }
 
-    void reset()
+    T release() { valid_ = false; return value_; }
+
+    void free()
     {
-        if(free_) free_(value_);
-        free_ = std::function<void(T)>();
+        if(valid_) free_(value_);
     }
 
 private:
-    std::function<void(T)> free_;
+    bool valid_;
     T value_;
+    Deleter free_;
 };
 
 } // Redopera

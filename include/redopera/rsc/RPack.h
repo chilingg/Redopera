@@ -1,12 +1,11 @@
 #ifndef RPACK_H
 #define RPACK_H
 
+#include "../RDefine.h"
 #include <memory>
 #include <map>
 
 namespace Redopera {
-
-using RData = uint8_t;
 
 class RPack
 {

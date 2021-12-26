@@ -1,8 +1,9 @@
 #ifndef RNAME_H
 #define RNAME_H
 
-#include <functional>
+#include <vector>
 #include <string>
+#include <string_view>
 #include <mutex>
 #include <unordered_map>
 
@@ -14,6 +15,10 @@ class RName
 
 public:
     RName(const std::string &name):
+        index_(nameToIndex(name))
+    {}
+
+    RName(std::string_view name):
         index_(nameToIndex(name))
     {}
 
@@ -30,9 +35,8 @@ public:
     bool operator!=(const RName &other) const { return index_ != other.index_; }
 
     size_t hash() const { return index_; }
-    size_t index() const { return index_; }
 
-    std::string toString() const
+    std::string_view string() const
     {
         std::lock_guard lock(gMutex);
         return gTable()[index_];
@@ -51,37 +55,9 @@ private:
         return table;
     }
 
-    static size_t nameToIndex(const std::string &name)
+    static size_t nameToIndex(std::string_view name)
     {
-        static const size_t P = 19249, MOD = 3221225473ul;
-
-        NameInfo info(name);
-
-        size_t hash = 0;
-        std::for_each(info.begin(), info.end(), [&hash](char& c)
-        {
-            size_t value;
-            if('0' <= c && c <= '9')
-            {
-                value = c - 48 + 27;
-            }
-            else if('A' <= c && c <= 'Z')
-            {
-                c += 32;
-                value = c - 96;
-            }
-            else if('a' <= c && c <= 'z')
-            {
-                value = c - 96;
-            }
-            else
-            {
-                c = '_';
-                value = 37;
-            }
-
-            hash = (hash * P + value) % MOD;
-        });
+        size_t hash = std::hash<std::string_view>()(name);
 
         std::lock_guard lock(gMutex);
         auto pair = indexTable().equal_range(hash);
@@ -89,12 +65,12 @@ private:
         {
             for(auto it = pair.first; it != pair.second; ++it)
             {
-                if(gTable()[it->second] == info)
+                if(gTable()[it->second] == name)
                     return it->second;
             }
         }
 
-        gTable().push_back(std::move(info));
+        gTable().emplace_back(name);
         size_t index = gTable().size() - 1;
         indexTable().emplace(hash, index);
         return index;
@@ -104,6 +80,11 @@ private:
 
     size_t index_;
 };
+
+RName operator "" _rname(const char *str, std::size_t)
+{
+    return RName(str);
+}
 
 } // ns Redopera
 
@@ -121,5 +102,9 @@ namespace std
         }
     };
 }
+
+#ifdef REDOPERA_DEFINE_FILE
+std::mutex Redopera::RName::gMutex;
+#endif
 
 #endif // RNAME_H

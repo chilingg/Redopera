@@ -2,60 +2,57 @@
 #define RSIGSLOT_H
 
 #include <memory>
-#include <unordered_map>
 #include <functional>
+#include <map>
 
 namespace Redopera {
 
-/* 不支持多线程 */
-
-class RSlot
+class RSloter
 {
 public:
-    template<typename Sloter>
-    static void disableSlot(Sloter *sloter)
-    {
-        sloter->__RSLOT__.flag.reset();
-    }
+    using SlotFlag = std::shared_ptr<bool>;
 
-    template<typename Sloter>
-    static void resetSlot(Sloter *sloter)
-    {
-        sloter->__RSLOT__.flag = std::make_shared<bool>(true);
-    }
-
-    RSlot():
-        flag(std::make_shared<bool>(true))
+    RSloter():
+        flags_(std::make_shared<bool>(true))
     {}
 
-    RSlot(const RSlot &):RSlot() {};
-    RSlot& operator=(const RSlot &) { return *this; };
+    RSloter(const RSloter &) = delete;
+    RSloter& operator=(const RSloter &) = delete;
 
-    RSlot(RSlot &&slot):
-        flag(std::move(slot.flag))
-    {
-        slot.flag = nullptr;
-    }
+    RSloter(RSloter &&sloter):
+        flags_(std::move(sloter.flags_))
+    {}
 
-    RSlot& operator=(RSlot &&slot)
+    RSloter& operator=(RSloter &&sloter)
     {
-        flag = std::move(slot.flag);
-        slot.flag = nullptr;
+        if(&sloter == this)
+            return *this;
+
+        free();
+        flags_ = std::move(sloter.flags_);
+
         return *this;
     }
 
-    ~RSlot()
+    ~RSloter()
     {
-        flag.reset();
+        free();
     }
 
-    std::weak_ptr<bool> clone() const { return std::weak_ptr<bool>(flag); }
-    void* flagAddr() const { return flag.get(); }
+    SlotFlag& flag() { return flags_; }
+
+    void free()
+    {
+        if(flags_)
+        {
+            (*flags_) = false;
+            flags_.reset();
+        }
+    }
 
 private:
-    std::shared_ptr<bool> flag; // 存活标志
+    SlotFlag flags_;
 };
-
 
 // 在需要使用槽函数的类声明尾部展开宏 _RSLOT_TAIL_
 #define _RSLOT_DECLARE_ public: Redopera::RSlot __RSLOT__;
@@ -66,10 +63,8 @@ class RSignal
 public:
     RSignal() = default;
 
-    RSignal(const RSignal &)
-    {}
-    RSignal& operator=(const RSignal &)
-    {}
+    RSignal(const RSignal &) = delete;
+    RSignal& operator=(const RSignal &) = delete;
 
     RSignal(const RSignal &&slot):
         slots_(std::move(slot.slots_))
@@ -89,8 +84,9 @@ public:
     {
         for(auto it = slots_.begin(); it != slots_.end();)
         {
-            bool b = it->second(std::forward<Args>(args)...);
-            if (!b)
+            if(*it->second.first)
+                it->second.second(std::forward<Args>(args)...);
+            else
             {
                 it = slots_.erase(it);
                 continue;
@@ -99,44 +95,20 @@ public:
         }
     }
 
-    template<typename Sloter>
-    void connect(const Sloter &sloter, const std::function<void(Args ...)> &slot)
+    size_t connect(RSloter *sloter, std::function<void(Args ...)> slot)
     {
-        auto weakptr = sloter.__RSLOT__.clone();
-        auto func = std::function<bool(Args ... args)>([weakptr, slot](Args ... args){
-            auto sp = weakptr.lock();
-            if(!sp) return false; // 若槽函数所属对象已析构或已主动disableSlot
+        static RSloter defaultSloter;
 
-            slot(std::forward<Args>(args)...);
-            return true;
-        });
+        if(!sloter)
+            sloter = &defaultSloter;
 
-        slots_.emplace(sloter.__RSLOT__.flagAddr(), func);
+        slots_.emplace(idCount_, std::make_pair(sloter->flag(), std::move(slot)));
+        return idCount_++;
     }
 
-    void connect(const RSlot& slot, const std::function<void(Args ...)> &sfunc)
+    bool disconnect(size_t id)
     {
-        auto weakptr = slot.clone();
-        auto func = std::function<bool(Args ... args)>([weakptr, sfunc](Args ... args){
-            auto sp = weakptr.lock();
-            if(!sp) return false; // 若槽函数所属对象已析构或已主动disableSlot
-
-            sfunc(std::forward<Args>(args)...);
-            return true;
-        });
-
-        slots_.emplace(slot.flagAddr(), func);
-    }
-
-    void disconnect(RSlot *sloter)
-    {
-        slots_.erase(sloter->flagAddr());
-    }
-
-    template<typename Sloter>
-    void disconnect(Sloter *sloter)
-    {
-        slots_.erase(sloter->__RSLOT__.flagAddr());
+        return slots_.erase(id);
     }
 
     void disconnectAll()
@@ -150,7 +122,8 @@ public:
     }
 
 private:
-    std::unordered_multimap<void*, std::function<bool(Args ... args)>> slots_;
+    size_t idCount_ = 0;
+    std::map<size_t, std::pair<RSloter::SlotFlag, std::function<void(Args ... args)>>> slots_;
 };
 
 } // Redopera

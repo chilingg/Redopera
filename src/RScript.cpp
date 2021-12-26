@@ -1,6 +1,5 @@
 #include <rsc/RScript.h>
-#include <RResource.h>
-#include <RDebug.h>
+#include <RFormat.h>
 
 using namespace Redopera;
 
@@ -199,7 +198,7 @@ bool RScript::call(const std::string &func, std::initializer_list<double> numLis
 
     if(lua_pcall(lua_.get(), numList.size()+strList.size(), resultN, 0) != 0)
     {
-        rPrError("Failure call in function <" + func + ">: " + lua_tostring(lua_.get(), -1));
+        rError("Failure call in function <{}>: {}\n", func, lua_tostring(lua_.get(), -1));
         lua_pop(lua_.get(), -1);
         return false;
     }
@@ -212,13 +211,12 @@ bool RScript::load(const std::string &lua)
     std::shared_ptr<lua_State> temp(luaL_newstate(), lua_close);
     luaL_openlibs(temp.get());
 
-    std::string path = RResource::rscPath(lua);
-    if(luaL_dofile(temp.get(), path.c_str()))
+    if(luaL_dofile(temp.get(), lua.c_str()))
     {
         if(luaL_dostring(temp.get(), lua.c_str()))
         {
-            rPrError(lua_tostring(temp.get(), -2));
-            rPrError(lua_tostring(temp.get(), -1));
+            rError(lua_tostring(temp.get(), -2));
+            rError(lua_tostring(temp.get(), -1));
             return false;
         }
         else {
@@ -237,7 +235,7 @@ bool RScript::load(const RData *buff, size_t size, const std::string &name)
 
     if(luaL_loadbuffer(temp.get(), reinterpret_cast<const char*>(buff), size, name.c_str()) || lua_pcall(temp.get(), 0, 0, 0))
     {
-        rPrError(lua_tostring(temp.get(), -1));
+        rError(lua_tostring(temp.get(), -1));
         return false;
     }
 
@@ -247,13 +245,12 @@ bool RScript::load(const RData *buff, size_t size, const std::string &name)
 
 bool RScript::import(const std::string &lua)
 {
-    std::string path = RResource::rscPath(lua);
-    if(luaL_dofile(lua_.get(), path.c_str()))
+    if(luaL_dofile(lua_.get(), lua.c_str()))
     {
         if(luaL_dostring(lua_.get(), lua.c_str()))
         {
-            rPrError(lua_tostring(lua_.get(), -2));
-            rPrError(lua_tostring(lua_.get(), -1));
+            rError(lua_tostring(lua_.get(), -2));
+            rError(lua_tostring(lua_.get(), -1));
             pop(2);
 
             return false;
@@ -270,7 +267,7 @@ bool RScript::import(const RData *buff, size_t size, const std::string &name)
 {
     if(luaL_loadbuffer(lua_.get(), reinterpret_cast<const char*>(buff), size, name.c_str()) || lua_pcall(lua_.get(), 0, 0, 0))
     {
-        rPrError(lua_tostring(lua_.get(), -1));
+        rError(lua_tostring(lua_.get(), -1));
         pop();
         return false;
     }

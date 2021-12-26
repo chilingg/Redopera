@@ -1,69 +1,66 @@
 #ifndef RCOLOR_H
 #define RCOLOR_H
 
-#include <cstdint>
-#include <string>
+#include "RDefine.h"
 
 namespace Redopera {
-
-using RGBA = uint32_t;
 
 class RColor
 {
 public:
-    explicit RColor(RGBA rgba = 0xffu) noexcept:
-        rgba_(rgba) {}
+    union ColorData {
+        struct {
+            uint8_t a, b, g, r;
+        };
+        uint32_t rgba;
+    };
 
-    RColor(uint32_t r, uint32_t g, uint32_t b, uint32_t a = 0xffu) noexcept
+    explicit RColor(RGBA rgba = 0xffffffffu) noexcept { data_.rgba = rgba; }
+
+    RColor(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 0xffu) noexcept:
+        data_{ a, b, g, r }
+    {}
+
+    bool operator==(const RColor &color) const noexcept
     {
-        rgba_ = a & 0xffu;
-        rgba_ |= (0xffu & b) << 8;
-        rgba_ |= (0xffu & g) << 16;
-        rgba_ |= r << 24;
+        return data_.rgba == color.data_.rgba;
     }
 
-    bool operator==(const RColor &color) const
+    bool operator!=(const RColor &color) const noexcept
     {
-        return rgba_ == color.rgba_;
+        return data_.rgba != color.data_.rgba;
     }
 
-    bool operator!=(const RColor &color) const
-    {
-        return rgba_ != color.rgba_;
-    }
+    uint8_t r() const noexcept { return data_.r; }
+    uint8_t g() const noexcept { return data_.g; }
+    uint8_t b() const noexcept { return data_.b; }
+    uint8_t a() const noexcept { return data_.a; }
 
-    uint8_t r() const { return rgba_ >> 24; }
-    uint8_t g() const { return rgba_ >> 16 & 0xffu; }
-    uint8_t b() const { return rgba_ >> 8 & 0xffu; }
-    uint8_t a() const { return rgba_ & 0xffu; }
+    float rf() const noexcept { return data_.r / 255.f; }
+    float gf() const noexcept { return data_.g / 255.f; }
+    float bf() const noexcept { return data_.b / 255.f; }
+    float af() const noexcept { return data_.a / 255.f; }
 
-    RGBA rgba() const { return rgba_; }
-    RGBA rgb() const { return rgba_ >> 8; }
-    RGBA bgr() const { return ((b() << 16) | (g() << 8) | r()); }
-    RGBA abgr() const { return ((a() << 24) | (b() << 16) | (g() << 8) | r()); }
+    RGBA rgba() const noexcept { return data_.rgba; }
+    RGBA rgb() const noexcept { return data_.rgba >> 8; }
+    RGBA bgr() const noexcept { return ColorData { data_.r, data_.g, data_.b, 0 }.rgba; }
+    RGBA abgr() const noexcept { return ColorData { data_.r, data_.g, data_.b, data_.a }.rgba; }
 
-    void setR(uint32_t r) { rgba_ = (rgba_ & 0xffffff) | r << 24; }
-    void setG(uint32_t g) { rgba_ = (rgba_ & 0xff00ffff) | (0xffu & g) << 16; }
-    void setB(uint32_t b) { rgba_ = (rgba_ & 0xffff00ff) | (0xffu & b) << 8; }
-    void setA(uint32_t a) { rgba_ = (rgba_ & 0xffffff00) | (a & 0xffu); }
-    void setRGBA(RGBA rgba) { rgba_ = rgba; }
-    void setRGB(RGBA rgb) { rgba_ &= 0x000000ff; rgba_ |= (rgb << 8); }
+    ColorData data() const noexcept { return data_; }
 
-    void setRGBA(uint32_t r, uint32_t g, uint32_t b, uint32_t a) {
-        rgba_ = (r << 24) | ((0xffu & g) << 16) | ((0xffu & b) << 8) | (a & 0xffu);
-    }
+    void setR(uint8_t r) noexcept { data_.r = r; }
+    void setG(uint8_t g) noexcept { data_.g = g; }
+    void setB(uint8_t b) noexcept { data_.b = b; }
+    void setA(uint8_t a) noexcept { data_.a = a; }
+    void setRGBA(RGBA rgba) noexcept { data_.rgba = rgba; }
+    void setRGB(RGBA rgb) noexcept { data_.rgba &= 0xff; data_.rgba |= (rgb << 8); }
 
-    void setRGB(uint32_t r, uint32_t g, uint32_t b) {
-        rgba_ = (r << 24) | ((0xffu & g) << 16) | ((0xffu & b) << 8) | (rgba_ & 0xffu);
-    }
+    void setRGBA(uint8_t r, uint8_t g, uint8_t b, uint8_t a) noexcept { data_ = { a, b, g, r }; }
 
-    std::string toString() const
-    {
-        return "(r:" + std::to_string(r()) + " g:" + std::to_string(g()) + " b:" + std::to_string(b()) + " a:" + std::to_string(a()) + ") ";
-    }
+    void setRGB(uint8_t r, uint8_t g, uint8_t b) noexcept { data_ = { data_.a, b, g, r }; }
 
 private:
-    RGBA rgba_;
+    ColorData data_;
 };
 
 } // ns Redopera

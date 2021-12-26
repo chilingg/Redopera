@@ -1,33 +1,58 @@
-#include <RDebug.h>
-#include <RAudioStream.h>
+#include <RFormat.h>
+#include <RGame.h>
+#include <RWindow.h>
+#include <rsc/RSoundEffect.h>
+#include <SDL2/SDL.h>
 
 using namespace Redopera;
 
-void message()
+int main( int argc, char* args[] )
 {
-    rPrError("Please enter a path for mp3 file!");
-    exit(EXIT_SUCCESS);
-}
+    RGame g(SDL_INIT_AUDIO | SDL_INIT_EVENTS);
+    RWindow w(800, 540, "Sound");
 
-int main(int argc, const char *argv[])
-{
-    if(argc != 2)
-        message();
+    rCheck(Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0,
+           fmt::format("SDL_mixer could not initialize! Error: {}", Mix_GetError()));
 
-    RMp3 mp3(argv[1]);
-    if(!mp3.isValid())
-        message();
+    RSoundEffect se("TestFile/bicycle_bell.mp3");
 
-    RAudioStream audio(mp3);
-    if(!audio.startStream())
-        return 0;
+    const char *info = "pressed 1 playing sound effect,\n"
+                       "pressed ↑ ↓ change volume,\n";
 
-    rDebug << "Press Q to quit play";
-    char c;
-    do {
-        std::cin >> c;
+    fmt::print("{}", info);
+
+    int volume = MIX_MAX_VOLUME;
+    bool quit = false;
+    SDL_Event e;
+    while( !quit )
+    {
+        while( SDL_PollEvent( &e ) != 0 )
+        {
+            if( e.type == SDL_QUIT )
+            {
+                quit = true;
+            }
+            else if(e.type == SDL_KEYDOWN)
+            {
+                switch(e.key.keysym.sym)
+                {
+                case SDLK_1:
+                    se.play();
+                    break;
+                case SDLK_DOWN:
+                    volume -= 10;
+                    Mix_Volume(-1, volume);
+                    fmt::print("Channels: {}, volume: {}\n", Mix_AllocateChannels(-1), volume);
+                    break;
+                case SDLK_UP:
+                    volume += 10;
+                    Mix_Volume(-1, volume);
+                    fmt::print("Channels: {}, volume: {}\n", Mix_AllocateChannels(-1), volume);
+                    break;
+                }
+            }
+        }
     }
-    while(c != 'q' && c != 'Q');
 
     return 0;
 }

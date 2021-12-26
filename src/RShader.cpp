@@ -1,20 +1,19 @@
-#include <rsc/RShader.h>
+#include <render/RShader.h>
 #include <rsc/RFile.h>
-#include <RDebug.h>
 
 using namespace Redopera;
 
-const std::unordered_set<RShader::Type> RShader::TYPE_LIST
-{
-    RShader::Type::Vertex,
-    RShader::Type::Fragment,
-    RShader::Type::TessContol,
-    RShader::Type::TessEvaluation,
-    RShader::Type::Geometry,
-    RShader::Type::Compute,
-};
+namespace  {
 
-const std::string &RShader::shaderTypeName(Type type)
+void deleteShader(GLuint *id)
+{
+    glDeleteShader(*id);
+    delete id;
+}
+
+} // ns
+
+std::string_view RShader::shaderTypeName(Type type)
 {
     static const std::string vetex      = "VertexShader";
     static const std::string fragment   = "FragmentShader";
@@ -23,7 +22,8 @@ const std::string &RShader::shaderTypeName(Type type)
     static const std::string geometry   = "GeometryShader";
     static const std::string compute    = "ComputeShader";
 
-    switch(type) {
+    switch(type)
+    {
     case Type::Vertex:
         return vetex;
     case Type::Fragment:
@@ -83,7 +83,7 @@ RShader::Type RShader::type() const
     return type_;
 }
 
-const std::string &RShader::typeName() const
+std::string_view RShader::typeName() const
 {
     return shaderTypeName(type_);
 }
@@ -96,34 +96,33 @@ GLuint RShader::id() const
 bool RShader::load(const std::string &shader, Type type)
 {
     const char *code;
-    RFile file;
+    std::unique_ptr<RData[]> file;
 
     if(shader.find('\n') == std::string::npos)
     {
         file = RFile::load(shader);
-        if (!file.data)
+        if (!file)
         {
-            rPrError("Failed to load shader file <" + RResource::rscPath(shader) + '>');
+            rError("Failed to load shader file {}!\n", shader);
             return false;
         }
         else
-            code = reinterpret_cast<char*>(file.data.get());
+            code = reinterpret_cast<char*>(file.get());
     }
     else
         code = shader.c_str();
 
     std::shared_ptr<GLuint> id(new GLuint(glCreateShader(static_cast<GLenum>(type))), deleteShader);
-    const GLchar *cp = code;
-    glShaderSource(*id, 1, &cp, nullptr);
+    glShaderSource(*id, 1, &code, nullptr);
     glCompileShader(*id);
 
     int success;
     glGetShaderiv(*id, GL_COMPILE_STATUS, &success);
-    if(rCheck(!success, "Failed to compile shader " + shaderTypeName(type) + shader))
+    if(rCheck(!success, "Failed to compile shader {}: {}\n", shaderTypeName(type), shader))
     {
         char infoLog[256];
         glGetShaderInfoLog(*id, sizeof(infoLog), nullptr, infoLog);
-        rPrError(infoLog);
+        rError(infoLog);
         return false;
     }
 
@@ -132,15 +131,9 @@ bool RShader::load(const std::string &shader, Type type)
     return true;
 }
 
-void RShader::release()
+void RShader::free()
 {
     shaderID_.reset();
-}
-
-void RShader::deleteShader(GLuint *id)
-{
-    glDeleteShader(*id);
-    delete id;
 }
 
 void swap(RShader &shader1, RShader &shader2)

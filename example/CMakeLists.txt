@@ -1,18 +1,10 @@
-cmake_minimum_required(VERSION 3.1)
-
-include_directories(${CMAKE_SOURCE_DIR}/include/redopera)
-
-link_directories(${CMAKE_BINARY_DIR})
+cmake_minimum_required(VERSION 3.5)
 
 add_executable(triangle triangle.cpp)
-target_link_libraries(triangle redopera)
+target_link_libraries(triangle PRIVATE redopera)
 
 add_executable(plane plane.cpp)
-target_link_libraries(plane redopera)
+target_link_libraries(plane PRIVATE redopera)
 
-add_executable(texts texts.cpp)
-target_link_libraries(texts redopera)
-
-add_executable(particle particle.cpp)
-target_link_libraries(particle redopera)
-
+add_executable(text text.cpp)
+target_link_libraries(text PRIVATE redopera)

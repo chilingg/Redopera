@@ -1,143 +1,198 @@
-#include <RWindow.h>
-#include <RPlane.h>
-#include <RGame.h>
-#include <RKeeper.h>
-#include <RInput.h>
+#include <render/ROpenGL.h>
+#include <render/RProgram.h>
+#include <render/RContext.h>
+#include <render/RTexture.h>
+#include <render/RRenderer.h>
+#include <rsc/RImage.h>
+#include <rsc/RFont.h>
+
 #include <RTimer.h>
-#include <RTextsLoader.h>
-#include <RRenderSys.h>
+#include <RGame.h>
+#include <RInput.h>
+#include <RWindow.h>
 
 using namespace Redopera;
 
 constexpr float SIZE = 480;
 
-class TestCtl
+struct Plane
+{
+    RRectF rect;
+    RTexture texture;
+};
+
+class Renderer : public RRenderer
 {
 public:
-    TestCtl():
-        plane({ RPoint(), RSize(36, 36) }, RTexture(RImage::redoperaIcon())),
-        viewpro(0, 0, SIZE, SIZE),
-        renderer()
+    Renderer():
+        project_(program_.getUniformLoc("project")),
+        model_(program_.getUniformLoc("model")),
+        hue_(program_.getUniformLoc("hue"))
     {
-        renderer.setViewMove();
+        glClearColor(.05f, 0.f, 0.1f, 1.f);
+        // 设置混合
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    }
 
-        RRectF rect = plane.rect();
-        rect.setCenter(viewpro.center());
-        plane.setPos(rect.pos());
-        plane.flipV();
+    const GLuint project_, model_, hue_;
+};
 
-        RTextsLoader arrowLoad(L"↑", 50, 50);
+class Scene
+{
+public:
+    Scene():
+        plane{{ RPointF(), RSizeF(36, 36) }, RImage::redoperaIcon() },
+        viewport(0, 0, SIZE, SIZE)
+    {
+        RRectF rect = plane.rect;
+        rect.setCenter(viewport.center());
+        plane.rect.setPos(rect);
 
-        arrowLoad.setAlign(RTextsLoader::Align::Mind, RTextsLoader::Align::Mind);
-        arrowLoad.setFontSize(36);
+        RFont font;
+        font.setSize(36);
+        RFont::Glyph glyph = font.getGlyph(L'↑');
+        RTexture::setTextureFomat(RTexture::SingleToLinear4);
+        arrow.load(glyph.data.get(), glyph.width, glyph.height, 1);
+        RTexture::setTextureFomat(RTexture::Nearest4);
 
-        arrow[0].setTexture(arrowLoad.texture());
-        arrow[0].setSize(arrowLoad.size());
+        rect.setSize(arrow.size().convert<float>());
+        rect.setCenter(viewport.center());
 
-        arrow[1] = arrow[0];
-        arrow[1].setRotate(0, 0, glm::radians(90.0f));
+        arrowModel[0] = glm::translate(glm::mat4(1), { rect.centerX(), rect.centerY() + 60, 0 });
+        arrowModel[0] = glm::rotate(arrowModel[0], glm::radians(180.f), { 0.f, 0.f, 1.f });
+        arrowModel[0] = glm::scale(arrowModel[0], { rect.width(), rect.height(), 0 });
 
-        arrow[2] = arrow[0];
-        arrow[2].setRotate(0, 0, glm::radians(180.0f));
+        arrowModel[1] = glm::translate(glm::mat4(1), { rect.centerX(), rect.centerY() - 60, 0 });
+        arrowModel[1] = glm::scale(arrowModel[1], { rect.width(), rect.height(), 0 });
 
-        arrow[3] = arrow[0];
-        arrow[3].setRotate(0, 0, glm::radians(270.0f));
+        arrowModel[2] = glm::translate(glm::mat4(1), { rect.centerX() + 60, rect.centerY(), 0 });
+        arrowModel[2] = glm::rotate(arrowModel[2], glm::radians(90.f), { 0.f, 0.f, 1.f });
+        arrowModel[2] = glm::scale(arrowModel[2], { rect.width(), rect.height(), 0 });
+
+        arrowModel[3] = glm::translate(glm::mat4(1), { rect.centerX() - 60, rect.centerY(), 0 });
+        arrowModel[3] = glm::rotate(arrowModel[3], glm::radians(-90.f), { 0.f, 0.f, 1.f });
+        arrowModel[3] = glm::scale(arrowModel[3], { rect.width(), rect.height(), 0 });
+
+        auto rpi = renderer.program().use();
+        rpi.setUniformMat(renderer.project_, math::viewport(viewport));
     }
 
     void update()
     {
-        RRPI rpi = renderer.shaders().use();
-        rpi.setUniform(renderer.loc(RRenderSys::hue), .1f, .1f, .14f, 1.f);
-        renderer << arrow[0] << arrow[1] << arrow[2] << arrow[3];
+        glClear(GL_COLOR_BUFFER_BIT);
 
-        rpi.setUniform(renderer.loc(RRenderSys::hue), 1.f, 1.f, 1.f, 1.f);
-        renderer << plane;
-    }
+        renderer.bindVAO();
+        RRPI rpi = renderer.program().use();
 
-    void translation(int w, int h)
-    {
-        RRect info(0, 0, w, h);
-
-        renderer.setViewport(0, info.width(), 0, info.height());
-
-        float xratio = info.width() / viewpro.width();
-        float yratio = info.height() / viewpro.height();
-        plane.setPos(plane.pos().x() * xratio, plane.pos().y() * yratio);
-
-        viewpro = info;
-
-        arrow[0].rRect().setCenter(info.center());
-        arrow[0].rRect().move(0, 60);
-        arrow[1].rRect().setCenter(info.center());
-        arrow[1].rRect().move(-60, 0);
-        arrow[2].rRect().setCenter(info.center());
-        arrow[2].rRect().move(0, -60);
-        arrow[3].rRect().setCenter(info.center());
-        arrow[3].rRect().move(60, 0);
-    }
-
-    void processEvent()
-    {
-        RWindow* window = RWindow::focusWindow();
-        if(window->cursorMode() == RWindow::CursorMode::Hidden)
+        rpi.setUniform(renderer.hue_, .1f, .1f, .2f, 1.f);
+        for(int i = 0; i < 4; ++i)
         {
-            if(RInput::cursorMove())
-                window->setCursorModel(RWindow::CursorMode::Normal);
+            rpi.setUniformMat(renderer.model_, arrowModel[i]);
+            arrow.bind();
+            renderer.draw();
         }
-        else if(window->cursorMode() == RWindow::CursorMode::Normal)
+
+        math::setRectAs(model, plane.rect);
+        model[1][1] = -model[1][1];
+        rpi.setUniformMat(renderer.model_, model);
+        rpi.setUniform(renderer.hue_, 1.f, 1.f, 1.f, 1.f);
+        plane.texture.bind();
+        renderer.draw();
+
+        renderer.unbindVAO();
+    }
+
+    void processEvent(const SDL_Event &e)
+    {
+        if(e.type == SDL_WINDOWEVENT)
         {
-            if(RInput::cursorMove())
+            if(e.window.event == SDL_WINDOWEVENT_RESIZED)
+            {
+                glViewport(0, 0, e.window.data1, e.window.data2);
+
+                auto pos = viewport.center();
+                viewport.setSize(e.window.data1, e.window.data2);
+                viewport.setCenter(pos);
+
+                auto rpi = renderer.program().use();
+                rpi.setUniformMat(renderer.project_, math::viewport(viewport));
+            }
+        }
+    }
+
+    void process()
+    {
+        if(RWindow::queryCursorStatus() == SDL_DISABLE)
+        {
+            if(RInput::mouse().move())
+                RWindow::showCursor(true);
+        }
+        else if(RWindow::queryCursorStatus() == SDL_ENABLE)
+        {
+            if(RInput::mouse().move())
                 timer.start();
             else if(timer.elapsed() > 1500)
-                window->setCursorModel(RWindow::CursorMode::Hidden);
+                RWindow::showCursor(false);
         }
 
-        // inputEvent只能监测感兴趣的按键
-        if(RInput::press(Keys::KEY_ESCAPE))
-            window->closeWindow();
+        if(RInput::key().press(SDL_SCANCODE_ESCAPE))
+        {
+            SDL_Event e;
+            e.type = SDL_QUIT;
+            SDL_PushEvent(&e);
+        }
 
-        RPoint p;
+        RPointF p;
         int step = 5;
-        if(RInput::status(Keys::KEY_LEFT) == BtnAct::PRESS)
+        if(RInput::key().status(SDL_SCANCODE_LEFT) == R_PRESSED)
             p.rx() -= step;
-        if(RInput::status(Keys::KEY_RIGHT) == BtnAct::PRESS)
+        if(RInput::key().status(SDL_SCANCODE_RIGHT) == R_PRESSED)
             p.rx() += step;
-        if(RInput::status(Keys::KEY_UP) == BtnAct::PRESS)
+        if(RInput::key().status(SDL_SCANCODE_UP) == R_PRESSED)
             p.ry() += step;
-        if(RInput::status(Keys::KEY_DOWN) == BtnAct::PRESS)
+        if(RInput::key().status(SDL_SCANCODE_DOWN) == R_PRESSED)
             p.ry() -= step;
 
-        if(!p.isOrigin() && viewpro.contains(plane.rect() + p))
-            plane.move(p);
+        if(!p.isOrigin())
+            plane.rect.move(p);
     }
 
 private:
-    RPlane plane;
-    RPlaneT arrow[4];
-    RRectF viewpro;
+    Plane plane;
+    RTexture arrow;
+    RRectF viewport;
     RTimer timer;
-    RRenderSys renderer;
-
-    _RSLOT_DECLARE_
+    Renderer renderer;
+    glm::mat4 model;
+    glm::mat4 arrowModel[4];
 };
 
 int main()
 {
     RGame game;
-    RWindow::Format format;
-    format.background = 0x101018ff;
-    format.debug = false;
-    RWindow window(SIZE, SIZE, "Plane", format);
+    RWindow window(SIZE, SIZE, "Plane", SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    RContext context(window, RContext::Format());
 
-    TestCtl t;
-    window.resized.connect(t, [&t](int w, int h){ t.translation(w, h); });
+    Scene scene;
 
-    window.show();
-    return window.exec([&t]
+    bool quit = false;
+    SDL_Event e;
+    while(!quit)
     {
-        t.processEvent();
-        t.update();
+        while(SDL_PollEvent(&e) != 0 )
+        {
+            if(e.type == SDL_QUIT)
+                quit = true;
 
-        return 0;
-    });
+            scene.processEvent(e);
+        }
+
+        scene.process();
+        scene.update();
+
+        SDL_GL_SwapWindow(window.handle());
+    }
+
+   return 0;
 }

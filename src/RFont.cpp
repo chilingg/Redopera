@@ -1,67 +1,46 @@
 #include <rsc/RFont.h>
 #include <rsc/RFile.h>
-#include <RDebug.h>
-#include <stb_truetype.h>
-#include <SourceCodePro.h>
 
-#include <cstring>
-#include <atomic>
+#include <extern/stb/stb_truetype.h>
 
 using namespace Redopera;
 
-unsigned RFont::cacheMaxSize_ = 1000;
-RFont RFont::defaultFont(SOURCE_FONT_DATA, SOURCE_FONT_SIZE);
-const unsigned RFont::SOURCE_CODE_PRO_FILE_SIZE = SOURCE_FONT_SIZE;
-const unsigned char* RFont::SOURCE_CODE_PRO_FILE_DATA = SOURCE_FONT_DATA;
-
-RFont RFont::sourceCodePro()
+RFont &RFont::defaultFont()
 {
-    return RFont(SOURCE_FONT_DATA, SOURCE_FONT_SIZE);
-}
-
-void RFont::setCasheSize(unsigned size)
-{
-    cacheMaxSize_ = size;
-}
-
-void RFont::setDefaultFont(const RFont &font)
-{
-    defaultFont = font;
-}
-
-const RFont &RFont::getDefaulteFont()
-{
-    return defaultFont;
+    static RFont font(sourceCodePro());
+    return font;
 }
 
 RFont::RFont():
-    RFont(getDefaulteFont())
+    RFont(defaultFont())
 {
 
 }
 
 RFont::RFont(const std::string &path, unsigned fsize):
-    cache_{ std::make_shared<std::map<RChar, Glyph>>(), fsize }
+    fsize_(fsize)
 {
     load(path);
 }
 
 RFont::RFont(const RData *data, const size_t size, unsigned fsize):
-    cache_{ std::make_shared<std::map<RChar, Glyph>>(), fsize }
+    fsize_(fsize)
 {
     load(data, size);
 }
 
 RFont::RFont(const RFont &font):
-    data_(font.data_),
-    cache_(font.cache_)
+    fsize_(font.fsize_),
+    info_(font.info_),
+    file_(font.file_)
 {
 
 }
 
 RFont::RFont(const RFont &&font):
-    data_{ std::move(font.data_.file), std::move(font.data_.info) },
-    cache_{ std::move(font.cache_.caches), font.cache_.fsize }
+    fsize_(font.fsize_),
+    info_(std::move(font.info_)),
+    file_(std::move(font.file_))
 {
 
 }
@@ -74,91 +53,75 @@ RFont &RFont::operator=(RFont font)
 
 void RFont::swap(RFont &font)
 {
-    data_.file.swap(font.data_.file);
-    data_.info.swap(font.data_.info);
-    cache_.caches.swap(font.cache_.caches);
-    using std::swap;
-    swap(cache_.fsize, font.cache_.fsize);
+    std::swap(fsize_, font.fsize_);
+    std::swap(info_, font.info_);
+    std::swap(file_, font.file_);
 }
 
 bool RFont::isValid() const
 {
-    return data_.file != nullptr;
+    return info_.operator bool();
 }
 
 unsigned RFont::size() const
 {
-    return cache_.fsize;
+    return fsize_;
 }
 
-const RFont::Glyph* RFont::getFontGlyph(RFont::RChar c) const
+RFont::Glyph RFont::getGlyph(RChar c) const
 {
-    Glyph &glyph = (*cache_.caches)[c];
-    if(!glyph.data)
-    {
-        float scale = stbtt_ScaleForMappingEmToPixels(data_.info.get(), cache_.fsize);
-        glyph.data.reset(stbtt_GetCodepointBitmap(
-                    data_.info.get(), 0, scale,
-                    c, &glyph.width, &glyph.height, &glyph.xoff, &glyph.yoff));
-        stbtt_GetCodepointHMetrics(data_.info.get(), c, &glyph.advence, nullptr);
-        glyph.advence *= scale;
+    Glyph glyph;
 
-        if(cache_.caches->size() > cacheMaxSize_)
-            clearCache();
-    }
+    float scale = stbtt_ScaleForMappingEmToPixels(info_.get(), fsize_);
+    glyph.data.reset(stbtt_GetCodepointBitmap(info_.get(), 0, scale, c, &glyph.width, &glyph.height, &glyph.xoff, &glyph.yoff));
+    stbtt_GetCodepointHMetrics(info_.get(), c, &glyph.advence, nullptr);
+    glyph.advence *= scale;
 
-    return &glyph;
+    return glyph;
 }
 
 void RFont::setSize(unsigned size)
 {
-    if (size != cache_.fsize)
-    {
-        cache_.caches = std::make_shared<std::map<RChar, Glyph>>();
-        cache_.fsize = size;
-    }
+    fsize_ = size;
 }
 
 bool RFont::load(const std::string &path)
 {
-    RFile file = RFile::load(path);
-
-    rCheck(!file.size, "Failed to load font in " + path);
-
-    std::shared_ptr<stbtt_fontinfo> info = std::make_shared<stbtt_fontinfo>();
-    stbtt_InitFont(info.get(), file.data.get(), stbtt_GetFontOffsetForIndex(file.data.get(),0));
-
-    if(rCheck(info->numGlyphs == 0, "Unknow font file in " + path))
+    std::unique_ptr<RData[]> data = RFile::load(path);
+    if(!data)
         return false;
 
-    data_ = { std::move(file.data), std::move(info) };
+    auto info = std::make_shared<stbtt_fontinfo>();
+    stbtt_InitFont(info.get(), data.get(), stbtt_GetFontOffsetForIndex(data.get(), 0));
+
+    if(rCheck(info->numGlyphs == 0, "Unknow font file in {}!\n", path))
+        return false;
+
+    info_ = std::move(info);
+    file_.reset(data.release());
     return true;
 }
 
 bool RFont::load(const RData *data, size_t size)
 {
-    std::shared_ptr<stbtt_fontinfo> info = std::make_shared<stbtt_fontinfo>();
+    auto info = std::make_shared<stbtt_fontinfo>();
     stbtt_InitFont(info.get(), data, 0);
 
-    if(rCheck(info->numGlyphs == 0, "Unknow font file"))
+    if(rCheck(info->numGlyphs == 0, "Unknow font file!\n"))
         return false;
 
-    std::shared_ptr<RData[]> p(new RData[size]);
-    std::memcpy(p.get(), data, size);
-    data_ = { std::move(p), std::move(info) };
+
+    //file_ = std::make_shared<RData[]>(size);
+    file_ = std::shared_ptr<RData[]> (new RData[size]);
+    std::memcpy(file_.get(), data, size);
+    info_ = std::move(info);
     return true;
 }
 
-void RFont::release()
+void RFont::free()
 {
-    data_.file.reset();
-    data_.info.reset();
-    cache_.caches.reset();
-}
-
-void RFont::clearCache() const
-{
-    *cache_.caches = std::map<RChar, Glyph>();
+    info_.reset();
+    file_.reset();
 }
 
 void swap(RFont &font1, RFont &font2)

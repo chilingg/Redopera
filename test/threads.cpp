@@ -1,5 +1,5 @@
-#include <RDebug.h>
-#include <RThreadPool.h>
+#include <iostream>
+#include <thread/RThreadPool.h>
 #include <RTimer.h>
 
 using namespace Redopera;
@@ -16,24 +16,24 @@ std::atomic_int count;
 
 int main()
 {
-    RTimerNS timer;
+    RStopwatch timer;
     unsigned tNum = std::thread::hardware_concurrency() > 1 ? std::thread::hardware_concurrency() : 1;
 
-    rDebug << "\n======== Multithread Test ========\n\n"
+    std::cout << "\n======== Multithread Test ========\n\n"
               "Count prime number in 0~50000: \n";
 
-    rDebug << "Using single thread...";
+    std::cout << "Using single thread...\n";
 
     timer.start();
     count = 0;
     for(unsigned i = 0; i < 50000; ++i)
         if(primeNum(i)) ++count;
 
-    rDebug << "Result: " + std::to_string(count)
-              + " Time: " + std::to_string(timer.elapsed()) + "ns\n";
+    std::cout << "Result: " + std::to_string(count)
+              + " Time: " + std::to_string(timer.elapsed()) + "ms\n";
 
-    rDebug << "Using thread poll calculate single tasks(50000)... "
-           << "Threads: " + std::to_string(tNum);
+    std::cout << "Using thread poll calculate single tasks(50000)... "
+           << "Threads: " + std::to_string(tNum) << '\n';
 
     timer.start();
     count = 0;
@@ -49,12 +49,12 @@ int main()
         std::this_thread::yield();
     pool.waitingForDone();
 
-    rDebug << "Result: " + std::to_string(count)
-              + " Time: " + std::to_string(timer.elapsed()) + "ns\n";
+    std::cout << "Result: " + std::to_string(count)
+              + " Time: " + std::to_string(timer.elapsed()) + "ms\n";
 
-    rDebug << "Using thread poll calculate blocked tasks... "
+    std::cout << "Using thread poll calculate blocked tasks... "
            << "Threads: " + std::to_string(tNum)
-              + " Block: " + std::to_string(50000 / 100);
+              + " Block: " + std::to_string(50000 / 100) << '\n';
 
     timer.start();
     pool.start();
@@ -80,12 +80,12 @@ int main()
         count += f.get();
     pool.waitingForDone();
 
-    rDebug << "Result: " + std::to_string(count)
-              + " Time: " + std::to_string(timer.elapsed()) + "ns\n";
+    std::cout << "Result: " + std::to_string(count)
+              + " Time: " + std::to_string(timer.elapsed()) + "ms\n";
 
-    rDebug << "Using multithread calculate blocked tasks... "
+    std::cout << "Using multithread calculate blocked tasks... "
            << "Threads: " + std::to_string(tNum)
-              + " Block: " + std::to_string(50000 / tNum);
+              + " Block: " + std::to_string(50000 / tNum)<< '\n';
 
     timer.start();
     count = 0;
@@ -108,8 +108,8 @@ int main()
     for(auto &t : threads)
         t.join();
 
-    rDebug << "Result: " + std::to_string(count)
-              + " Time: " + std::to_string(timer.elapsed()) + "ns\n";
+    std::cout << "Result: " + std::to_string(count)
+              + " Time: " + std::to_string(timer.elapsed()) + "ms\n";
 
     return 0;
 }

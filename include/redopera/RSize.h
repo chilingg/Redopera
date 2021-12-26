@@ -1,70 +1,68 @@
 #ifndef RSIZE_H
 #define RSIZE_H
 
-#include <string>
-
 namespace Redopera {
 
-namespace RValue {
+namespace basic {
 
 template <typename Value>
-class RSizeValue
+class RSizeBasic
 {
 public:
-    RSizeValue() noexcept: RSizeValue<Value>(0, 0) {}
-    RSizeValue(Value width, Value height) noexcept : width_(width), height_(height) {}
+    RSizeBasic() noexcept: RSizeBasic<Value>(0, 0) {}
+    RSizeBasic(Value width, Value height) noexcept : width_(width), height_(height) {}
 
     template<typename T>
-    operator RSizeValue<T>() const { return RSizeValue<T>(width_, height_); }
+    RSizeBasic<T> convert() const noexcept { return RSizeBasic<T>(width_, height_); }
 
-    bool operator==(const RSizeValue<Value> &size) const { return width_ == size.width_ && height_ == size.height_; }
-    bool operator!=(const RSizeValue<Value> &size) const { return width_ != size.width_ || height_ != size.height_; }
-
-    template<typename T>
-    RSizeValue<Value>& operator*=(T value) { width_ *= value; height_ *= value; return *this; }
-    template<typename T>
-    RSizeValue<Value>& operator/=(T value) { width_ /= value; height_ /= value; return *this; }
+    bool operator==(const RSizeBasic<Value> &size) const noexcept { return width_ == size.width_ && height_ == size.height_; }
+    bool operator!=(const RSizeBasic<Value> &size) const noexcept { return width_ != size.width_ || height_ != size.height_; }
 
     template<typename T>
-    RSizeValue<Value> operator*(T value) const { return RSizeValue<Value>(width_ * value, height_ * value); }
+    RSizeBasic<Value>& operator*=(T value) noexcept { width_ *= value; height_ *= value; return *this; }
     template<typename T>
-    RSizeValue<Value> operator/(T value) const { return RSizeValue<Value>(width_ / value, height_ / value); }
+    RSizeBasic<Value>& operator/=(T value) noexcept { width_ /= value; height_ /= value; return *this; }
 
-    Value width() const { return width_; }
-    Value height() const { return height_; }
+    template<typename T>
+    RSizeBasic<Value> operator*(T value) const noexcept { return RSizeBasic<Value>(width_ * value, height_ * value); }
+    template<typename T>
+    RSizeBasic<Value> operator/(T value) const noexcept { return RSizeBasic<Value>(width_ / value, height_ / value); }
 
-    bool isEmpty() const { return (width_ == 0) && (height_ == 0); }
-    bool isInvalid() const { return (width_ <= 0) || (height_ <= 0); }
-    bool isValid() const { return (width_ > 0) && (height_ > 0); }
+    Value width() const noexcept { return width_; }
+    Value height() const noexcept { return height_; }
 
-    void setWidth(Value width) { width_ = width; }
-    void setHeight(Value height) { height_ = height; }
-    void setSize(Value width, Value height) { width_ = width; height_ = height; }
-    void setSize(const RSizeValue<Value> &size) { setSize(size.width(), size.height()); }
+    bool isEmpty() const noexcept { return (width_ == 0) && (height_ == 0); }
+    bool isInvalid() const noexcept { return (width_ <= 0) || (height_ <= 0); }
+    bool isValid() const noexcept { return (width_ > 0) && (height_ > 0); }
 
-    Value& rWidth() { return width_; }
-    Value& rHeight() { return height_; }
+    void setWidth(Value width) noexcept { width_ = width; }
+    void setHeight(Value height) noexcept { height_ = height; }
+    void setSize(Value width, Value height) noexcept { width_ = width; height_ = height; }
+    void setSize(const RSizeBasic<Value> &size) noexcept { setSize(size.width(), size.height()); }
 
-    void expand(Value width, Value height) { width_ += width; height_ += height; }
+    Value& rWidth() noexcept { return width_; }
+    Value& rHeight() noexcept { return height_; }
 
-    std::string toString() const
-    {
-        return "(w:" + std::to_string(width_) + " h:" + std::to_string(height_) + ") ";
-    }
+    void expand(Value width, Value height) noexcept { width_ += width; height_ += height; }
 
 protected:
     Value width_;
     Value height_;
 };
 
-extern template class RSizeValue<int>;
-extern template class RSizeValue<float>;
+extern template class RSizeBasic<int>;
+extern template class RSizeBasic<float>;
 
-} // sn RValue
+} // ns basic
 
-using RSize = RValue::RSizeValue<int>;
-using RSizeF = RValue::RSizeValue<float>;
+using RSize = basic::RSizeBasic<int>;
+using RSizeF = basic::RSizeBasic<float>;
 
-} // ns Redopera
+} // Redopera
+
+#ifdef REDOPERA_DEFINE_FILE
+template class Redopera::basic::RSizeBasic<int>;
+template class Redopera::basic::RSizeBasic<float>;
+#endif
 
 #endif // RSIZE_H

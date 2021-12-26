@@ -1,91 +1,75 @@
-#include <RDebug.h>
 #include <RName.h>
 #include <RTimer.h>
+#include <fmt/core.h>
 #include <unordered_map>
-#include <RColor.h>
+#include <random>
+#include <functional>
 
 using namespace Redopera;
 
+class TestName
+{
+    static constexpr size_t num = 50000;
+
+public:
+    TestName():
+        rengine(std::time(0)),
+        values(num)
+    {
+        std::fill_n(values.begin(), num, rengine());
+    }
+
+    template <typename Key>
+    void constructAndAccessTest(size_t &ct, size_t &at, std::function<Key(unsigned)> f)
+    {
+        std::unordered_map<Key, int> table;
+
+        std::vector<Key> names;
+        timer.start();
+        while(table.size() < num)
+        {
+            Key n = f(rengine());
+            if(!table.contains(n))
+            {
+                table.emplace(n, values[table.size()]);
+                names.push_back(n);
+            }
+        }
+        ct = timer.elapsed();
+        //fmt::print("{1:8d}:Construction {0} table\n", typeid(Key).name(), ct);
+
+        size_t count = 0;
+        timer.start();
+        for(size_t i = 0; i < num; ++i)
+        {
+            count += table[names[values[i] % num]];
+        }
+        at = timer.elapsed();
+        //fmt::print("{1:8d}:Access {0} table\n count = {2} \n", typeid(Key).name(), at, count);
+    }
+
+    std::default_random_engine rengine;
+    std::vector<unsigned> values;
+    RStopwatchMS timer;
+};
+
 int main()
 {
-    size_t num = 1000000;
-    size_t count = 0;
-    RTimer timer;
-    srand(timer.elapsed());
+    TestName t;
+    size_t sizeC, sizeA, strC, strA, nameC, nameA;
 
-    std::unordered_map<size_t, int> table3;
-    std::vector<size_t> names3;
-    timer.start();
-    while(table3.size() < num)
-    {
-        size_t n = std::rand() * static_cast<size_t>(std::rand());
+    t.constructAndAccessTest<size_t>(sizeC, sizeA, [](unsigned n){ return n; });
+    t.constructAndAccessTest<std::string>(strC, strA, [](unsigned n){ return std::to_string(n*n*n); });
+    t.constructAndAccessTest<RName>(nameC, nameA, [](unsigned n){ return std::to_string(n*n*n); });
 
-        if(!table3.count(n))
-        {
-            names3.push_back(n);
-            table3.emplace(n, n);
-        }
-    }
-    rDebug << "Construction size_t table:\t" << timer.elapsed();
+    t.constructAndAccessTest<RName>(nameC, nameA, [](unsigned n){ return std::to_string(n*n*n); });
+    t.constructAndAccessTest<std::string>(strC, strA, [](unsigned n){ return std::to_string(n*n*n); });
+    t.constructAndAccessTest<size_t>(sizeC, sizeA, [](unsigned n){ return n; });
 
-    count = 0;
-    timer.start();
-    for(size_t i = 0; i < num; ++i)
-    {
-        count += table3.at(names3[i]);
-    }
-    rDebug << "Access size_t table:\t" << timer.elapsed();
-    rDebug << count;
-
-    std::unordered_map<RName, int> table1;
-    std::vector<RName> names1;
-    timer.start();
-    for(size_t i = 0; i < names3.size(); ++i)
-    {
-        size_t n = names3[i];
-
-        RName name = std::to_string(n);
-        if(!table1.count(name))
-        {
-            names1.push_back(name);
-            table1.emplace(names1.back(), n);
-        }
-    }
-    rDebug << "Construction RName table:\t" << timer.elapsed();
-
-    count = 0;
-    timer.start();
-    for(size_t i = 0; i < num; ++i)
-    {
-        count += table1.at(names1[i]);
-    }
-    rDebug << "Access RName table:\t" << timer.elapsed();
-    rDebug << count;
-
-    std::unordered_map<std::string, int> table2;
-    std::vector<std::string> names2;
-    timer.start();
-    for(size_t i = 0; i < names3.size(); ++i)
-    {
-        size_t n = names3[i];
-
-        std::string name = std::to_string(n);
-        if(!table2.count(name))
-        {
-            names2.push_back(name);
-            table2.emplace(name, n);
-        }
-    }
-    rDebug << "Construction string table:\t" << timer.elapsed();
-
-    count = 0;
-    timer.start();
-    for(size_t i = 0; i < num; ++i)
-    {
-        count += table2.at(names2[i]);
-    }
-    rDebug << "Access String table:\t" << timer.elapsed();
-    rDebug << count;
+    double total = sizeC + strC + nameC;
+    fmt::print("Ratio of Construct: {:.3} : {:.3} : {:.3}\n", sizeC / total, strC / total, nameC / total);
+    total = sizeA + strA + nameA;
+    fmt::print("Ratio of Access: {:.3} : {:.3} : {:.3}\n", sizeA / total, strA / total, nameA / total);
 
     return 0;
 }

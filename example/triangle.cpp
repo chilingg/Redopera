@@ -1,10 +1,18 @@
+#include <render/ROpenGL.h>
+#include <render/RProgram.h>
+#include <render/RContext.h>
+
 #include <RGame.h>
 #include <RWindow.h>
-#include <RInput.h>
+#include <RFormat.h>
 #include <RKeeper.h>
-#include <RShaders.h>
+
+#include <SDL2/SDL.h>
 
 using namespace Redopera;
+
+template <typename T>
+using RKeeperF = RKeeper<T, std::function<void(T)>>;
 
 const char *vCode =
         "#version 330\n"
@@ -15,11 +23,8 @@ const char *vCode =
         "void main()\n"
         "{\n"
         "   gl_Position = projecte * model * vec4(aPos, 1.0);\n"
-        "   float n = 1 - (gl_Position.z+1)/2;\n"
-        "   n = n * n * n * 5;\n"
-        "   if(aPos.x > 0) color = vec3(0, 0, n);\n"
-        "   else if(aPos.x < 0) color = vec3(0, 0, n);\n"
-        "   else color = vec3(n, 0, 0);\n"
+        "   float n = abs(aPos.x / 20);\n"
+        "   color = vec3(abs(n - 1), 0, n - (gl_Position.z * 2.5));\n"
         "}\n";
 
 const char *fCode =
@@ -31,16 +36,18 @@ const char *fCode =
         "   fragColor = vec4(color, 1.0);\n"
         "}\n";
 
-class TestCtl
+class Triangle
 {
 public:
-    TestCtl():
+    Triangle():
         shaders({RShader(vCode, RShader::Type::Vertex), RShader(fCode, RShader::Type::Fragment)}),
         model(glm::mat4(1))
     {}
 
     void update()
     {
+        glClear(GL_COLOR_BUFFER_BIT);
+
         model = glm::rotate(model, 0.05f, { 0.0f, 1.0f, 0.0f });
         auto itfc = shaders.use();
         itfc.setUniformMat(modelLoc, model);
@@ -50,6 +57,8 @@ public:
 
     void start()
     {
+        glClearColor( .1f, 0.f, 0.f, 1.f );
+
         // start事件在调用exce()时发起
         GLuint vao, vbo;
         glGenVertexArrays(1, &vao);
@@ -76,41 +85,44 @@ public:
         // Interface生存周期内对应的shader program都处于glUseProgram()调用中，析构时自动glUseProgram(0);
         RRPI intf = shaders.use();
         intf.setUniformMat(modelLoc, model);
-        intf.setUniformMat(projection, glm::perspective(-30.0f, 30.0f, 0.0f, 60.0f, 0.0f, 1500.0f));
-    }
-
-    void process()
-    {
-        // inputEvent只能监测感兴趣的按键
-        if(RInput::anyKeyPress())
-            RWindow::focusWindow()->closeWindow();
+        intf.setUniformMat(projection, math::perspective({ -30.0f, 0.0f, 60.0f, 60.0f }, 0.0f, 1500.0f));
     }
 
 private:
-    RKeeper<GLuint> VAO, VBO;
-    RShaders shaders;
+    RKeeperF<GLuint> VAO, VBO;
+    RProgram shaders;
     GLuint modelLoc;
     glm::mat4 model;
 };
 
-int main()
+int main(int arg, char **argv)
 {
-    RGame game;
+    RGame game(SDL_INIT_VIDEO);
+    RWindow window(540, 540, "OpenGL Test", SDL_WINDOW_OPENGL);
 
-    RWindow::Format format;
-    format.debug = false;
-    format.decorate = false;
-    format.background = 0x101018ff;
-    RWindow window(500, 500, "Triangle", format);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    RContext context(window);
 
-    TestCtl t;
+    Triangle triangle;
+    triangle.start();
 
-    window.show();
-    t.start();
-    return window.exec([&t]
+    bool quit = false;
+    SDL_Event e;
+    while( !quit )
     {
-        t.process();
-        t.update();
-        return 0;
-    });
+        while( SDL_PollEvent( &e ) != 0 )
+        {
+            if( e.type == SDL_QUIT )
+            {
+                quit = true;
+            }
+        }
+
+        triangle.update();
+        SDL_GL_SwapWindow(window.handle());
+    }
+
+   return 0;
 }

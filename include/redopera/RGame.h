@@ -1,45 +1,22 @@
 #ifndef RGAME_H
 #define RGAME_H
 
-#include "ROpenGL.h"
-#include "RDebug.h"
+#include <cstdint>
 
 namespace Redopera {
 
 class RGame
 {
 public:
-    RGame()
-    {
-        if(init)
-            throw "GLFW has been initialized!";
+    static bool setHint(const char *name, const char *value);
 
-        setlocale(LC_CTYPE, "");
-
-        glfwSetErrorCallback(errorCallback);
-        init = glfwInit() == GLFW_TRUE ? true : false;
-    }
-
-    ~RGame()
-    {
-        if(init)
-        {
-            glfwTerminate();
-            init = false;
-        }
-    };
+    RGame();
+    RGame(uint32_t flag);
+    ~RGame();
 
     explicit operator bool() const { return init; }
 
-    RGame(const RGame&) = delete;
-    RGame& operator=(const RGame&) = delete;
-
 private:
-    static void errorCallback(int error, const char* description)
-    {
-        rPrError("GLFW Error " + std::to_string(error) + ": " + description);
-    }
-
     static bool init;
 };
 

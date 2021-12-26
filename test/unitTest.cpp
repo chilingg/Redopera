@@ -1,249 +1,376 @@
-#include <RDebug.h>
+#include <RFormat.h>
+#include <fmt/color.h>
+
 #include <RColor.h>
 #include <RPoint.h>
 #include <RSize.h>
 #include <RRect.h>
+#include <RTimer.h>
+#include <thread>
+#include <RMath.h>
+#include <RSigslot.h>
 #include <RKeeper.h>
-#include <RNode.h>
-#include <RResource.h>
-#include <rsc/RImage.h>
-#include <rsc/RScript.h>
-#include <rsc/RMp3.h>
-#include <rsc/RFont.h>
-#include <rsc/RPack.h>
-#include <RModelMat.h>
-#include <REntity.h>
+#include <RTextLoader.h>
 
-#include <cassert>
+#include <rsc/RImage.h>
+#include <rsc/RFont.h>
+#include <rsc/RMusic.h>
+#include <rsc/RSoundEffect.h>
 
 using namespace Redopera;
 
-int main()
+template<typename T, typename T2>
+void equal(T&& v1, T2&& v2, unsigned line)
 {
-    rDebug << "Testing class func:";
+    if(!(v1 == v2))
+        fmt::print(fg(fmt::color::red), "Line {}: {} != {}\n", line, v1, v2);
+}
 
-    // RColor ====================
-    RColor color;
-    assert(color.a() == 0xff && color.r() == 0 && color.g() == 0 && color.b() == 0);
-    assert(color.rgba() == 0xff && color.rgb() == 0);
-    color.setA(0xF);
-    color.setR(0x1E);
-    color.setG(0x2D);
-    color.setB(0x3C);
-    assert(color.a() == 15 && color.r() == 30 && color.g() == 45 && color.b() == 60);
-    assert(color.rgba() == 0x1e2d3c0f && color.rgb() == 0x1e2d3c);
-    color.setRGBA(0xf0121314);
-    assert(color.a() == 0x14 && color.r() == 0xf0 && color.g() == 0x12 && color.b() == 0x13);
-    color.setRGBA(0xff222324);
-    assert(color.a() == 0x24 && color.r() == 0xff && color.g() == 0x22 && color.b() == 0x23);
+void require(bool b, unsigned line)
+{
+    if(!b)
+        fmt::print(fg(fmt::color::red), "Line {}: Not a requirement!\n", line);
+}
 
-    // RPoint ====================
+template<typename T, typename T2, typename F>
+void require_of(T v1, T2 v2, F f, unsigned line)
+{
+    if(!f(v1, v2))
+        fmt::print(fg(fmt::color::red), "Line {}: Unexpected of {} and {}\n", line, v1, v2);
+}
+
+#define EQUAL(v1, v2) equal(v1, v2, __LINE__)
+#define REQUIRE(b) require(b, __LINE__)
+#define REQUIRE_OF(v1, v2, f) require_of(v1, v2, f, __LINE__)
+
+void testColor()
+{
+    fmt::print("RColor Testing...\n");
+
+    bool b = true;
+    RColor color1, color2(0x10111213), color3(20, 30, 40, 50);
+
+    EQUAL(sizeof(RColor), 4);
+    EQUAL(color1.rf(), 1);
+    EQUAL(color1.gf(), 1.f);
+    EQUAL(color2.bf(), 0x12/255.f);
+    EQUAL(color3.af(), 50/255.f);
+
+    EQUAL(color1.r(), 255);
+    EQUAL(color2.g(), 17);
+    EQUAL(color2.b(), 18);
+    EQUAL(color3.a(), 50);
+
+    EQUAL(color3.rgba(), 0x141e2832);
+    EQUAL(color3.rgb(), 0x141e28);
+    EQUAL(color3.bgr(), 0x281e14);
+    EQUAL(color2.abgr(), 0x13121110);
+
+    uint32_t d = color3.abgr();
+    uint8_t *p = reinterpret_cast<uint8_t*>(&d);
+    EQUAL(p[0]*1, 20);
+    EQUAL(p[1]*1, 30);
+    EQUAL(p[2]*1, 40);
+    EQUAL(p[3]*1, 50);
+
+    color1.setR(1);
+    color1.setG(2);
+    color1.setB(3);
+    color1.setA(4);
+    EQUAL(color1.data().rgba, 0x01020304);
+    color2.setRGBA(1, 2, 3, 4);
+    EQUAL(color1, color2);
+    color3.setRGBA(0x01020304);
+    EQUAL(color1, color3);
+    color3.setRGB(0x50101010);
+    EQUAL(color3.data().rgba, 0x10101004);
+    color2.setRGB(16, 16, 16);
+    EQUAL(color3.rgb(), color2.rgb());
+}
+
+void testPoint()
+{
+    fmt::print("RPoint Testing...\n");
+
+    bool b = true;
     RPoint pos1(1, 2, 3), pos2;
-    assert(pos1 != pos2);
-    assert(!pos1.isOrigin());
-    assert(pos2.isOrigin());
+
+    EQUAL(pos2 ,RPoint(0, 0, 0));
+    REQUIRE(!pos1.isOrigin());
+    REQUIRE(pos2.isOrigin());
     pos1.setPos(10, 20, 30);
     pos2.setX(10);
     pos2.setY(20);
     pos2.setZ(30);
-    assert(pos1 == pos2 && pos1.x() == 10 && pos1.y() == 20 && pos1.z() == 30);
+    EQUAL(pos1, pos2);
+    EQUAL(pos1.x(), 10);
+    EQUAL(pos1.y(), 20);
+    EQUAL(pos1.z(), 30);
     pos1 += pos2 + pos1;
-    assert(pos1 - RPoint(10, 20, 30) == pos2 + RPoint(10, 20, 30));
+    REQUIRE(pos1 - RPoint(10, 20, 30) == pos2 + RPoint(10, 20, 30));
     pos2.mirrorH(20);
-    assert(pos2 == RPoint(30, 20, 30));
+    EQUAL(pos2, RPoint(30, 20, 30));
     pos2.mirrorV(-10);
-    assert(pos2 == RPoint(30, -40, 30));
+    EQUAL(pos2, RPoint(30, -40, 30));
 
-    // RSize ====================
+    int *p = reinterpret_cast<int*>(&pos2);
+    EQUAL(p[0], 30);
+    EQUAL(p[1], -40);
+    EQUAL(p[2], 30);
+}
+
+void testSize()
+{
+    fmt::print("RSize Testing...\n");
+
     RSize size1, size2(10, 20);
-    assert(size1 != size2 && size1.isEmpty() && size1.isInvalid() && size2.isValid());
+
+    EQUAL(size1, RSize(0, 0));
+    REQUIRE(size1.isEmpty());
+    REQUIRE(size1.isInvalid());
+    REQUIRE(size2.isValid());
     size1.setSize(20, 10);
     size2.expand(10, -10);
-    assert(size1 == size2 && size1.width() == 20 && size1.height() == 10);
+    EQUAL(size1, size2);
+    EQUAL(size1.width(), 20);
+    EQUAL(size1.height(), 10);
     size1.setWidth(30);
     size1.setHeight(15);
     size2 *= 3.f;
-    assert(size2 == size1 *2. && size1 / 5 == RSize(6, 3));
+    EQUAL(size2, size1 *2.);
+    EQUAL(size1 / 5, RSize(6, 3));
 
-    // RRect ====================
+    int *p = reinterpret_cast<int*>(&size1);
+    EQUAL(p[0], 30);
+    EQUAL(p[1], 15);
+}
+
+void testRect()
+{
+    fmt::print("RRect Testing...\n");
+
     RRect rect1, rect2(20, 20, 10, 10), rect3(RPoint2(20, 20), RPoint2(30, 30));
-    assert(rect1.isEmpty());
-    assert(rect1.isInvalid());
-    assert(rect2.isValid());
-    assert(rect2 == rect3);
-    assert(rect1 != rect3);
+
+    REQUIRE(rect1.isEmpty());
+    REQUIRE(rect1.isInvalid());
+    REQUIRE(rect2.isValid());
+    EQUAL(rect2, rect3);
+    REQUIRE(rect1 != rect3);
     rect1.setRect(1, 1, 10, 10);
     rect2.setBottomLeft(1, 1);
     rect2.setTopRIght(11, 11);
     rect3.setPos(1, 1);
     rect3.setSize(10, 10);
-    assert(rect1 == rect2 && rect2 == rect3 && rect1 == RRect(RPoint2(1, 1), RSize(10, 10)));
+    EQUAL(rect1, rect2);
+    EQUAL(rect2, rect3);
+    EQUAL(rect1, RRect(RPoint2(1, 1), RSize(10, 10)));
     rect1.setCenter(10, 10);
     rect2.move(4, 4);
-    assert(rect1 == rect2 && rect1.topLeft() == RPoint2(5, 15) && rect1.bottomRight() == RPoint2(15, 5));
-    assert(!rect1.contains(rect3) && rect1.contains(rect2) && rect1.contains(5, 5) && !rect1.contains(16, 15));
-    assert(rect1.overlap(rect3));
+    EQUAL(rect1, rect2);
+    EQUAL(rect1.topLeft(), RPoint2(5, 15));
+    EQUAL(rect1.bottomRight(), RPoint2(15, 5));
+    REQUIRE(!rect1.contains(rect3));
+    REQUIRE(rect1.contains(rect2));
+    REQUIRE(rect1.contains(5, 5));
+    REQUIRE(!rect1.contains(16, 15));
+    REQUIRE(rect1.overlap(rect3));
 
-    // RKeeper
-    int n = 0;
-    RKeeper<int> keeper;
-    {
-        RKeeper<int> keeper2(1, [&n](int kn){ n += kn; });
-    }
-    keeper.reset(2, [&n](int kn){ n += kn; });
-    keeper.reset();
-    assert(n == 3);
+    int *p = reinterpret_cast<int*>(&rect1);
+    EQUAL(p[0], 5);
+    EQUAL(p[1], 5);
+    EQUAL(p[2], 10);
+    EQUAL(p[3], 10);
+}
 
-    // RNode ====================
-    RNode node1("Node-rect1", &rect1), node2;
-    assert(node1.status() == RNode::Status::Normal && node1.status() == node2.status());
-    assert(node1.name() == RName("node_rect1"));
-    assert(node2.name() == "node");
-    assert(node1.holder<RRect>()->isValid());
-    std::string order;
-    node1.setStartFunc([&order]{ order += '1'; });
-    node2.setStartFunc([&order]{ order += '2'; });
-    node1.setUpdateFunc([&order](RRenderSys *){ order += '3'; });
-    node2.setUpdateFunc([&order, &node2](RRenderSys *){ order += '4'; node2.breakLooping(); });
-    node1.setFinishFunc([&order]{ order += '6'; });
-    node2.setFinishFunc([&order]{ order += '5'; });
-    node1.addChild(&node2);
-    node1.exec();
-    assert(order == "123456");
-    RNode node3;
-    node3.changeParent(&node1);
-    node2.rename("Node1");
-    assert(node3.name() == "node1");
-    assert(node2.name() == "node11");
-    node3.addChild(&node2);
-    assert(node3.path() == "/node_rect1/node1");
-    assert(node2.path() == "/node_rect1/node1/node11");
-    assert(node3.node("Node11") == &node2);
+void testTimer()
+{
+    fmt::print("RTimer and RStopwatch Testing...\n");
 
-    // RResource ====================
-    RResource::setResourcePath("TestFile/");
+    RStopwatch sw1;
+    RStopwatchMS sw2;
+    RStopwatchNS sw3;
 
-    // RImage ====================
-    RImage img(":/timg.png");
-    assert(img.width() == 4 && img.height() == 2 && img.channel() == 3);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    REQUIRE_OF(sw1.elapsed(), 99, std::greater<RStopwatch::rep>());
+    REQUIRE_OF(sw2.elapsed(), 99999, std::greater<RStopwatchMS::rep>());
+    REQUIRE_OF(sw3.elapsed(), 99999999, std::greater<RStopwatchNS::rep>());
+
+    RTimerMS timer;
+    REQUIRE(timer.isPaused());
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EQUAL(timer.elapsed(), 0);
+    timer.start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    REQUIRE_OF(timer.elapsed(), 99, std::greater<RStopwatch::rep>());
+    timer.pause();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    REQUIRE_OF(timer.elapsed(), 99, std::greater<RStopwatch::rep>());
+    timer = RTimerMS(true);
+    REQUIRE(timer.isStarted());
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    REQUIRE_OF(timer.elapsed(), 199, std::greater<RStopwatch::rep>());
+}
+
+void testMath()
+{
+    fmt::print("RMath Testing...\n");
+
+    glm::mat4 mat1(1), mat2, mat3;
+    EQUAL(mat1, math::unitize(mat2));
+    REQUIRE(mat2 != mat3);
+
+    mat1 = glm::scale(mat1, { 8, 4, 1 });
+    mat3 = math::scale(RSizeF(8, 4));
+    math::setScale(mat2, RSizeF(8, 4));
+    EQUAL(mat1, mat2);
+    EQUAL(mat1, mat3);
+
+    mat3 = glm::translate(mat1, { 3, 6, 0 });
+    math::setMove(mat2, RPointF(3, 6));
+    EQUAL(mat2, mat3);
+
+    RRectF rect(4.7f, 6.2f, 23.2f, 42.3f);
+    mat1 = glm::translate(glm::mat4(1), { rect.x(), rect.y(), 0 });
+    mat1 = glm::scale(mat1, { rect.width(), rect.height(), 1 });
+    math::unitize(mat2);
+    math::setMove(mat2, rect.pos());
+    math::setScale(mat2, rect.size());
+    EQUAL(mat1, mat2);
+    rect.setCenter(rect.pos());
+    math::setRectAs(mat3, rect);
+    EQUAL(mat1, mat3);
+
+    math::setMove(math::unitize(mat1), { 0, 5 });
+    math::setRect(mat1, rect);
+    rect.move(0, 5);
+    math::setRectAs(mat3, rect);
+    EQUAL(mat1, mat3);
+}
+
+void testImage()
+{
+    fmt::print("RImage Testing...\n");
+
+    RImage img("TestFile/timg.png");
+    EQUAL(img.width(), 4);
+    EQUAL(img.height(), 2);
+    EQUAL(img.channel(), 3);
     std::array<RData, 24> data = { 200, 100, 50, 255, 0, 0, 0, 255, 0, 0, 0, 255,
                                    255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0 };
-    assert(std::equal(data.data(), data.data() + sizeof(data), img.data()));
+    REQUIRE(std::equal(data.data(), data.data() + sizeof(data), img.data()));
     img.flipV();
     data = { 255, 255, 255, 0, 0, 0, 255, 255, 255, 0, 0, 0,
              200, 100, 50, 255, 0, 0, 0, 255, 0, 0, 0, 255 };
-    assert(std::equal(data.data(), data.data() + sizeof(data), img.data()));
+    REQUIRE(std::equal(data.data(), data.data() + sizeof(data), img.data()));
     img.load(data.data(), 4, 2, 3);
     img.flipH();
     data = { 0, 0, 0, 255, 255, 255, 0, 0, 0, 255, 255, 255,
              0, 0, 255, 0, 255, 0, 255, 0, 0, 200, 100, 50 };
-    assert(std::equal(data.data(), data.data() + sizeof(data), img.data()));
+    REQUIRE(std::equal(data.data(), data.data() + sizeof(data), img.data()));
     img.rotate90();
     data = { 0, 0, 255, 0, 0, 0, 0, 255, 0, 255, 255, 255,
              255, 0, 0, 0, 0, 0, 200, 100, 50, 255, 255, 255 };
-    assert(std::equal(data.data(), data.data() + sizeof(data), img.data()));
-    img.fill(20, 30, 40, 50); // 三通道图像忽略A参数
+    REQUIRE(std::equal(data.data(), data.data() + sizeof(data), img.data()));
+    img.fill(0x141e2832); // 20, 30, 40, 50) // 三通道图像忽略A参数
     data = { 20, 30, 40, 20, 30, 40, 20, 30, 40, 20, 30, 40,
              20, 30, 40, 20, 30, 40, 20, 30, 40, 20, 30, 40 };
-    assert(std::equal(data.data(), data.data() + sizeof(data), img.data()));
+    REQUIRE(std::equal(data.data(), data.data() + sizeof(data), img.data()));
+}
 
-    // RLuaScript ====================
-    const char luaCode[] =
-            "function max(num1, num2)\n"
-                "if(num1 > num2) then\n"
-                    "return num1;\n"
-                "else\n"
-                    "return num2;\n"
-                "end\n"
-            "end\n";
+void testSigSlot()
+{
+    fmt::print("RSignal and RSloter Testing...\n");
 
-    RScript scp(luaCode);
-    assert(scp.isValid() && scp.call("max", {2, 5}, {}, 1) && scp.valueIsNumber() && scp.getInteger() == 5);
-    scp.import(":/min.lua");
-    assert(scp.isValid() && scp.call("min", {2, 5}, {}, 1) && scp.valueIsNumber() && scp.getInteger() == 2);
+    RSignal<int, int&> signal;
+    RSloter slot1, slot2;
+    int i = 0;
+    size_t slotID;
 
-    // RMp3 ====================
-    RMp3 mp3(":/bicycle_bell.mp3");
-    assert(mp3.isValid() && mp3.hz() == 48000 && mp3.channel() == 2);
+    {
+        RSloter slot3;
+        signal.connect(&slot1, [](int n, int &m){ ++n; ++m; });
+        signal.connect(&slot2, [](int n, int &m){ ++n; ++m; });
+        signal.connect(&slot3, [](int n, int &m){ ++n; ++m; });
+        slotID = signal.connect(nullptr, [](int n, int &m){ ++n; ++m; });
+    }
 
-    // RFont ====================
+    signal.emit(i, i);
+    EQUAL(i, 3);
+    slot2.free();
+    signal.emit(i, i);
+    EQUAL(i, 5);
+    REQUIRE(signal.disconnect(slotID));
+    signal.emit(i, i);
+    EQUAL(i, 6);
+}
+
+void testKeeper()
+{
+    fmt::print("RKeeper and RSloter Testing...\n");
+
+    int n = 0;
+    RKeeper<int, std::function<void(int)>> keeper;
+    REQUIRE(!keeper.isValid());
+    {
+        decltype(keeper) keeper2(1, [&n](int kn){ n += kn; });
+        REQUIRE(keeper2);
+        REQUIRE(keeper2.isValid());
+    }
+    keeper.reset(2, [&n](int kn){ n += kn; });
+    decltype(keeper) keeper2(1, [&n](int kn){ n += kn; });
+    keeper2.release();
+    keeper.free();
+    EQUAL(n, 3);
+
+}
+
+void testFont()
+{
+    fmt::print("RFont and RSloter Testing...\n");
+
     RFont font;
-    const RFont::Glyph *glyoh = font.getFontGlyph(L'A');
-    assert(font.isValid() && glyoh->width > 0 && glyoh->height > 0);
+    const RFont::Glyph glyoh = font.getGlyph(L'A');
+    REQUIRE(font.isValid());
+    REQUIRE_OF(glyoh.width, 0, std::not_equal_to<int>());
+    REQUIRE_OF(glyoh.height, 0, std::not_equal_to<int>());
 
-    // RPack ====================
-    RPack pck;
-    pck.packing(":/bicycle_bell.mp3", "mp3");
-    assert(pck.getFileInfo("mp3")->size == 27018);
-    pck.save(":/pck");
-    RPack pck2;
-    pck2.load((":/pck"));
-    const RPack::FInfo *info = pck2.getFileInfo("mp3");
-    mp3.load(info->data.get(), info->size);
-    assert(mp3.isValid() && mp3.hz() == 48000 && mp3.channel() == 2);
+}
 
-    // RModelMat ====================
-    float x = 3.f;
-    float y = 12.f;
-    float z = -2.f;
-    float width = 12.f;
-    float height = 16.f;
-    RModelMat model(x, y, z, width, height);
-    glm::mat4 mat(1);
-    mat = glm::translate(mat, { x + width/2.f, y + height/2.f, z});
-    mat = glm::scale(mat, { width, height, 0.f });
-    assert(model.model() == mat);
-    assert(!model.isFlipH() && !model.isFlipV());
-    model.flipH();
-    assert(model.isFlipH() && !model.isFlipV());
-    model.flipV();
-    assert(model.isFlipH() && model.isFlipV());
-    model.move(3.f, -6.f, -4.f);
-    assert(model.pos() == RPointF(6.f, 6.f, -6.f));
-    assert(model.size() == RSizeF(12.f, 16.f));
-    model.setPos(0, 0);
-    assert(model.pos() == RPointF(0.f, 0.f, -6.f));
-    model.setPos(2.f, 3.f);
-    assert(model.right() == 14.f);
-    assert(model.top() == 19.f);
-    assert(model.left() == 2.f && model.x() == 2.f);
-    assert(model.bottom() == 3.f && model.y() == 3.f);
-    assert(model.centerX() == 8.f);
-    assert(model.centerY() == 11.f);
-    assert(model.center() == RRectF(2.f, 3.f, 12.f, 16.f).center());
+void testMusic()
+{
+    fmt::print("RMusic and RSoundEffect Testing...\n");
 
-    // REntity ====================
-    REntity entity("test", nullptr);
-    entity.addComp("rect", rect1);
-    entity.addComp("size", size1);
-    entity.getR<RRect>("rect").setRect(2, 2, 4, 4);
-    assert(entity.get<RRect>("rect") == RRect(2, 2, 4, 4) && entity.get<RRect>("rect") != rect1);
+    RMusic music("TestFile/bicycle_bell.mp3");
+    REQUIRE(music.isValid());
+    RSoundEffect chunk("TestFile/bicycle_bell.mp3");
+    REQUIRE(chunk.isValid());
+    EQUAL(chunk.volume(), MIX_MAX_VOLUME);
+}
 
-    entity.addFunc("add1", std::function<int(REntity&, int)>([](REntity&, int n){ return ++n; }));
-    entity.addFunc<int, int>("add2", [](REntity&, int n, int m){ return n + m; });
-    entity.addFunc<int&, int>("add3", [](REntity&, int& n, int m){ n += m; });
+void testTextLoader()
+{
+    fmt::print("RTextLoader Testing...\n");
 
-    assert(entity.func<int>("add1", 5) ==  entity.func<int>("add2", 3, 3));
-    n = 3;
-    entity.func<void>("add3", n, 2);
-    assert(n == 5);
+    RTextLoader loader;
+    EQUAL(loader.getTextBoxSize(L"s"), RSize(8, 16));
+    EQUAL(loader.getTextBoxSize(L"s\n"), loader.getTextBoxSize(L"s"));
+}
 
-    entity.addSignal<int&, int>("signal");
-    entity.sigal<int&, int>("signal").connect(entity.addComp<RSlot>("slot", {}), [](int &n1, int n2){ n1 += n2; return true; });
-    entity.sigal<int&, int>("signal").emit(n, 5);
-    assert(n == 10);
-    entity.removeSignal("signal");
-    entity.removeComp("slot");
+int main()
+{
+    testColor();
+    testPoint();
+    testSize();
+    testRect();
+    testTimer();
+    testMath();
+    testImage();
+    testSigSlot();
+    testKeeper();
+    testFont();
+    testMusic();
+    testTextLoader();
 
-    entity.addChild("test2");
-    assert(entity.child("test2").name() == "test2");
-
-    assert(entity.isComp("rect") && entity.compSize() == 2);
-    assert(entity.funcSize() == 3 && entity.isFunc("add3") && !entity.isComp("add3"));
-    assert(entity.signalSize() == 0);
-    assert(entity.childrenSize() == 1);
-
-    rDebug << "End of test, No error occurred.";
-
+    fmt::print("\nEnd of test.\n");
     return 0;
 }

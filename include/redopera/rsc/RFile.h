@@ -1,58 +1,44 @@
 #ifndef RFILE_H
 #define RFILE_H
 
-#include "RResource.h"
+#include "../RFormat.h"
+#include <fstream>
 
 namespace Redopera {
 
-struct RFile
+namespace RFile {
+
+static std::unique_ptr<RData[]> load(const std::string &path, size_t *fsize = nullptr)
 {
-    enum class Mode
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if(rCheck(!file.is_open(), "Failed to load file in {}!\n", path))
     {
-        Write,
-        Append
-    };
-
-    static RFile load(const std::string &path)
-    {
-        auto rpath = RResource::rscPath(path);
-        RFile file;
-
-        FILE *fp = fopen(rpath.c_str(), "rb");
-        if (fp)
-        {
-            fseek(fp, 0L, SEEK_END);
-            auto size = ftell(fp);
-            fseek(fp, 0L, SEEK_SET);
-
-            file.data = std::make_unique<RData[]>(size);
-            fread(file.data.get(), 1, size, fp);
-            file.size = size;
-            fclose(fp);
-        }
-
-        return file;
+        if(fsize)
+            *fsize = 0;
+        return nullptr;
     }
 
-    static bool save(const std::string &path, const RFile& file, Mode mode = Mode::Write)
+    size_t size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    auto data = std::make_unique<RData[]>(size);
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        file.read(reinterpret_cast<char*>(data.get()), size);
+        file.close();
+    }
+    catch(std::ifstream::failure &f)
     {
-        auto rpath = RResource::rscPath(path);
-
-        FILE *fp = fopen(rpath.c_str(), mode == Mode::Write ? "wb" : "ab");
-        if (fp)
-        {
-            bool b = fwrite(file.data.get(), 1, file.size, fp) == file.size;
-            fclose(fp);
-
-            return b;
-        }
-
-        return false;
+        rError("Wrong access file {}: {}\n", path, f.what());
+        return nullptr;
     }
 
-    size_t size = 0;
-    std::unique_ptr<RData[]> data;
-};
+    if(fsize)
+        *fsize = size;
+    return data;
+}
+
+} // ns RFile
 
 } // Redopera ns
 

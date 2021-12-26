@@ -1,17 +1,18 @@
 #include <RSprite.h>
+#include <render/RTexture.h>
 
 using namespace Redopera;
 
 RSprite::RSprite(const RSprite &sprite):
-    frames_(sprite.frames_),
-    interval_(sprite.interval_)
+    interval_(sprite.interval_),
+    frames_(sprite.frames_)
 {
 
 }
 
 RSprite::RSprite(const RSprite &&sprite):
-    frames_(std::move(sprite.frames_)),
-    interval_(sprite.interval_)
+    interval_(sprite.interval_),
+    frames_(std::move(sprite.frames_))
 {
 
 }
@@ -34,14 +35,6 @@ RSprite& RSprite::operator=(const RSprite &&sprite)
 
 const RTexture &RSprite::texture() const
 {
-    if(delta_ < interval_)
-        ++delta_;
-    else
-    {
-        delta_ = 0;
-        index_ = (index_ + 1) % frames_.size();
-    }
-
     return frames_[index_];
 }
 
@@ -70,9 +63,25 @@ const RTexture &RSprite::frame(size_t index) const
     return frames_.at(index);
 }
 
+void RSprite::play()
+{
+    if(delta_ < interval_)
+        ++delta_;
+    else
+    {
+        delta_ = 0;
+        index_ = (index_ + 1) % frames_.size();
+    }
+}
+
 void RSprite::setInterval(int interval)
 {
     interval_ = interval;
+}
+
+void RSprite::setIndex(size_t index)
+{
+    index_ = index % frames_.size();
 }
 
 void RSprite::add(const RTexture &frame)
@@ -80,9 +89,9 @@ void RSprite::add(const RTexture &frame)
     frames_.push_back(frame);
 }
 
-void RSprite::add(const std::vector<RTexture> &texs)
+void RSprite::add(const std::initializer_list<RTexture> &list)
 {
-    frames_.insert(frames_.end(), texs.begin(), texs.end());
+    frames_.insert(frames_.end(), list);
 }
 
 void RSprite::remove(size_t index)

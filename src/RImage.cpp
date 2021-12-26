@@ -1,11 +1,29 @@
-#include <RColor.h>
 #include <RSize.h>
-#include <RDebug.h>
-#include <RResource.h>
+#include <RColor.h>
 #include <rsc/RImage.h>
-#include <stb_image.h>
 
-#include <cstring>
+#include <extern/stb/stb_image.h>
+#include <RFormat.h>
+
+namespace  {
+
+//#define RIMAGE_ALLOCATION_TEST
+#ifdef RIMAGE_ALLOCATION_TEST
+
+void rImageFree(void *p)
+{
+    fmt::print("Free image data.\n");
+    stbi_image_free(p);
+}
+
+#else
+
+void (*rImageFree)(void*) =
+        stbi_image_free;
+
+#endif
+}
+
 
 using namespace Redopera;
 
@@ -15,7 +33,12 @@ const RImage &RImage::redoperaIcon()
     return icon;
 }
 
-RImage::RImage(const std::string &path, bool flip)
+RImage::RImage(const std::string &path, bool flip):
+    RImage(path.c_str(), flip)
+{
+}
+
+RImage::RImage(const char *path, bool flip)
 {
     load(path, flip);
 }
@@ -30,8 +53,13 @@ RImage::RImage(const RData *data, int width, int height, int channel)
     load(data, width, height, channel);
 }
 
+RImage::RImage(const RData *data, const RSize &size, int channel)
+{
+    load(data, size.width(), size.height(), channel);
+}
+
 RImage::RImage(const RImage &img):
-    data_(img.data_),
+    RSC(img),
     width_(img.width_),
     height_(img.height_),
     channel_(img.channel_)
@@ -39,8 +67,8 @@ RImage::RImage(const RImage &img):
 
 }
 
-RImage::RImage(const RImage &&img):
-    data_(std::move(img.data_)),
+RImage::RImage(RImage &&img):
+    RSC(std::move(img)),
     width_(img.width_),
     height_(img.height_),
     channel_(img.channel_)
@@ -54,18 +82,23 @@ RImage &RImage::operator=(RImage img)
     return *this;
 }
 
+RImage &RImage::operator=(RImage &&img)
+{
+    RSC::operator=(std::move(img));
+    width_ = img.width_;
+    height_ = img.height_;
+    channel_ = img.channel_;
+
+    return *this;
+}
+
 void RImage::swap(RImage &img)
 {
     using std::swap;
-    swap(data_, img.data_);
+    RSC::swap(img);
     swap(width_, img.width_);
     swap(height_, img.height_);
     swap(channel_, img.channel_);
-}
-
-bool RImage::isValid() const
-{
-    return data_ != nullptr;
 }
 
 int RImage::width() const
@@ -88,34 +121,32 @@ int RImage::channel() const
     return channel_;
 }
 
-RData *RImage::data() const
-{
-    return data_.get();
-}
-
 bool RImage::load(const std::string &path, bool flip)
 {
-    auto rpath = RResource::rscPath(path);
+    return load(path.c_str(), flip);
+}
 
+bool RImage::load(const char *path, bool flip)
+{
     stbi_set_flip_vertically_on_load(flip);
-    std::shared_ptr<RData> temp(stbi_load(rpath.c_str(), &width_, &height_, &channel_, 0), stbi_image_free);
+    std::shared_ptr<RData> temp(stbi_load(path, &width_, &height_, &channel_, 0), rImageFree);
 
-    if(rCheck(!temp, "Failed to load image in " + rpath))
+    if(rCheck(!temp, "Failed to load image in {}\n", path))
         return false;
 
-    data_.swap(temp);
+    reset(temp);
     return true;
 }
 
 bool RImage::load(const RData *buf, size_t size, bool flip)
 {
     stbi_set_flip_vertically_on_load(flip);
-    std::shared_ptr<RData> temp(stbi_load_from_memory(buf, size, &width_, &height_, &channel_, 0), stbi_image_free);
+    std::shared_ptr<RData> temp(stbi_load_from_memory(buf, size, &width_, &height_, &channel_, 0), rImageFree);
 
-    if(rCheck(!temp, "Failed to load image in memory"))
+    if(rCheck(!temp, "Failed to load image in memory\n"))
         return false;
 
-    data_.swap(temp);
+    reset(temp);
     return true;
 }
 
@@ -126,7 +157,7 @@ bool RImage::load(const RData *data, int width, int height, int channel)
 
     if(data) std::memcpy(d, data, size);
 
-    data_.reset(d, stbi_image_free);
+    reset(d, rImageFree);
     width_ = width;
     height_ = height;
     channel_ = channel;
@@ -139,11 +170,11 @@ bool RImage::load(const RData *data, const RSize &size, int channel)
     return load(data, size.width(), size.height(), channel);
 }
 
-void RImage::flipV()
+RImage& RImage::flipV()
 {
     copyOnWrite();
 
-    RData *bitmap = data_.get();
+    RData *bitmap = data();
     using std::swap;
 
     for(int h = 0, h2 = height_ - 1; h < height_/2; ++h, --h2)
@@ -154,13 +185,15 @@ void RImage::flipV()
                 swap(bitmap[(h*width_+w)*channel_+c], bitmap[(h2*width_+w2)*channel_+c]);
         }
     }
+
+    return *this;
 }
 
-void RImage::flipH()
+RImage &RImage::flipH()
 {
     copyOnWrite();
 
-    RData *bitmap = data_.get();
+    RData *bitmap = data();
     using std::swap;
 
     for(int h = 0, h2 = 0; h < height_; ++h, ++h2)
@@ -171,6 +204,7 @@ void RImage::flipH()
                 swap(bitmap[(h*width_+w)*channel_+c], bitmap[(h2*width_+w2)*channel_+c]);
         }
     }
+    return *this;
 }
 
 void RImage::rotate90()
@@ -186,63 +220,54 @@ void RImage::rotate90()
         for(int h = height_ - 1; h >= 0; --h)
         {
             for(int c = 0; c < channel_; ++c)
-                *d++ = data_.get()[h * width_ * channel_ + w * channel_ + c];
+                *d++ = data()[h * width_ * channel_ + w * channel_ + c];
         }
     }
 
-    data_.reset(dest, stbi_image_free);
+    reset(dest, rImageFree);
     std::swap(width_, height_);
 }
 
-void RImage::fill(RData r, RData g, RData b, RData a)
+void RImage::fill(RGBA rgba)
 {
-    struct tow
-    {
-        RData d1;
-        RData d2;
-    };
     struct three
     {
         RData d1;
         RData d2;
         RData d3;
     };
-    struct four
-    {
-        RData d1;
-        RData d2;
-        RData d3;
-        RData d4;
-    };
 
     copyOnWrite();
 
-    RData *data = data_.get();
-    if(channel_ == 4)
-        std::fill_n(reinterpret_cast<four*>(data), width_ * height_, four{ r, g, b, a });
-    else if(channel_ == 3)
-        std::fill_n(reinterpret_cast<three*>(data), width_ * height_, three{ r, g, b });
-    else if(channel_ == 1)
-        std::fill_n(data, width_ * height_, r);
-    else if(channel_ == 2)
-        std::fill_n(reinterpret_cast<tow*>(data), width_ * height_, tow{ r, g });
-}
-
-void RImage::release()
-{
-    data_.reset();
+    RColor color(rgba);
+    RData *d = data();
+    switch(channel_)
+    {
+    case 4:
+        std::fill_n(reinterpret_cast<RGBA*>(d), width_ * height_, color.abgr());
+        break;
+    case 3:
+        std::fill_n(reinterpret_cast<three*>(d), width_ * height_, three{ color.r(), color.g(), color.b() });
+        break;
+    case 1:
+        std::fill_n(d, width_ * height_, RData(color.a()));
+        break;
+    case 2:
+        std::fill_n(reinterpret_cast<uint16_t*>(d), width_ * height_, uint16_t(rgba));
+        break;
+    }
 }
 
 void RImage::copyOnWrite()
 {
-    if(data_.unique()) return;
+    if(p_.unique()) return;
 
     size_t size = static_cast<size_t>(height_) * width_ * channel_;
-    RData *source = data_.get();
+    RData *source = data();
     RData *data = static_cast<RData*>(std::malloc(size));
     std::memcpy(data, source, size);
 
-    data_.reset(data, stbi_image_free);
+    reset(data, rImageFree);
 }
 
 void swap(RImage &img1, RImage &img2)
@@ -250,7 +275,7 @@ void swap(RImage &img1, RImage &img2)
     img1.swap(img2);
 }
 
-const RData RImage::REDOPERA_ICON[] =
+constexpr RData RImage::REDOPERA_ICON[] =
 {
     0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,
     0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x1c,0x1c,0x1c,0x9,0x13,0x13,0x1f,0x52,
