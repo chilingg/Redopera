@@ -23,6 +23,9 @@ public:
 
     // sourceCodePro()定义在字体资源文件中 (SourceCodePro.cpp)
     static RFont sourceCodePro();
+    static const void* sourceCodeProFileData();
+    static size_t sourceCodeProFileSize();
+
     static RFont& defaultFont();
 
     RFont();

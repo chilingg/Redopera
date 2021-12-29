@@ -6,7 +6,7 @@ using namespace Redopera;
 
 namespace  {
 
-constexpr unsigned SOURCE_FONT_SIZE = 145516;
+constexpr size_t SOURCE_FONT_SIZE = 145516;
 
 constexpr unsigned char SOURCE_FONT_DATA[] = {
         0x4f,0x54,0x54,0x4f,0x0,0xf,0x0,0x80,0x0,0x3,0x0,0x70,0x42,0x41,0x53,0x45,0x65,0x1e,0x5d,0xbd,0x0,0x1,0xcd,0xac,
@@ -6080,4 +6080,14 @@ constexpr unsigned char SOURCE_FONT_DATA[] = {
 RFont RFont::sourceCodePro()
 {
     return RFont(SOURCE_FONT_DATA, SOURCE_FONT_SIZE);
+}
+
+const void *RFont::sourceCodeProFileData()
+{
+    return SOURCE_FONT_DATA;
+}
+
+size_t RFont::sourceCodeProFileSize()
+{
+    return SOURCE_FONT_SIZE;
 }
