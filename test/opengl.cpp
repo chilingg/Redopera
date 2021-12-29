@@ -25,7 +25,7 @@ int main()
     RWindow window(1, 1, "OpenGL Feedback Test", SDL_WINDOW_OPENGL | SDL_WINDOW_HIDDEN);
 
     RContext::Format fmt;
-    fmt.debug = true;
+    fmt.debug = false;
     fmt.forward = true;
     fmt.rasterizer = false;
     fmt.vSync = false;

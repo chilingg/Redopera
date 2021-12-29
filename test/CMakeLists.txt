@@ -24,6 +24,9 @@ target_link_libraries(sound redopera)
 add_executable(input input.cpp)
 target_link_libraries(input redopera)
 
+add_executable(context context.cpp)
+target_link_libraries(context redopera)
+
 find_file(RTEST_FILE rtest.cpp .)
 if(RTEST_FILE)
     add_executable(rtest rtest.cpp)
