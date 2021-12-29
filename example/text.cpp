@@ -142,7 +142,7 @@ int main()
         }
 
         scene.update();
-        SDL_GL_SwapWindow(window.handle());
+        window.swapBuffers();
     }
 
    return 0;

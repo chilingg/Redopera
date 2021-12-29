@@ -31,6 +31,8 @@ public:
 
     void setIcon(const RImage &icon);
 
+    void swapBuffers();
+
 private:
     SDL_Window *window_ = nullptr;
 };

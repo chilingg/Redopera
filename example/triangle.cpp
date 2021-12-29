@@ -121,7 +121,7 @@ int main(int arg, char **argv)
         }
 
         triangle.update();
-        SDL_GL_SwapWindow(window.handle());
+        window.swapBuffers();
     }
 
    return 0;

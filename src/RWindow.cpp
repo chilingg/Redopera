@@ -63,6 +63,11 @@ void RWindow::setIcon(const RImage &icon)
     }
 }
 
+void RWindow::swapBuffers()
+{
+    SDL_GL_SwapWindow(window_);
+}
+
 void Redopera::RWindow::showCursor(bool enable)
 {
     SDL_ShowCursor(enable ? SDL_ENABLE : SDL_DISABLE);
