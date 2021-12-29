@@ -140,6 +140,25 @@ bool RContext::setContext(const RWindow &window, const RContext::Format &fmt)
 
     if(setContext(window))
     {
+        if(fmt.debug)
+        {
+            // Debug Context 需要OpenGL4.3以上版本
+            if(GLVersion.major * 10 + GLVersion.minor >= 43 && GL_CONTEXT_FLAG_DEBUG_BIT)
+            {
+                rMessage("OpenGL Context: {}\nEnable OpenGL debug output\n", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
+
+                glEnable(GL_DEBUG_OUTPUT);
+                glDebugMessageCallback(openglDebugMessageCallback, nullptr);
+                //过滤着色器编译成功消息通知
+                glDebugMessageControl(GL_DEBUG_SOURCE_SHADER_COMPILER, GL_DEBUG_TYPE_OTHER,
+                                      GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
+                glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER,
+                                      GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
+            }
+            else
+                rWarning("Unable to set OpenGL Debug Context!\n");
+        }
+
         if(fmt.vSync)
             setSwapInterval(1);
         setRasterizer(fmt.rasterizer);
@@ -165,22 +184,6 @@ bool RContext::setContext(const RWindow &window)
         return false;
     }
     SDL_GL_MakeCurrent(window.handle(), context.get());
-
-    // Debug Context 需要OpenGL4.3以上版本
-    if(GLVersion.major * 10 + GLVersion.minor > 43 && GL_CONTEXT_FLAG_DEBUG_BIT)
-    {
-        rMessage("OpenGL Context: {}\nEnable OpenGL debug output\n", reinterpret_cast<const char*>(glGetString(GL_VERSION)));
-
-        glEnable(GL_DEBUG_OUTPUT);
-        glDebugMessageCallback(openglDebugMessageCallback, nullptr);
-        //过滤着色器编译成功消息通知
-        //glDebugMessageControl(GL_DEBUG_SOURCE_SHADER_COMPILER, GL_DEBUG_TYPE_OTHER,
-                              //GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
-        //glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_OTHER,
-                              //GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, GL_FALSE);
-    }
-    else
-        rWarning("Unable to set OpenGL Debug Context!\n");
 
     context_ = context.release();
     return true;
