@@ -11,6 +11,7 @@
 #include <RSigslot.h>
 #include <RKeeper.h>
 #include <RTextLoader.h>
+#include <REntity.h>
 
 #include <rsc/RImage.h>
 #include <rsc/RFont.h>
@@ -20,7 +21,7 @@
 using namespace Redopera;
 
 template<typename T, typename T2>
-void equal(T&& v1, T2&& v2, unsigned line)
+void equalTest(T&& v1, T2&& v2, unsigned line)
 {
     if(!(v1 == v2))
         fmt::print(fg(fmt::color::red), "Line {}: {} != {}\n", line, v1, v2);
@@ -39,7 +40,7 @@ void require_of(T v1, T2 v2, F f, unsigned line)
         fmt::print(fg(fmt::color::red), "Line {}: Unexpected of {} and {}\n", line, v1, v2);
 }
 
-#define EQUAL(v1, v2) equal(v1, v2, __LINE__)
+#define EQUAL(v1, v2) equalTest(v1, v2, __LINE__)
 #define REQUIRE(b) require(b, __LINE__)
 #define REQUIRE_OF(v1, v2, f) require_of(v1, v2, f, __LINE__)
 
@@ -247,6 +248,28 @@ void testMath()
     EQUAL(mat1, mat3);
 }
 
+void testEntity()
+{
+    fmt::print("REtity Testing...\n");
+
+    using namespace std::string_literals;
+
+    RName num = "num", str = "str";
+    REntity<int, std::string> entity;
+    REQUIRE(!entity.isComponent(num));
+    entity.add(num, 3);
+    entity.add(str, "str"s);
+    REQUIRE(entity.isComponent(num));
+    EQUAL(entity.index(num), 0);
+    EQUAL(entity.get<int>(num), 3);
+    entity.remove(num);
+    REQUIRE(!entity.isComponent(num));
+    REQUIRE(!entity.getIf<int>(str));
+    std::string *p = entity.getIf<std::string>(str);
+    REQUIRE(p);
+    EQUAL(*p, "str"s);
+}
+
 void testImage()
 {
     fmt::print("RImage Testing...\n");
@@ -364,6 +387,7 @@ int main()
     testRect();
     testTimer();
     testMath();
+    testEntity();
     testImage();
     testSigSlot();
     testKeeper();

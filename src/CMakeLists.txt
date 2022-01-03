@@ -21,6 +21,7 @@ set(REDOPERA_HEADERS
     ../include/redopera/RWindow.h
     ../include/redopera/RTextLoader.h
     ../include/redopera/RSprite.h
+    ../include/redopera/REntity.h
 
     ../include/redopera/rsc/RResource.h
     ../include/redopera/rsc/RImage.h
