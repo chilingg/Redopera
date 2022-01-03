@@ -81,11 +81,6 @@ private:
     size_t index_;
 };
 
-RName operator "" _rname(const char *str, std::size_t)
-{
-    return RName(str);
-}
-
 } // ns Redopera
 
 namespace std
@@ -104,6 +99,7 @@ namespace std
 }
 
 #ifdef REDOPERA_DEFINE_FILE
+Redopera::RName operator "" _rname(const char *str, std::size_t) { return Redopera::RName(str); }
 std::mutex Redopera::RName::gMutex;
 #endif
 
