@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 add_subdirectory(extern extern)
 add_subdirectory(src src)
 
-if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}" OR ${REDOPERA_DEVELOPING})
     add_subdirectory(test test)
     add_subdirectory(example example)
 endif()
