@@ -87,4 +87,6 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     set_target_properties(redopera PROPERTIES OUTPUT_NAME redoperad)
+else()
+    target_compile_definitions(redopera PRIVATE NDEBUG)
 endif()
