@@ -6,9 +6,9 @@
 #include <RName.h>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include <extern/stb/stb_image.h>
+#include <stb/stb_image.h>
 
 #define STB_TRUETYPE_IMPLEMENTATION
-#include <extern/stb/stb_truetype.h>
+#include <stb/stb_truetype.h>
 
 #include <fstream>

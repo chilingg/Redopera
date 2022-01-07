@@ -1,7 +1,7 @@
 #include <rsc/RFont.h>
 #include <rsc/RFile.h>
 
-#include <extern/stb/stb_truetype.h>
+#include <stb/stb_truetype.h>
 
 using namespace Redopera;
 

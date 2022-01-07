@@ -2,7 +2,7 @@
 #include <RColor.h>
 #include <rsc/RImage.h>
 
-#include <extern/stb/stb_image.h>
+#include <stb/stb_image.h>
 #include <RFormat.h>
 
 namespace  {
