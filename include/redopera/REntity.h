@@ -32,8 +32,9 @@ public:
     T& get(RName name){ return std::get<T>(component_.at(name)); }
 
     template<typename T>
-    T* getIf(RName name){ return std::get_if<T>(&component_.at(name)); }
-
+    T* getIf(RName name) { return std::get_if<T>(&component_.at(name)); }
+    template<typename T>
+    const T* getIf(RName name) const { return std::get_if<T>(&component_.at(name)); }
 
     template<typename T>
     T& add(RName name, T&& value)
