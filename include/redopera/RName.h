@@ -36,7 +36,13 @@ public:
 
     size_t hash() const { return index_; }
 
-    std::string_view string() const
+    const std::string& string() const
+    {
+        std::lock_guard lock(gMutex);
+        return gTable()[index_];
+    }
+
+    std::string_view stringView() const
     {
         std::lock_guard lock(gMutex);
         return gTable()[index_];
