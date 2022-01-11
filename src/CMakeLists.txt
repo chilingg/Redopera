@@ -20,8 +20,8 @@ set(REDOPERA_HEADERS
     ../include/redopera/RGame.h
     ../include/redopera/RWindow.h
     ../include/redopera/RTextLoader.h
-    ../include/redopera/RSprite.h
     ../include/redopera/REntity.h
+    ../include/redopera/RDict.h
 
     ../include/redopera/rsc/RResource.h
     ../include/redopera/rsc/RImage.h
@@ -38,6 +38,7 @@ set(REDOPERA_HEADERS
     ../include/redopera/render/RTexture.h
     ../include/redopera/render/RContext.h
     ../include/redopera/render/RRenderer.h
+    ../include/redopera/render/RSprite.h
     ../include/redopera/render/render.h
 
     ../include/redopera/thread/RThread.h
