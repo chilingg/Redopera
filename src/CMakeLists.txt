@@ -31,6 +31,7 @@ set(REDOPERA_HEADERS
     ../include/redopera/rsc/RScript.h
     ../include/redopera/rsc/RMusic.h
     ../include/redopera/rsc/RSoundEffect.h
+    ../include/redopera/rsc/RJson.h
 
     ../include/redopera/render/ROpenGL.h
     ../include/redopera/render/RShader.h
