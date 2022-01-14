@@ -26,6 +26,10 @@ public:
         index_(nameToIndex(name))
     {}
 
+    RName(size_t index):
+        index_(index)
+    {}
+
     RName(const RName &) = default;
     RName(RName &&) = default;
     RName& operator=(const RName&) = default;
@@ -34,7 +38,7 @@ public:
     bool operator==(const RName &other) const { return index_ == other.index_; }
     bool operator!=(const RName &other) const { return index_ != other.index_; }
 
-    size_t hash() const { return index_; }
+    size_t index() const { return index_; }
 
     const std::string& string() const
     {
@@ -98,11 +102,13 @@ namespace std
 
         result_type operator()(const argument_type &name) const
         {
-            result_type const hash = name.hash();
+            result_type const hash = name.index();
             return hash;
         }
     };
 }
+
+extern Redopera::RName operator "" _rname(const char *str, std::size_t);
 
 #ifdef REDOPERA_DEFINE_FILE
 Redopera::RName operator "" _rname(const char *str, std::size_t) { return Redopera::RName(str); }
