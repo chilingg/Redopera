@@ -46,6 +46,12 @@ public:
         return gTable()[index_];
     }
 
+    const char* cString() const
+    {
+        std::lock_guard lock(gMutex);
+        return gTable()[index_].c_str();
+    }
+
     std::string_view stringView() const
     {
         std::lock_guard lock(gMutex);
