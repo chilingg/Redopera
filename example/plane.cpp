@@ -52,9 +52,9 @@ public:
         RFont font;
         font.setSize(36);
         RFont::Glyph glyph = font.getGlyph(L'↑');
-        RTexture::setTextureFomat(RTexture::SingleToLinear4);
+        RTexture::setTextureFormat(RTexture::SingleToLinear4);
         arrow.load(glyph.data.get(), glyph.width, glyph.height, 1);
-        RTexture::setTextureFomat(RTexture::Nearest4);
+        RTexture::setTextureFormat(RTexture::Nearest4);
 
         rect.setSize(arrow.size().convert<float>());
         rect.setCenter(viewport.center());

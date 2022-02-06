@@ -57,10 +57,10 @@ RTexture RTexture::createTransTex()
     return { reinterpret_cast<const RData*>("\x0\x0\x0\x0"), 1, 1, 4 };
 }
 
-void RTexture::setTextureFomat(const RTexture::Format &format)
+RTexture::Format RTexture::setTextureFormat(RTexture::Format format)
 {
-    textureFormat = format;
-
+    std::swap(textureFormat, format);
+    return format;
 }
 
 RTexture::Format &RTexture::currentFormat()

@@ -58,7 +58,7 @@ public:
             Wrap s, t;
         } wrap { Wrap::ClampToBorder, Wrap::ClampToBorder };
 
-        std::array<GLfloat, 4> edgeColor { 0, 0, 0, 1.f };
+        std::array<GLfloat, 4> edgeColor { 0, 0, 0, 0 };
         std::array<GLint, 4> swizzle { GL_RED, GL_GREEN, GL_BLUE, GL_ALPHA};
     };
 
@@ -73,7 +73,7 @@ public:
     static RTexture createRedTex();
     static RTexture createTransTex();
 
-    static void setTextureFomat(const Format &format);
+    static Format setTextureFormat(Format format);
     static Format& currentFormat();
     static RTexture colorTexture(const RColor &color);
     static RTexture colorTexture(RGBA rgba);

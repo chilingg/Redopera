@@ -27,7 +27,7 @@ public:
     {
         auto fmt =  RTexture::Nearest3;
         fmt.wrap = { RTexture::Wrap::Repeat, RTexture::Wrap::Repeat };
-        RTexture::setTextureFomat(fmt);
+        RTexture::setTextureFormat(fmt);
         tex_ = RTexture::createWhiteTex();
 
         setBackgroundColor(0x101020ff);
@@ -67,7 +67,7 @@ public:
         // loader.setFont(RFont("/usr/share/fonts/wenquanyi/wqy-zenhei/wqy-zenhei.ttc"));
         loader.setFontSize(12);
 
-        RTexture::setTextureFomat(RTexture::SingleToLinear4);
+        RTexture::setTextureFormat(RTexture::SingleToLinear4);
         RImage img(nullptr, 220, 110, 1);
         RRectF rect({ 20, SIZE - 110 }, img.size().convert<float>());
 
