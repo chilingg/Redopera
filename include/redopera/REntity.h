@@ -20,6 +20,7 @@ public:
 
     size_t index(RName name) const { return component_.at(name).index(); }
     const RDict<Component>& componentList() const { return component_; }
+    RDict<Component>& componentListR() { return component_; }
     size_t size() const { return component_.size(); }
 
     bool isComponent(RName name) const { return component_.contains(name); }
@@ -39,14 +40,12 @@ public:
     template<typename T>
     T& add(RName name, T value)
     {
-        auto it = component_.emplace(name, std::move(value));
-        return std::get<T>(it.first->second);
+        return std::get<T>(component_[name] = std::move(value));
     }
     template<typename T, typename ...Args>
-    T& add(RName name, Args&& ... value)
+    T& add(RName name, Args&& ... args)
     {
-        auto it = component_.emplace(name, T(std::forward<T>(value)...));
-        return std::get<T>(it.first->second);
+        return std::get<T>(component_[name] = T(std::forward<Args>(args)...));
     }
 
     void remove(RName name) { component_.erase(name); }
