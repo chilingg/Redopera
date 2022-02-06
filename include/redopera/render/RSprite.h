@@ -20,9 +20,11 @@ public:
     RSprite& operator=(const RSprite &&sprite);
 
     const RTexture& texture() const;
+    const std::vector<RTexture>& textureList() const;
     int delta() const;
     size_t frameCount() const;
     size_t currentIndex() const;
+    int interval() const;
     const RTexture& frame() const;
     const RTexture& frame(size_t index) const;
 
@@ -36,7 +38,7 @@ public:
     void clear();
 
 private:
-    int interval_ = 20;
+    int interval_ = 10;
     int delta_ = 0;
     size_t index_ = 0;
     std::vector<RTexture> frames_;

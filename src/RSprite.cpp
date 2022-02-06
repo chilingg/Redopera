@@ -38,6 +38,11 @@ const RTexture &RSprite::texture() const
     return frames_[index_];
 }
 
+const std::vector<RTexture> &RSprite::textureList() const
+{
+    return frames_;
+}
+
 int RSprite::delta() const
 {
     return delta_;
@@ -51,6 +56,11 @@ size_t RSprite::frameCount() const
 size_t RSprite::currentIndex() const
 {
     return index_;
+}
+
+int RSprite::interval() const
+{
+    return interval_;
 }
 
 const RTexture &RSprite::frame() const
